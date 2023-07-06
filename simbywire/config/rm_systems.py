@@ -2,6 +2,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
+from .named import Named
+
 
 class UntruncationStep(BaseModel, extra="forbid"):
     name: str = ""
@@ -28,6 +30,5 @@ RmStep = Annotated[
 ]
 
 
-class RmSystem(BaseModel, extra="forbid"):
-    name: str
+class RmSystem(Named, extra="forbid"):
     steps: list[RmStep]

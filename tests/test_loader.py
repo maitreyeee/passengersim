@@ -63,4 +63,6 @@ def test_u10_loader():
     u10_yaml = Path(__file__).parents[2].joinpath("networks/u10.yaml")
     with open(u10_yaml) as f:
         content = yaml.safe_load(f)
-    AirSimConfig.model_validate(content)
+    u10 = AirSimConfig.model_validate(content)
+    assert len(u10.airlines) == 4
+    assert u10.airlines["AL2"].name == "AL2"

@@ -1,10 +1,11 @@
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from .named import Named
 
 
-class PodsChoiceModel(BaseModel, extra="forbid"):
-    # name: str
+class PodsChoiceModel(Named, extra="forbid"):
     kind: Literal["pods"]
 
     emult: float | None = None
@@ -21,8 +22,7 @@ class PodsChoiceModel(BaseModel, extra="forbid"):
     connection_multiplier: float | None = None
 
 
-class LogitChoiceModel(BaseModel, extra="forbid"):
-    # name: str
+class LogitChoiceModel(Named, extra="forbid"):
     kind: Literal["logit"]
 
     intercept: float = 0
