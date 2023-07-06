@@ -51,3 +51,5 @@ class AirSimConfig(BaseModel, extra="forbid"):
                     f"Airline {airline.name} has unknown RM system {airline.rm_system}"
                 )
         return m
+
+    classes: list[str]
