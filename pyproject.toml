@@ -9,10 +9,10 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
 fallback_version = "0.1.0"
-write_to = "bywire/_version.py"
+write_to = "simbywire/_version.py"
 
 [project]
-name = "bywire"
+name = "simbywire"
 dynamic = ["version"]
 requires-python = ">=3.11"
 dependencies = [
@@ -23,9 +23,18 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["bywire"]
+packages = ["simbywire"]
 
 [metadata]
 description = "User interface for AirSim"
 author = "Atlanta Analytics LLC"
 author_email = "jeff@newman.me"
+
+[tool.ruff]
+# Enable flake8-bugbear (`B`) and pyupgrade ('UP') rules.
+select = ["E", "F", "B", "UP"]
+fix = true
+ignore-init-module-imports = true
+line-length = 120
+ignore = ["B905"]
+target-version = "py311"
