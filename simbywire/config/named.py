@@ -11,7 +11,9 @@ class Named(BaseModel):
 T = TypeVar("T", bound=Named)
 
 
-def enforce_name(x: dict[str, T]):
+def enforce_name(x: dict[str, T] | list[T]):
+    if isinstance(x, list):
+        x = {i["name"]: i for i in x}
     for k, v in x.items():
         if "name" not in v or not v["name"]:
             v["name"] = k

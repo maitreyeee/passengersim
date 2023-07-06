@@ -1,6 +1,7 @@
 from pydantic import BaseModel, confloat, conint, model_validator
 
 from .airlines import Airline
+from .booking_curves import BookingCurve
 from .choice_model import ChoiceModel
 from .named import DictOfNamed
 from .rm_systems import RmSystem
@@ -53,3 +54,22 @@ class AirSimConfig(BaseModel, extra="forbid"):
         return m
 
     classes: list[str]
+    dcps: list[int]
+
+    booking_curves: DictOfNamed[BookingCurve]
+
+    @model_validator(mode="after")
+    def booking_curves_match_dcps(cls, m: "AirSimConfig"):
+        """Check that all booking curves are complete and valid."""
+        sorted_dcps = reversed(sorted(m.dcps))
+        for curve in m.booking_curves.values():
+            i = 0
+            for dcp in sorted_dcps:
+                assert (
+                    dcp in curve.curve
+                ), f"booking curve {curve.name} is missing dcp {dcp}"
+                assert (
+                    curve.curve[dcp] >= i
+                ), f"booking curve {curve.name} moves backwards at dcp {dcp}"
+                i = curve.curve[dcp]
+        return m
