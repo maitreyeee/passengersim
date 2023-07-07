@@ -11,9 +11,15 @@ class Named(BaseModel):
 T = TypeVar("T", bound=Named)
 
 
-def enforce_name(x: dict[str, T] | list[T]):
+def enforce_name(x: dict[str, T] | list[T]) -> dict[str, T]:
     if isinstance(x, list):
-        x = {i["name"]: i for i in x}
+        x_ = {}
+        for n, i in enumerate(x):
+            k = i.get("name")
+            if k is None:
+                raise ValueError(f"missing name in position {n}")
+            x_[k] = i
+        x = x_
     for k, v in x.items():
         if "name" not in v or not v["name"]:
             v["name"] = k

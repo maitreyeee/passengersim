@@ -30,13 +30,13 @@ def test_rm_systems():
     content = yaml.safe_load(io.StringIO(demo1))
     loaded = AirSimConfig.model_validate(content)
 
-    system0 = loaded.rm_systems[0]
+    system0 = loaded.rm_systems["SystemA"]
     assert system0.name == "SystemA"
     assert len(system0.steps) == 2
     assert isinstance(system0.steps[0], UntruncationStep)
     assert isinstance(system0.steps[1], ForecastStep)
 
-    system1 = loaded.rm_systems[1]
+    system1 = loaded.rm_systems["SystemB"]
     assert system1.name == "SystemB"
     assert isinstance(system1.steps[0], ForecastStep)
     assert system1.steps[0].step_type == "forecast"
