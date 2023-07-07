@@ -1,9 +1,13 @@
 from pydantic import BaseModel, Field, model_validator
 
-from ..pseudonym import random_label
+from simbywire.pseudonym import random_label
+
 from .airlines import Airline
 from .booking_curves import BookingCurve
 from .choice_model import ChoiceModel
+from .demands import Demand
+from .fares import Fare
+from .legs import Leg
 from .named import DictOfNamed
 from .rm_systems import RmSystem
 from .simulation_controls import SimulationSettings
@@ -13,11 +17,15 @@ class AirSimConfig(BaseModel, extra="forbid"):
     scenario: str = Field(default_factory=random_label)
 
     simulation_controls: SimulationSettings = SimulationSettings()
-
     rm_systems: DictOfNamed[RmSystem] = []
     choice_models: DictOfNamed[ChoiceModel] = {}
-
     airlines: DictOfNamed[Airline] = {}
+    classes: list[str] = []
+    dcps: list[int] = []
+    booking_curves: DictOfNamed[BookingCurve] = {}
+    legs: list[Leg] = []
+    demands: list[Demand] = []
+    fares: list[Fare] = []
 
     @model_validator(mode="after")
     def airlines_have_rm_systems(cls, m: "AirSimConfig"):
@@ -28,11 +36,6 @@ class AirSimConfig(BaseModel, extra="forbid"):
                     f"Airline {airline.name} has unknown RM system {airline.rm_system}"
                 )
         return m
-
-    classes: list[str] = []
-    dcps: list[int] = []
-
-    booking_curves: DictOfNamed[BookingCurve] = {}
 
     @model_validator(mode="after")
     def booking_curves_match_dcps(cls, m: "AirSimConfig"):
