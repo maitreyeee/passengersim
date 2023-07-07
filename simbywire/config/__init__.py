@@ -9,6 +9,7 @@ from .demands import Demand
 from .fares import Fare
 from .legs import Leg
 from .named import DictOfNamed
+from .paths import Path
 from .rm_systems import RmSystem
 from .simulation_controls import SimulationSettings
 
@@ -26,6 +27,7 @@ class AirSimConfig(BaseModel, extra="forbid"):
     legs: list[Leg] = []
     demands: list[Demand] = []
     fares: list[Fare] = []
+    paths: list[Path] = []
 
     @model_validator(mode="after")
     def airlines_have_rm_systems(cls, m: "AirSimConfig"):
