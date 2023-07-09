@@ -1,8 +1,10 @@
+import gzip
 import io
 from pathlib import Path
 
 import pytest
 import yaml
+from AirSim.utils.SimDriver import SimDriver
 from pydantic import ValidationError
 
 from simbywire import AirSimConfig
@@ -60,9 +62,19 @@ def test_rm_systems():
 
 
 def test_u10_loader():
-    u10_yaml = Path(__file__).parents[2].joinpath("networks/u10.yaml")
-    with open(u10_yaml) as f:
+    u10_config = Path(__file__).parents[2].joinpath("networks/u10-config.yaml")
+    u10_network = Path(__file__).parents[2].joinpath("networks/u10-network.yaml.gz")
+    with open(u10_config) as f:
         content = yaml.safe_load(f)
+    with gzip.open(u10_network) as f:
+        content.update(yaml.safe_load(f))
     u10 = AirSimConfig.model_validate(content)
     assert len(u10.airlines) == 4
     assert u10.airlines["AL2"].name == "AL2"
+
+
+def test_u10_transcoder():
+    sd = SimDriver(
+        input_file=Path(__file__).parents[2].joinpath("networks/u10-airsim.txt"),
+    )
+    sd.loader.dump_network(sd, "/tmp/u10-temp.yml")

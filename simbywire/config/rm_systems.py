@@ -18,6 +18,7 @@ class ForecastStep(BaseModel, extra="forbid"):
     name: str = ""
     step_type: Literal["forecast"]
     algorithm: str
+    kind: Literal["leg", "path"] = "leg"
     alpha: float = 0.15
 
 
