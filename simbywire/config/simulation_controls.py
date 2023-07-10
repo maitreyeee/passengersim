@@ -31,3 +31,5 @@ class SimulationSettings(BaseModel, extra="forbid"):
     disable_ap: bool = False
     demand_multiplier: confloat(gt=0) = 1.0
     manual_paths: bool = True
+
+    write_raw_files: bool = False

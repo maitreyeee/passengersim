@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pydantic import BaseModel, Field, model_validator
 
 from simbywire.pseudonym import random_label
@@ -5,6 +7,7 @@ from simbywire.pseudonym import random_label
 from .airlines import Airline
 from .booking_curves import BookingCurve
 from .choice_model import ChoiceModel
+from .database import DatabaseConfig
 from .demands import Demand
 from .fares import Fare
 from .legs import Leg
@@ -18,6 +21,7 @@ class AirSimConfig(BaseModel, extra="forbid"):
     scenario: str = Field(default_factory=random_label)
 
     simulation_controls: SimulationSettings = SimulationSettings()
+    db: DatabaseConfig = DatabaseConfig()
     rm_systems: DictOfNamed[RmSystem] = []
     choice_models: DictOfNamed[ChoiceModel] = {}
     airlines: DictOfNamed[Airline] = {}
@@ -30,7 +34,7 @@ class AirSimConfig(BaseModel, extra="forbid"):
     paths: list[Path] = []
 
     @model_validator(mode="after")
-    def airlines_have_rm_systems(cls, m: "AirSimConfig"):
+    def airlines_have_rm_systems(cls, m: AirSimConfig):
         """Check that all airlines have RM systems that have been defined."""
         for airline in m.airlines.values():
             if airline.rm_system not in m.rm_systems:
@@ -40,7 +44,7 @@ class AirSimConfig(BaseModel, extra="forbid"):
         return m
 
     @model_validator(mode="after")
-    def booking_curves_match_dcps(cls, m: "AirSimConfig"):
+    def booking_curves_match_dcps(cls, m: AirSimConfig):
         """Check that all booking curves are complete and valid."""
         sorted_dcps = reversed(sorted(m.dcps))
         for curve in m.booking_curves.values():

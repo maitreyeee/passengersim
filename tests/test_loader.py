@@ -78,3 +78,10 @@ def test_u10_transcoder():
         input_file=Path(__file__).parents[2].joinpath("networks/u10-airsim.txt"),
     )
     sd.loader.dump_network(sd, "/tmp/u10-temp.yml")
+
+
+def test_3mkt_transcoder():
+    sd = SimDriver(
+        input_file=Path(__file__).parents[2].joinpath("networks/3mkt-temp.txt"),
+    )
+    sd.loader.dump_network(sd, "/tmp/3mkt.yaml")

@@ -26,6 +26,7 @@ class OptimizationStep(BaseModel, extra="forbid"):
     name: str = ""
     step_type: Literal["optimization"]
     algorithm: str
+    kind: Literal["leg", "path"] = "leg"
 
 
 RmStep = Annotated[
