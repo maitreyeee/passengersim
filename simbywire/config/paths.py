@@ -17,3 +17,10 @@ class Path(BaseModel, extra="forbid"):
         if isinstance(v, int):
             v = [v]
         return v
+
+    @field_validator("legs")
+    def at_least_one_leg(cls, v):
+        """There must be at least one leg."""
+        if len(v) < 1:
+            raise ValueError("path must have at least one leg")
+        return v

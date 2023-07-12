@@ -3,7 +3,7 @@ from __future__ import annotations
 from pydantic import BaseModel, confloat, conint
 
 
-class SimulationSettings(BaseModel, extra="forbid"):
+class SimulationSettings(BaseModel, extra="allow"):
     num_trials: conint(ge=1, le=1000) = 1
     """The overall number of trials to run.
 
@@ -33,3 +33,5 @@ class SimulationSettings(BaseModel, extra="forbid"):
     manual_paths: bool = True
 
     write_raw_files: bool = False
+
+    random_seed: int | None = None
