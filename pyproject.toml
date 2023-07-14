@@ -14,7 +14,7 @@ write_to = "simbywire/_version.py"
 [project]
 name = "simbywire"
 dynamic = ["version"]
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 dependencies = [
     "numpy",
     "scipy",
@@ -37,7 +37,7 @@ fix = true
 ignore-init-module-imports = true
 line-length = 120
 ignore = ["B905"]
-target-version = "py311"
+target-version = "py310"
 
 [tool.ruff.isort]
 known-first-party = ["simbywire"]
