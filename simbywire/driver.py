@@ -9,11 +9,13 @@ from math import sqrt
 from typing import Any
 
 import AirSim
+import pandas as pd
 import yaml
 from AirSim import PathClass
 from AirSim.utils import FileWriter, airsim_utils, db_utils
 
 from .config import AirSimConfig
+from .utils.si import si_units
 
 logger = logging.getLogger("AirSim")
 
@@ -488,7 +490,7 @@ class Simulation:
                 sold_leisure,
             )
 
-    def run_reports(self, sim: AirSim.AirSim):
+    def compute_reports(self, sim: AirSim.AirSim, to_log=True):
         num_samples = sim.num_trials * (sim.num_samples - sim.burn_samples)
         if num_samples <= 0:
             raise ValueError(
@@ -498,40 +500,96 @@ class Simulation:
                 f"\n- burn_samples = {sim.burn_samples}"
             )
         tot_rev = 0.0
+        dmd_df = []
         for m in sim.demands:
             avg_price = m.revenue / m.sold if m.sold > 0 else 0
-            logger.info(
-                f"   Dmd: {m.orig}-{m.dest}:{m.segment}"
-                f"  Sold = {m.sold},  "
-                f"Rev = {m.revenue}, "
-                f"AvgFare = {avg_price:.2f}"
+            dmd_df.append(
+                dict(
+                    orig=m.orig,
+                    dest=m.dest,
+                    segment=m.segment,
+                    sold=m.sold,
+                    revenue=m.revenue,
+                    avg_fare=m.revenue / m.sold if m.sold > 0 else 0,
+                )
             )
+            if to_log:
+                logger.info(
+                    f"   Dmd: {m.orig}-{m.dest}:{m.segment}"
+                    f"  Sold = {m.sold},  "
+                    f"Rev = {m.revenue}, "
+                    f"AvgFare = {avg_price:.2f}"
+                )
             tot_rev += m.revenue
+        dmd_df = pd.DataFrame(dmd_df)
 
         avg_lf, n = 0, 0
         airline_asm = defaultdict(float)
         airline_rpm = defaultdict(float)
+        leg_df = []
         for leg in sim.legs:
             avg_sold = leg.gt_sold / num_samples
             avg_rev = leg.gt_revenue / num_samples
             lf = 100.0 * leg.gt_sold / (leg.capacity * num_samples)
-            logger.info(
-                f"    Leg: {leg.carrier}:{leg.flt_no} {leg.orig}-{leg.dest}: "
-                f" AvgSold = {avg_sold:6.2f},  AvgRev = ${avg_rev:,.2f}, LF = {lf:,.2f}%"
+            if to_log:
+                logger.info(
+                    f"    Leg: {leg.carrier}:{leg.flt_no} {leg.orig}-{leg.dest}: "
+                    f" AvgSold = {avg_sold:6.2f},  AvgRev = ${avg_rev:,.2f}, LF = {lf:,.2f}%"
+                )
+            leg_df.append(
+                dict(
+                    carrier=leg.carrier,
+                    flt_no=leg.flt_no,
+                    orig=leg.orig,
+                    dest=leg.dest,
+                    avg_sold=avg_sold,
+                    avg_rev=avg_rev,
+                    lf=lf,
+                )
             )
             avg_lf += lf
             n += 1
             airline_asm[leg.carrier] += leg.distance * leg.capacity * num_samples
             airline_rpm[leg.carrier] += leg.distance * leg.gt_sold
+        leg_df = pd.DataFrame(leg_df)
 
         avg_lf = avg_lf / n if n > 0 else 0
-        logger.info(f"    LF:  {avg_lf:6.2f}%, Total revenue = ${tot_rev:,.2f}")
+        if to_log:
+            logger.info(f"    LF:  {avg_lf:6.2f}%, Total revenue = ${tot_rev:,.2f}")
 
+        path_df = []
         for path in sim.paths:
             avg_sold = path.gt_sold / num_samples
             avg_rev = path.gt_revenue / num_samples
-            logger.info(f"{path}, avg_sold={avg_sold:6.2f}, avg_rev=${avg_rev:10,.2f}")
+            if to_log:
+                logger.info(f"{path}, avg_sold={avg_sold:6.2f}, avg_rev=${avg_rev:10,.2f}")
+            if path.num_legs() == 1:
+                path_df.append(
+                    dict(
+                        orig=path.orig,
+                        dest=path.dest,
+                        carrier1=path.get_leg_carrier(0),
+                        flt_no1=path.get_leg_fltno(0),
+                        carrier2=None,
+                        flt_no2=None,
+                    )
+                )
+            elif path.num_legs() == 2:
+                path_df.append(
+                    dict(
+                        orig=path.orig,
+                        dest=path.dest,
+                        carrier1=path.get_leg_carrier(0),
+                        flt_no1=path.get_leg_fltno(0),
+                        carrier2=path.get_leg_carrier(1),
+                        flt_no2=path.get_leg_fltno(1),
+                    )
+                )
+            else:
+                raise NotImplementedError("path with other than 1 or 2 legs")
+        path_df = pd.DataFrame(path_df)
 
+        airline_df = []
         for cxr in sim.airlines:
             avg_sold = round(cxr.gt_sold / num_samples)
             avg_rev = cxr.gt_revenue / num_samples
@@ -539,27 +597,42 @@ class Simulation:
             # lf2 = 100.0 * cxr.gt_revenue_passenger_miles / asm if asm > 0 else 0.0
             denom = airline_asm[cxr.name]
             lf2 = (100.0 * airline_rpm[cxr.name] / denom) if denom > 0 else 0
-            logger.info(
-                f"Airline: {cxr.name}, AvgSold: {avg_sold}, LF {lf2:.2f}%,  AvgRev ${avg_rev:10,.2f}"
-            )
+            if to_log:
+                logger.info(
+                    f"Airline: {cxr.name}, AvgSold: {avg_sold}, LF {lf2:.2f}%,  AvgRev ${avg_rev:10,.2f}"
+                )
+            airline_df.append(dict(
+                name=cxr.name,
+                avg_sold=avg_sold,
+                load_factor=lf2,
+                avg_rev=avg_rev,
+                asm=airline_asm[cxr.name],
+                rpm=airline_rpm[cxr.name],
+            ))
             # logger.info(f"ASM = {airline_asm[cxr.name]:.2f}, RPM = {airline_rpm[cxr.name]:.2f}, LF = {lf2:.2f}%") #***
+        airline_df = pd.DataFrame(airline_df)
+
+        return dict(
+            dmd=dmd_df,
+            leg=leg_df,
+            path=path_df,
+            airline=airline_df,
+        )
+
 
     def reseed(self, seed=42):
         logger.info(f"RESEEDING {seed}")
         self.sim.random_generator = AirSim.Generator(42)
         print("random_generator set")
-        # for cm in self.choice_models.values():
-        #     seed += 1
-        #     cm.reseed(seed)
-        # print("reseeding done")
 
-    def run(self):
+    def run(self, log_reports=True):
         start_time = time.time()
         self.setup_scenario()
         self.reseed(42)
         print("Runnong...")
         self.run_sim()
-        self.run_reports(self.sim)
+        summary = self.compute_reports(self.sim, to_log=log_reports)
         logger.info(
             f"Th' th' that's all folks !!!    (Elapsed time = {round(time.time() - start_time, 2)})"
         )
+        return summary

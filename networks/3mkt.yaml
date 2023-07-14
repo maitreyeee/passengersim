@@ -1,5 +1,6 @@
 scenario: Three Market Test Network
 simulation_controls:
+  random_seed: 42
   num_trials: 1
   num_samples: 300
   sys_k_factor: 0.1
