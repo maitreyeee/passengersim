@@ -1,130 +1,130 @@
-airline:
+airlines:
 - asm: 118440000.0
-  avg_rev: 50100.32459999821
-  avg_sold: 161
-  load_factor: 35.37918608578183
+  avg_rev: 51336.4927000008
+  avg_sold: 164
+  load_factor: 36.33742570077676
   name: AL1
-  rpm: 41903108.0
+  rpm: 43038047.0
 - asm: 76560000.0
-  avg_rev: 37596.84299998822
-  avg_sold: 121
-  load_factor: 36.563235370950885
+  avg_rev: 38630.052799987236
+  avg_sold: 124
+  load_factor: 37.74636624869383
   name: AL2
-  rpm: 27992813.0
+  rpm: 28898618.0
 - asm: 41880000.0
-  avg_rev: 16401.943100001838
+  avg_rev: 16427.17920000186
   avg_sold: 53
-  load_factor: 43.84166666666667
+  load_factor: 43.90416666666667
   name: AL3
-  rpm: 18360890.0
+  rpm: 18387065.0
 - asm: 41880000.0
-  avg_rev: 12615.35070000121
-  avg_sold: 40
-  load_factor: 33.425
+  avg_rev: 13075.009900001234
+  avg_sold: 42
+  load_factor: 34.61666666666667
   name: AL4
-  rpm: 13998390.0
-dmd:
-- avg_fare: 309.2564705882352
+  rpm: 14497460.0
+demands:
+- avg_fare: 307.2818181818181
   dest: SFO
   orig: BOS
-  revenue: 15772.079999999993
+  revenue: 13520.399999999996
   segment: business
-  sold: 51
+  sold: 44
 - avg_fare: 304.56
   dest: SFO
   orig: BOS
-  revenue: 2131.92
+  revenue: 304.56
   segment: leisure
-  sold: 7
-- avg_fare: 312.36045977011526
+  sold: 1
+- avg_fare: 313.95294117647086
   dest: ORD
   orig: BOS
-  revenue: 27175.360000000026
+  revenue: 37360.40000000003
   segment: business
-  sold: 87
-- avg_fare: 305.6389189189189
+  sold: 119
+- avg_fare: 304.5599999999999
   dest: ORD
   orig: BOS
-  revenue: 11308.64
+  revenue: 13400.639999999996
   segment: leisure
-  sold: 37
-- avg_fare: 318.4269473684213
+  sold: 44
+- avg_fare: 321.2177914110429
   dest: DFW
   orig: BOS
-  revenue: 30250.560000000023
+  revenue: 52358.5
   segment: business
-  sold: 95
-- avg_fare: 307.6909803921567
+  sold: 163
+- avg_fare: 306.596734693878
   dest: DFW
   orig: BOS
-  revenue: 15692.239999999993
+  revenue: 30046.480000000043
   segment: leisure
-  sold: 51
-leg:
-- avg_rev: 8646.897600000992
-  avg_sold: 28.185
+  sold: 98
+legs:
+- avg_rev: 9068.661600001062
+  avg_sold: 29.56
   carrier: AL1
   dest: SFO
   flt_no: 1
-  lf: 28.185
+  lf: 29.56
   orig: BOS
-- avg_rev: 8779.329600001016
-  avg_sold: 28.61
+- avg_rev: 9122.011200001078
+  avg_sold: 29.745
   carrier: AL2
   dest: SFO
   flt_no: 2
-  lf: 28.61
+  lf: 29.745
   orig: BOS
-- avg_rev: 16297.429600001853
-  avg_sold: 52.335
+- avg_rev: 16174.031200001857
+  avg_sold: 51.92
   carrier: AL1
   dest: ORD
   flt_no: 3
-  lf: 52.335
+  lf: 51.92
   orig: BOS
-- avg_rev: 16187.781200001831
-  avg_sold: 51.935
+- avg_rev: 16279.32640000185
+  avg_sold: 52.25
   carrier: AL2
   dest: ORD
   flt_no: 4
-  lf: 51.935
+  lf: 52.25
   orig: BOS
-- avg_rev: 16401.943100001838
-  avg_sold: 52.61
+- avg_rev: 16427.17920000186
+  avg_sold: 52.685
   carrier: AL3
   dest: ORD
   flt_no: 5
-  lf: 43.84166666666667
+  lf: 43.90416666666667
   orig: BOS
-- avg_rev: 12645.156700001224
-  avg_sold: 40.28
+- avg_rev: 13110.926500001251
+  avg_sold: 41.65
   carrier: AL1
   dest: DFW
   flt_no: 6
-  lf: 33.56666666666667
+  lf: 34.708333333333336
   orig: BOS
-- avg_rev: 12510.840700001176
-  avg_sold: 39.78
+- avg_rev: 12982.873400001206
+  avg_sold: 41.185
   carrier: AL1
   dest: DFW
   flt_no: 7
-  lf: 33.15
+  lf: 34.32083333333333
   orig: BOS
-- avg_rev: 12629.732200001215
-  avg_sold: 40.19
+- avg_rev: 13228.715200001267
+  avg_sold: 42.065
   carrier: AL2
   dest: DFW
   flt_no: 8
-  lf: 33.49166666666667
+  lf: 35.05416666666667
   orig: BOS
-- avg_rev: 12615.35070000121
-  avg_sold: 40.11
+- avg_rev: 13075.009900001234
+  avg_sold: 41.54
   carrier: AL4
   dest: DFW
   flt_no: 9
-  lf: 33.425
+  lf: 34.61666666666667
   orig: BOS
-path:
+paths:
 - carrier1: AL1
   carrier2: null
   dest: SFO
