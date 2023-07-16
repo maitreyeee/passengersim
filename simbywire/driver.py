@@ -16,8 +16,11 @@ from AirSim.utils import FileWriter, airsim_utils, db_utils
 
 from .config import AirSimConfig
 from .utils.si import si_units
+from collections import namedtuple
 
 logger = logging.getLogger("AirSim")
+
+SummaryTables = namedtuple("SummaryTables", ['demands', 'legs', 'paths', 'airlines'])
 
 
 class Simulation:
@@ -70,7 +73,8 @@ class Simulation:
         self.demand_multiplier = 1.0
         self.airports = []
         self.choice_models = {}
-        self.debug = True
+        self.debug = False
+        self.update_frequency = None
         self.random_generator = AirSim.Generator(42)
         self._initialize(config)
 
@@ -84,11 +88,12 @@ class Simulation:
                 self.write_raw_files = pvalue
             elif pname == "random_seed":
                 self.random_generator.seed(pvalue)
+            elif pname == "update_frequency":
+                self.update_frequency = pvalue
             else:
-                print("SETTING", pname, float(pvalue))
                 self.sim.set_parm(pname, float(pvalue))
         for pname, pvalue in config.simulation_controls.model_extra.items():
-            print("SETTING", pname, float(pvalue))
+            print(f"extra simulation setting: {pname} = ", float(pvalue))
             self.sim.set_parm(pname, float(pvalue))
 
         self.rm_systems = {}
@@ -262,15 +267,16 @@ class Simulation:
                     pc.set_indexes(index, index)
                     path.add_path_class(pc)
 
-    def run_sim(self):
-        logger.info(
+    def _run_sim(self):
+        update_freq = self.update_frequency
+        logger.debug(
             f"run_sim, num_trials = {self.sim.num_trials}, num_samples = {self.sim.num_samples}"
         )
         for trial in range(self.sim.num_trials):
             self.sim.trial = trial
             for sample in range(self.sim.num_samples):
                 self.sim.sample = sample
-                if self.sim.sample % 1 == 0:
+                if update_freq is not None and self.sim.sample % update_freq == 0:
                     avg_rev, n = 0.0, 0
                     airline_info = ""
                     for cxr in self.sim.airlines:
@@ -612,25 +618,23 @@ class Simulation:
             # logger.info(f"ASM = {airline_asm[cxr.name]:.2f}, RPM = {airline_rpm[cxr.name]:.2f}, LF = {lf2:.2f}%") #***
         airline_df = pd.DataFrame(airline_df)
 
-        return dict(
-            dmd=dmd_df,
-            leg=leg_df,
-            path=path_df,
-            airline=airline_df,
+        return SummaryTables(
+            demands=dmd_df,
+            legs=leg_df,
+            paths=path_df,
+            airlines=airline_df,
         )
 
 
     def reseed(self, seed=42):
-        logger.info(f"RESEEDING {seed}")
+        logger.info(f"reseeding random_generator: {seed}")
         self.sim.random_generator = AirSim.Generator(42)
-        print("random_generator set")
 
     def run(self, log_reports=True):
         start_time = time.time()
         self.setup_scenario()
-        self.reseed(42)
-        print("Runnong...")
-        self.run_sim()
+        # self.reseed(42)
+        self._run_sim()
         summary = self.compute_reports(self.sim, to_log=log_reports)
         logger.info(
             f"Th' th' that's all folks !!!    (Elapsed time = {round(time.time() - start_time, 2)})"

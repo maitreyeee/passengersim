@@ -1,0 +1,40 @@
+site_name: AirSim
+theme:
+  name: material
+  icon:
+    logo: material/shield-airplane
+  features:
+    - content.code.copy
+    - navigation.tabs
+
+extra_css:
+  - stylesheets/extra.css
+
+plugins:
+  - offline
+  - mkdocs-jupyter
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+            separate_signature: true
+            show_signature_annotations: true
+            signature_crossrefs: false
+            docstring_style: numpy
+            allow_inspection: false
+            docstring_section_style: list
+            show_if_no_docstring: true
+  - search
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+
+repo_url: https://github.com/jpn--/SimByWire
+repo_name: jpn--/sim-by-wire

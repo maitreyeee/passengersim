@@ -30,6 +30,11 @@ test = [
 [tool.setuptools]
 packages = ["simbywire"]
 
+[tool.setuptools.package-data]
+simbywire = [
+    "networks/*.yaml",
+]
+
 [metadata]
 description = "User interface for AirSim"
 author = "Atlanta Analytics LLC"

@@ -35,3 +35,5 @@ class SimulationSettings(BaseModel, extra="allow"):
     write_raw_files: bool = False
 
     random_seed: int | None = None
+
+    update_frequency: int | None = None

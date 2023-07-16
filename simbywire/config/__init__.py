@@ -19,6 +19,7 @@ from .simulation_controls import SimulationSettings
 
 class AirSimConfig(BaseModel, extra="forbid"):
     scenario: str = Field(default_factory=random_label)
+    """Name for this scenario."""
 
     simulation_controls: SimulationSettings = SimulationSettings()
     db: DatabaseConfig = DatabaseConfig()
@@ -27,6 +28,11 @@ class AirSimConfig(BaseModel, extra="forbid"):
     airlines: DictOfNamed[Airline] = {}
     classes: list[str] = []
     dcps: list[int] = []
+    """A list of DCPs (data collection points).
+    
+    The DCPs are given as integers, which represent the number of days
+    before departure.
+    """
     booking_curves: DictOfNamed[BookingCurve] = {}
     legs: list[Leg] = []
     demands: list[Demand] = []
