@@ -25,13 +25,13 @@ class Leg(BaseModel, extra="forbid"):
     distance: float | None = None
 
     @field_validator("date", mode="before")
-    def date_from_string(cls, v):
+    def _date_from_string(cls, v):
         if isinstance(v, str):
             v = datetime.fromisoformat(v)
         return v
 
     @field_validator("dep_time", "arr_time", mode="before")
-    def timestring_to_int(cls, v, info: FieldValidationInfo):
+    def _timestring_to_int(cls, v, info: FieldValidationInfo):
         if isinstance(v, str) and ":" in v:
             dep_time_str = v.split(":")
             hh, mm = int(dep_time_str[0]), int(dep_time_str[1])

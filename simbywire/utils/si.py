@@ -36,8 +36,8 @@ def si_units(x, kind='', f="{:.3g}{}{}"):
         tier += 1
     return f.format(x,tiers[tier],kind)
 
-_si_float = re.compile("^\s*([0-9]+\.?[0-9]*)\s?([yzafpnµmKMGTPEZY])\s*$")
-_si_int = re.compile("^\s*([0-9]+)\s?([yzafpnµmKMGTPEZY])\s*$")
+_si_float = re.compile(r"^\s*([0-9]+\.?[0-9]*)\s?([yzafpnµmKMGTPEZY])\s*$")
+_si_int = re.compile(r"^\s*([0-9]+)\s?([yzafpnµmKMGTPEZY])\s*$")
 
 def get_float(x):
     try:

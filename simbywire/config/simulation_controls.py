@@ -1,3 +1,5 @@
+# TITLE: Simulation Controls
+# DOC-NAME: 01-simulation-controls
 from __future__ import annotations
 
 from pydantic import BaseModel, confloat, conint

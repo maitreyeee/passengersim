@@ -1,3 +1,4 @@
+# TITLE: Choice Models
 from __future__ import annotations
 
 from typing import Annotated, Literal
@@ -43,3 +44,8 @@ class LogitChoiceModel(Named, extra="forbid"):
 
 
 ChoiceModel = Annotated[PodsChoiceModel | LogitChoiceModel, Field(discriminator="kind")]
+"""
+Two types of choice models are available in AirSim.
+
+Use the `kind` key to select which kind of choice model you wish to parameterize.
+"""

@@ -26,6 +26,9 @@ plugins:
             docstring_section_style: list
             show_if_no_docstring: true
   - search
+  - gen-files:
+      scripts:
+      - docs/.scripts/_generate_ref_pages.py
 
 markdown_extensions:
   - pymdownx.highlight:

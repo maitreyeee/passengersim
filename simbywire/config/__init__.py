@@ -1,3 +1,5 @@
+# TITLE: AirSimConfig
+# DOC-NAME: 00-configs
 from __future__ import annotations
 
 from pydantic import BaseModel, Field, model_validator
