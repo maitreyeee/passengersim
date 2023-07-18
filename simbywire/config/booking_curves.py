@@ -49,7 +49,7 @@ class BookingCurve(Named, extra="forbid"):
     """
 
     @field_validator("curve")
-    def _booking_curves_accumuate(cls, v: dict[int, float], info: FieldValidationInfo):
+    def _booking_curves_accumulate(cls, v: dict[int, float], info: FieldValidationInfo):
         """Check that all curve values do not decrease as DCP keys decrease."""
         sorted_dcps = reversed(sorted(v.keys()))
         i = 0
