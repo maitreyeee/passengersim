@@ -2,8 +2,11 @@
 # DOC-NAME: 00-configs
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, model_validator
+import gzip
+import pathlib
 
+import yaml
+from pydantic import BaseModel, Field, model_validator
 from simbywire.pseudonym import random_label
 
 from .airlines import Airline
@@ -66,3 +69,20 @@ class AirSimConfig(BaseModel, extra="forbid"):
                 ), f"booking curve {curve.name} moves backwards at dcp {dcp}"
                 i = curve.curve[dcp]
         return m
+
+    @classmethod
+    def _from_yaml(
+        cls,
+        filenames: pathlib.Path | list[pathlib.Path],
+    ):
+        """Read from YAML."""
+        if isinstance(filenames, str | pathlib.Path):
+            filenames = [filenames]
+        raw_config = {}
+        for filename in reversed(filenames):
+            filename = pathlib.Path(filename)
+            opener = gzip.open if filename.suffix == ".gz" else open
+            with opener(filename) as f:
+                content = yaml.safe_load(f)
+                raw_config.update(content)
+        return cls.model_validate(raw_config)

@@ -30,16 +30,7 @@ class Simulation:
         filenames: pathlib.Path | list[pathlib.Path],
         output_dir: pathlib.Path | None = None,
     ):
-        if isinstance(filenames, str | pathlib.Path):
-            filenames = [filenames]
-        raw_config = {}
-        for filename in reversed(filenames):
-            filename = pathlib.Path(filename)
-            opener = gzip.open if filename.suffix == ".gz" else open
-            with opener(filename) as f:
-                content = yaml.safe_load(f)
-                raw_config.update(content)
-        config = AirSimConfig.model_validate(raw_config)
+        config = AirSimConfig._from_yaml(filenames)
         return cls(config, output_dir)
 
     def __init__(

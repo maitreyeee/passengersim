@@ -8,7 +8,7 @@ from AirSim.utils.SimDriver import SimDriver
 from pydantic import ValidationError
 
 from simbywire import AirSimConfig
-from simbywire.config.rm_systems import ForecastStep, UntruncationStep
+from simbywire.config.rm_steps import ForecastStep, UntruncationStep
 
 
 def test_rm_systems():
