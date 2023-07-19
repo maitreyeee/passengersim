@@ -45,7 +45,7 @@ class AirSimConfig(BaseModel, extra="forbid"):
     paths: list[Path] = []
 
     @model_validator(mode="after")
-    def airlines_have_rm_systems(cls, m: AirSimConfig):
+    def _airlines_have_rm_systems(cls, m: AirSimConfig):
         """Check that all airlines have RM systems that have been defined."""
         for airline in m.airlines.values():
             if airline.rm_system not in m.rm_systems:
@@ -55,7 +55,7 @@ class AirSimConfig(BaseModel, extra="forbid"):
         return m
 
     @model_validator(mode="after")
-    def booking_curves_match_dcps(cls, m: AirSimConfig):
+    def _booking_curves_match_dcps(cls, m: AirSimConfig):
         """Check that all booking curves are complete and valid."""
         sorted_dcps = reversed(sorted(m.dcps))
         for curve in m.booking_curves.values():

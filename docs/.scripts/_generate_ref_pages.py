@@ -57,5 +57,6 @@ for path in sorted(sw_path.joinpath("simbywire/config").rglob("*.py")):
         print("    options:", file=fd)
         print("      filters:", file=fd)
         print('        - "!^debug.*"', file=fd)
+        print('        - "!^_[^_]"', file=fd)
 
     mkdocs_gen_files.set_edit_path(full_doc_path, path)
