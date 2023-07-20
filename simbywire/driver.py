@@ -1,26 +1,22 @@
-import gzip
 import logging
 import os
 import pathlib
 import time
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from datetime import datetime
 from math import sqrt
 from typing import Any
 
 import AirSim
 import pandas as pd
-import yaml
 from AirSim import PathClass
 from AirSim.utils import FileWriter, airsim_utils, db_utils
 
 from .config import AirSimConfig
-from .utils.si import si_units
-from collections import namedtuple
 
 logger = logging.getLogger("AirSim")
 
-SummaryTables = namedtuple("SummaryTables", ['demands', 'legs', 'paths', 'airlines'])
+SummaryTables = namedtuple("SummaryTables", ["demands", "legs", "paths", "airlines"])
 
 
 class Simulation:
@@ -72,6 +68,7 @@ class Simulation:
     def _initialize(self, config: AirSimConfig):
         self.sim = AirSim.AirSim(name=config.scenario)
         self.sim.random_generator = self.random_generator
+        self.sim.snapshot_filters = config.snapshot_filters
         for pname, pvalue in config.simulation_controls:
             if pname == "demand_multiplier":
                 self.demand_multiplier = pvalue
@@ -559,7 +556,9 @@ class Simulation:
             avg_sold = path.gt_sold / num_samples
             avg_rev = path.gt_revenue / num_samples
             if to_log:
-                logger.info(f"{path}, avg_sold={avg_sold:6.2f}, avg_rev=${avg_rev:10,.2f}")
+                logger.info(
+                    f"{path}, avg_sold={avg_sold:6.2f}, avg_rev=${avg_rev:10,.2f}"
+                )
             if path.num_legs() == 1:
                 path_df.append(
                     dict(
@@ -598,14 +597,16 @@ class Simulation:
                 logger.info(
                     f"Airline: {cxr.name}, AvgSold: {avg_sold}, LF {lf2:.2f}%,  AvgRev ${avg_rev:10,.2f}"
                 )
-            airline_df.append(dict(
-                name=cxr.name,
-                avg_sold=avg_sold,
-                load_factor=lf2,
-                avg_rev=avg_rev,
-                asm=airline_asm[cxr.name],
-                rpm=airline_rpm[cxr.name],
-            ))
+            airline_df.append(
+                dict(
+                    name=cxr.name,
+                    avg_sold=avg_sold,
+                    load_factor=lf2,
+                    avg_rev=avg_rev,
+                    asm=airline_asm[cxr.name],
+                    rpm=airline_rpm[cxr.name],
+                )
+            )
             # logger.info(f"ASM = {airline_asm[cxr.name]:.2f}, RPM = {airline_rpm[cxr.name]:.2f}, LF = {lf2:.2f}%") #***
         airline_df = pd.DataFrame(airline_df)
 
@@ -615,7 +616,6 @@ class Simulation:
             paths=path_df,
             airlines=airline_df,
         )
-
 
     def reseed(self, seed=42):
         logger.info(f"reseeding random_generator: {seed}")

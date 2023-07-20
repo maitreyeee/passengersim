@@ -7,6 +7,7 @@ import pathlib
 
 import yaml
 from pydantic import BaseModel, Field, model_validator
+
 from simbywire.pseudonym import random_label
 
 from .airlines import Airline
@@ -20,6 +21,7 @@ from .named import DictOfNamed
 from .paths import Path
 from .rm_systems import RmSystem
 from .simulation_controls import SimulationSettings
+from .snapshot_filter import SnapshotFilter
 
 
 class AirSimConfig(BaseModel, extra="forbid"):
@@ -34,7 +36,7 @@ class AirSimConfig(BaseModel, extra="forbid"):
     classes: list[str] = []
     dcps: list[int] = []
     """A list of DCPs (data collection points).
-    
+
     The DCPs are given as integers, which represent the number of days
     before departure.
     """
@@ -43,6 +45,8 @@ class AirSimConfig(BaseModel, extra="forbid"):
     demands: list[Demand] = []
     fares: list[Fare] = []
     paths: list[Path] = []
+
+    snapshot_filters: list[SnapshotFilter] = []
 
     @model_validator(mode="after")
     def _airlines_have_rm_systems(cls, m: AirSimConfig):
