@@ -1,3 +1,4 @@
+import importlib
 import logging
 import os
 import pathlib
@@ -12,7 +13,8 @@ import pandas as pd
 from AirSim import PathClass
 from AirSim.utils import FileWriter, airsim_utils, db_utils
 
-from .config import AirSimConfig
+import simbywire.config.rm_systems
+from simbywire.config import AirSimConfig
 
 logger = logging.getLogger("AirSim")
 
@@ -26,7 +28,11 @@ class Simulation:
         filenames: pathlib.Path | list[pathlib.Path],
         output_dir: pathlib.Path | None = None,
     ):
-        config = AirSimConfig._from_yaml(filenames)
+        # reload these to refresh for any newly defined RmSteps
+        importlib.reload(simbywire.config.rm_systems)
+        importlib.reload(simbywire.config)
+
+        config = simbywire.config.AirSimConfig._from_yaml(filenames)
         return cls(config, output_dir)
 
     def __init__(

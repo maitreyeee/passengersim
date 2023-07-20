@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import gzip
 import pathlib
+import typing
 
 import yaml
 from pydantic import BaseModel, Field, model_validator
