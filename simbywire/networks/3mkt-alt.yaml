@@ -27,7 +27,7 @@ rm_systems:
       algorithm: exp_smoothing
       alpha: 0.1
       kind: leg
-    - step_type: optimization
+    - step_type: emsr
       name: optimization
       algorithm: emsrb
       kind: leg

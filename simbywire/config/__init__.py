@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import gzip
+import importlib
 import pathlib
+import sys
 import typing
 
 import yaml
@@ -91,3 +93,23 @@ class AirSimConfig(BaseModel, extra="forbid"):
                 content = yaml.safe_load(f)
                 raw_config.update(content)
         return cls.model_validate(raw_config)
+
+    @classmethod
+    def from_yaml(
+        cls,
+        filenames: pathlib.Path | list[pathlib.Path],
+    ):
+        """Load AirSim config from YAML.
+
+        This method reloads the config class to ensure all imported RmSteps
+        are properly registered before loading the YAML instructions.
+        """
+
+        # reload these to refresh for any newly defined RmSteps
+        importlib.reload(sys.modules.get(f"{__name__}.rm_systems"))
+        module = importlib.reload(sys.modules.get(f"{__name__}"))
+
+        reloaded_class = getattr(module, cls.__name__)
+        if reloaded_class is None:
+            raise RuntimeError(f"unable to reload {cls.__name__}")
+        return reloaded_class._from_yaml(filenames)
