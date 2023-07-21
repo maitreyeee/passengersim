@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import importlib
 import logging
 import os
 import pathlib
 import time
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 from datetime import datetime
 from math import sqrt
 from typing import Any
@@ -15,10 +17,10 @@ from AirSim.utils import FileWriter, airsim_utils, db_utils
 
 import simbywire.config.rm_systems
 from simbywire.config import AirSimConfig
+from simbywire.config.snapshot_filter import SnapshotFilter
+from simbywire.summary import SummaryTables
 
 logger = logging.getLogger("AirSim")
-
-SummaryTables = namedtuple("SummaryTables", ["demands", "legs", "paths", "airlines"])
 
 
 class Simulation:
@@ -62,7 +64,6 @@ class Simulation:
         self.db_engine = config.db.engine
         self.db_filename = config.db.filename
         self.output_dir = output_dir
-        self.snapshot_filters = []
         self.demand_multiplier = 1.0
         self.airports = []
         self.choice_models = {}
@@ -70,6 +71,24 @@ class Simulation:
         self.update_frequency = None
         self.random_generator = AirSim.Generator(42)
         self._initialize(config)
+
+    @property
+    def snapshot_filters(self) -> list[SnapshotFilter] | None:
+        try:
+            sim = self.sim
+        except AttributeError:
+            return None
+        return sim.snapshot_filters
+
+    @snapshot_filters.setter
+    def snapshot_filters(self, x: list[SnapshotFilter]):
+        try:
+            sim = self.sim
+        except AttributeError as err:
+            raise ValueError(
+                "sim not initialized, cannot set snapshot_filters"
+            ) from err
+        sim.snapshot_filters = x
 
     def _initialize(self, config: AirSimConfig):
         self.sim = AirSim.AirSim(name=config.scenario)
