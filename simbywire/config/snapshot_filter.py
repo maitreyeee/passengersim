@@ -1,3 +1,4 @@
+import logging
 from typing import Literal
 
 from pydantic import BaseModel, field_validator
@@ -14,6 +15,7 @@ class SnapshotFilter(BaseModel):
     orig: list[str] = []
     dest: list[str] = []
     flt_no: list[int] = []
+    logger: str | None = None
 
     @field_validator("sample", "dcp", "orig", "dest", "flt_no", mode="before")
     def _allow_singletons(cls, v):
@@ -61,6 +63,8 @@ class SnapshotFilter(BaseModel):
 
         # Now do something
         if len(self.title) > 0:
+            if self.logger:
+                logging.getLogger(self.logger)
             print(f"{self.title}:{info}")
 
         if self.type in ["leg_untruncation", "path_untruncation"]:

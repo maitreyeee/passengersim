@@ -78,7 +78,7 @@ class AirSimConfig(BaseModel, extra="forbid"):
         return m
 
     @classmethod
-    def _from_yaml(
+    def from_yaml(
         cls,
         filenames: pathlib.Path | list[pathlib.Path],
     ):
@@ -95,21 +95,32 @@ class AirSimConfig(BaseModel, extra="forbid"):
         return cls.model_validate(raw_config)
 
     @classmethod
-    def from_yaml(
+    def model_validate(
         cls,
-        filenames: pathlib.Path | list[pathlib.Path],
-    ):
-        """Load AirSim config from YAML.
+        *args,
+        **kwargs,
+    ) -> typing.Self:
+        """Validate the AirSimConfig inputs.
 
-        This method reloads the config class to ensure all imported RmSteps
-        are properly registered before loading the YAML instructions.
+        This method reloads the AirSimConfig class to ensure all imported
+        RmSteps are properly registered before validation.
+
+        Args:
+            obj: The object to validate.
+            strict: Whether to raise an exception on invalid fields.
+            from_attributes: Whether to extract data from object attributes.
+            context: Additional context to pass to the validator.
+
+        Raises:
+            ValidationError: If the object could not be validated.
+
+        Returns:
+            The validated model instance.
         """
-
         # reload these to refresh for any newly defined RmSteps
         importlib.reload(sys.modules.get(f"{__name__}.rm_systems"))
         module = importlib.reload(sys.modules.get(f"{__name__}"))
-
         reloaded_class = getattr(module, cls.__name__)
-        if reloaded_class is None:
-            raise RuntimeError(f"unable to reload {cls.__name__}")
-        return reloaded_class._from_yaml(filenames)
+        # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
+        __tracebackhide__ = True
+        return reloaded_class.__pydantic_validator__.validate_python(*args, **kwargs)

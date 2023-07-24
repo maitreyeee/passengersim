@@ -1,3 +1,5 @@
+from AirSim import airline  # noqa: F401 # declarations of usual RmStep classes
+
 from .config import AirSimConfig
 from .driver import Simulation
 
