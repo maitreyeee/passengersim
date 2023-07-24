@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import importlib
 import logging
 import os
 import pathlib
@@ -30,11 +29,7 @@ class Simulation:
         filenames: pathlib.Path | list[pathlib.Path],
         output_dir: pathlib.Path | None = None,
     ):
-        # reload these to refresh for any newly defined RmSteps
-        importlib.reload(simbywire.config.rm_systems)
-        importlib.reload(simbywire.config)
-
-        config = simbywire.config.AirSimConfig._from_yaml(filenames)
+        config = simbywire.config.AirSimConfig.from_yaml(filenames)
         return cls(config, output_dir)
 
     def __init__(

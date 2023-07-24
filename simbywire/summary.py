@@ -14,6 +14,9 @@ class SummaryTables:
         self.paths = paths
         self.airlines = airlines
 
+    def to_records(self):
+        return {k: v.to_dict(orient="records") for (k, v) in self.__dict__.items()}
+
     def fig_airline_loads(self):
         """Figure showing ASM, RPM by airline."""
         import altair as alt
