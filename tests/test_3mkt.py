@@ -1,5 +1,5 @@
 import AirSim.airline.rm_emsr  # noqa: F401
-import AirSim.airline.rm_pro_bp_2  # noqa: F401
+import AirSim.airline.rm_pro_bp  # noqa: F401
 
 from simbywire import Simulation, demo_network
 from simbywire.config import AirSimConfig
