@@ -28,8 +28,11 @@ test = [
     "pytest-regressions ~=2.4",
 ]
 
-[tool.setuptools]
-packages = ["simbywire"]
+[tool.setuptools.packages.find]
+where = ["."]  # list of folders that contain the packages (["."] by default)
+include = ["simbywire*"]  # package names should match these glob patterns (["*"] by default)
+exclude = ["simbywire.tests*"]  # exclude packages matching these glob patterns (empty by default)
+namespaces = false  # to disable scanning PEP 420 namespaces (true by default)
 
 [tool.setuptools.package-data]
 simbywire = [
