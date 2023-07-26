@@ -8,7 +8,7 @@ from collections.abc import Callable
 from functools import reduce
 from typing import Annotated, ClassVar, Literal
 
-from AirSim.airline import rm_forecast, rm_untruncation
+from AirSim.airline import rm_forecast, rm_untruncation, rm_path_2_leg
 from pydantic import BaseModel, Field
 
 
@@ -78,3 +78,9 @@ class ForecastStep(RmStepBase, extra="forbid"):
     algorithm: str
     kind: Literal["leg", "path"] = "leg"
     alpha: float = 0.15
+
+
+class AggregationStep(RmStepBase, extra="forbid"):
+    step_type: Literal["aggregate"]
+    step_class: ClassVar[Callable] = rm_path_2_leg.AggregationStep
+

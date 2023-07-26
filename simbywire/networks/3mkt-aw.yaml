@@ -4,7 +4,7 @@
 
 scenario: AW_test
 simulation_controls:
-  num_trials: 5
+  num_trials: 1
   num_samples: 600
   sys_k_factor: 0.1
   mkt_k_factor: 0.15
@@ -62,10 +62,16 @@ rm_systems:
       - step_type: forecast
         name: path_forecast
         algorithm: exp_smoothing
-        alpha: 0.1
+        alpha: 0.15
         kind: path
       - step_type: probp
         name: optimization
+      - step_type: aggregate
+        name: aggregate
+      - step_type: emsr
+        name: optimization
+        algorithm: emsrb
+        kind: leg
 
 choice_models:
   business:
@@ -579,18 +585,18 @@ fares:
       - R3
 
 snapshot_filters:
-  - type: path_untruncation
-    title: Snapshot of path untruncation
-    sample: 35
-    dcp: 0
-    flt_no: 202
+#  - type: path_untruncation
+#    title: Snapshot of path untruncation
+#    sample: 35
+#    dcp: 0
+#    flt_no: 202
   - type: rm
     title: Testing the snapshot filters
     sample: [20, 30]
     dcp: 7
-    flt_no: 101
+    flt_no: 201
   - type: pro_bp
     title: Testing the snapshot filters again
     sample: [20, 30]
     dcp: 56
-    flt_no: 201
+    flt_no: 211
