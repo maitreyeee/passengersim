@@ -13,7 +13,8 @@ extra_css:
 
 plugins:
   - offline
-  - mkdocs-jupyter
+  - mkdocs-jupyter:
+      execute: true
   - mkdocstrings:
       handlers:
         python:
