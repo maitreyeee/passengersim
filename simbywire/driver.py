@@ -264,7 +264,7 @@ class Simulation:
     def vn_initial_mapping(self):
         vn_airlines = []
         for airline in self.sim.airlines:
-            if airline.use_vn:
+            if airline.control == "vn":
                 vn_airlines.append(airline.name)
 
         for path in self.sim.paths:
@@ -525,6 +525,9 @@ class Simulation:
                     sold=m.sold,
                     revenue=m.revenue,
                     avg_fare=m.revenue / m.sold if m.sold > 0 else 0,
+                    gt_demand=m.gt_demand,
+                    gt_sold=m.gt_sold,
+                    gt_revenue=m.gt_revenue
                 )
             )
             if to_log:
@@ -588,6 +591,8 @@ class Simulation:
                         flt_no1=path.get_leg_fltno(0),
                         carrier2=None,
                         flt_no2=None,
+                        avg_sold=avg_sold,
+                        avg_rev=avg_rev
                     )
                 )
             elif path.num_legs() == 2:
@@ -599,6 +604,8 @@ class Simulation:
                         flt_no1=path.get_leg_fltno(0),
                         carrier2=path.get_leg_carrier(1),
                         flt_no2=path.get_leg_fltno(1),
+                        avg_sold=avg_sold,
+                        avg_rev=avg_rev
                     )
                 )
             else:
