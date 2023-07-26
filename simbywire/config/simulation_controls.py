@@ -17,6 +17,10 @@ class SimulationSettings(BaseModel, extra="allow"):
     """The number of samples to run within each trial.
     """
 
+    burn_samples: conint(ge=1, le=1000) = 100
+    """The number of samples to burn when starting each trial.
+    """
+
     sys_k_factor: confloat(gt=0, lt=5.0) = 0.10
     mkt_k_factor: confloat(gt=0, lt=5.0) = 0.20
     pax_type_k_factor: confloat(gt=0, lt=5.0) = 0.40

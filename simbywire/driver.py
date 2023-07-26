@@ -646,12 +646,11 @@ class Simulation:
 
     def reseed(self, seed=42):
         logger.info(f"reseeding random_generator: {seed}")
-        self.sim.random_generator = AirSim.Generator(42)
+        self.sim.random_generator.seed(seed)
 
     def run(self, log_reports=True):
         start_time = time.time()
         self.setup_scenario()
-        # self.reseed(42)
         self._run_sim()
         summary = self.compute_reports(self.sim, to_log=log_reports)
         logger.info(
