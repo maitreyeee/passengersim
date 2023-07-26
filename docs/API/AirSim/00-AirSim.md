@@ -6,3 +6,4 @@
       filters:
         - "!^debug.*"  # don't show debug* settings in documentation
       show_category_heading: true
+      allow_inspection: false

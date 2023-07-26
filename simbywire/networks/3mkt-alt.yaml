@@ -39,10 +39,10 @@ choice_models:
     path_quality:  [38.30,  0.10]
     preferred_airline:  [-12.29,  0.17]
     tolerance: 2.0
-    r1: 0.30
-    r2: 0.10
-    r3: 0.20
-    r4: 0.15
+    r1: 1.0
+    r2: 0.35
+    r3: 0.50
+#    r4: 0.15
   leisure:
     kind: pods
     emult: 1.5
@@ -50,10 +50,10 @@ choice_models:
     path_quality:  [2.02, 0.12]
     preferred_airline:  [-1.98, 0.11]
     tolerance: 5.0
-    r1: 0.30
-    r2: 0.15
-    r3: 0.25
-    r4: 0.20
+    r1: 0.70
+    r2: 0.35
+    r3: 0.35
+#    r4: 0.20
 airlines:
 - name: AL1
   rm_system: rm_test1
