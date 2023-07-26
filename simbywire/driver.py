@@ -66,6 +66,10 @@ class Simulation:
         self.update_frequency = None
         self.random_generator = AirSim.Generator(42)
         self._initialize(config)
+        self.cnx = db_utils.get_database_connection(
+            engine=self.db_engine,
+            filename=self.db_filename,
+        )
 
     @property
     def snapshot_filters(self) -> list[SnapshotFilter] | None:
@@ -321,6 +325,8 @@ class Simulation:
                             self.sim.num_events() == 0
                         ), f"Event queue still has {self.sim.num_events()} events"
                         break
+                if self.cnx:
+                    self.cnx.commit()
 
     def run_airline_models(self, info: Any = None, departed: bool = False, debug=False):
         dcp = 0 if info == "Done" else info[1]
@@ -527,7 +533,7 @@ class Simulation:
                     avg_fare=m.revenue / m.sold if m.sold > 0 else 0,
                     gt_demand=m.gt_demand,
                     gt_sold=m.gt_sold,
-                    gt_revenue=m.gt_revenue
+                    gt_revenue=m.gt_revenue,
                 )
             )
             if to_log:
@@ -592,7 +598,7 @@ class Simulation:
                         carrier2=None,
                         flt_no2=None,
                         avg_sold=avg_sold,
-                        avg_rev=avg_rev
+                        avg_rev=avg_rev,
                     )
                 )
             elif path.num_legs() == 2:
@@ -605,7 +611,7 @@ class Simulation:
                         carrier2=path.get_leg_carrier(1),
                         flt_no2=path.get_leg_fltno(1),
                         avg_sold=avg_sold,
-                        avg_rev=avg_rev
+                        avg_rev=avg_rev,
                     )
                 )
             else:
