@@ -26,6 +26,7 @@ plugins:
             allow_inspection: false
             docstring_section_style: list
             show_if_no_docstring: true
+            load_external_modules: false
   - search
   - gen-files:
       scripts:
