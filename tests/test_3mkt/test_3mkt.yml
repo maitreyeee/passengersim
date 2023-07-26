@@ -26,36 +26,54 @@ airlines:
 demands:
 - avg_fare: 307.1354838709678
   dest: SFO
+  gt_demand: 82
+  gt_revenue: 19042.4
+  gt_sold: 62
   orig: BOS
   revenue: 19042.4
   segment: business
   sold: 62
 - avg_fare: 304.56
   dest: SFO
+  gt_demand: 127
+  gt_revenue: 2131.92
+  gt_sold: 7
   orig: BOS
   revenue: 2131.92
   segment: leisure
   sold: 7
 - avg_fare: 312.4182677165356
   dest: ORD
+  gt_demand: 127
+  gt_revenue: 39677.12000000002
+  gt_sold: 127
   orig: BOS
   revenue: 39677.12000000002
   segment: business
   sold: 127
 - avg_fare: 304.56000000000006
   dest: ORD
+  gt_demand: 123
+  gt_revenue: 9441.360000000002
+  gt_sold: 31
   orig: BOS
   revenue: 9441.360000000002
   segment: leisure
   sold: 31
 - avg_fare: 318.3575
   dest: DFW
+  gt_demand: 136
+  gt_revenue: 43296.62
+  gt_sold: 136
   orig: BOS
   revenue: 43296.62
   segment: business
   sold: 136
 - avg_fare: 305.0296470588239
   dest: DFW
+  gt_demand: 168
+  gt_revenue: 25927.520000000033
+  gt_sold: 85
   orig: BOS
   revenue: 25927.520000000033
   segment: leisure
@@ -125,109 +143,145 @@ legs:
   lf: 55.833333333333336
   orig: BOS
 paths:
-- carrier1: AL1
+- avg_rev: 12302.159999999998
+  avg_sold: 40.0
+  carrier1: AL1
   carrier2: null
   dest: SFO
   flt_no1: 1
   flt_no2: null
   orig: BOS
-- carrier1: AL2
+- avg_rev: 8872.160000000003
+  avg_sold: 29.0
+  carrier1: AL2
   carrier2: null
   dest: SFO
   flt_no1: 2
   flt_no2: null
   orig: BOS
-- carrier1: AL1
+- avg_rev: 16076.639999999992
+  avg_sold: 52.0
+  carrier1: AL1
   carrier2: null
   dest: ORD
   flt_no1: 3
   flt_no2: null
   orig: BOS
-- carrier1: AL2
+- avg_rev: 15627.199999999992
+  avg_sold: 50.0
+  carrier1: AL2
   carrier2: null
   dest: ORD
   flt_no1: 4
   flt_no2: null
   orig: BOS
-- carrier1: AL3
+- avg_rev: 17414.639999999992
+  avg_sold: 56.0
+  carrier1: AL3
   carrier2: null
   dest: ORD
   flt_no1: 5
   flt_no2: null
   orig: BOS
-- carrier1: AL1
+- avg_rev: 15851.919999999991
+  avg_sold: 51.0
+  carrier1: AL1
   carrier2: null
   dest: DFW
   flt_no1: 6
   flt_no2: null
   orig: BOS
-- carrier1: AL1
+- avg_rev: 13799.839999999997
+  avg_sold: 44.0
+  carrier1: AL1
   carrier2: null
   dest: DFW
   flt_no1: 7
   flt_no2: null
   orig: BOS
-- carrier1: AL2
+- avg_rev: 18647.899999999998
+  avg_sold: 59.0
+  carrier1: AL2
   carrier2: null
   dest: DFW
   flt_no1: 8
   flt_no2: null
   orig: BOS
-- carrier1: AL4
+- avg_rev: 20924.480000000007
+  avg_sold: 67.0
+  carrier1: AL4
   carrier2: null
   dest: DFW
   flt_no1: 9
   flt_no2: null
   orig: BOS
-- carrier1: AL1
+- avg_rev: 15851.919999999991
+  avg_sold: 51.0
+  carrier1: AL1
   carrier2: null
   dest: DFW
   flt_no1: 6
   flt_no2: null
   orig: BOS
-- carrier1: AL1
+- avg_rev: 13799.839999999997
+  avg_sold: 44.0
+  carrier1: AL1
   carrier2: null
   dest: DFW
   flt_no1: 7
   flt_no2: null
   orig: BOS
-- carrier1: AL2
+- avg_rev: 18647.899999999998
+  avg_sold: 59.0
+  carrier1: AL2
   carrier2: null
   dest: DFW
   flt_no1: 8
   flt_no2: null
   orig: BOS
-- carrier1: AL4
+- avg_rev: 20924.480000000007
+  avg_sold: 67.0
+  carrier1: AL4
   carrier2: null
   dest: DFW
   flt_no1: 9
   flt_no2: null
   orig: BOS
-- carrier1: AL1
+- avg_rev: 16076.639999999992
+  avg_sold: 52.0
+  carrier1: AL1
   carrier2: null
   dest: ORD
   flt_no1: 3
   flt_no2: null
   orig: BOS
-- carrier1: AL2
+- avg_rev: 15627.199999999992
+  avg_sold: 50.0
+  carrier1: AL2
   carrier2: null
   dest: ORD
   flt_no1: 4
   flt_no2: null
   orig: BOS
-- carrier1: AL3
+- avg_rev: 17414.639999999992
+  avg_sold: 56.0
+  carrier1: AL3
   carrier2: null
   dest: ORD
   flt_no1: 5
   flt_no2: null
   orig: BOS
-- carrier1: AL1
+- avg_rev: 12302.159999999998
+  avg_sold: 40.0
+  carrier1: AL1
   carrier2: null
   dest: SFO
   flt_no1: 1
   flt_no2: null
   orig: BOS
-- carrier1: AL2
+- avg_rev: 8872.160000000003
+  avg_sold: 29.0
+  carrier1: AL2
   carrier2: null
   dest: SFO
   flt_no1: 2
