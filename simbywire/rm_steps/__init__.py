@@ -18,23 +18,27 @@ except ImportError:
 
 
 class RmStep(RmStepBase, ABC):
-    requires: list[str] = []
-    """
-    A list of things that this RM step requires before it can be run.
+    @property
+    def requires(self) -> list[str]:
+        """
+        A list of things that this RM step requires before it can be run.
 
-    This allows the driver to check that the flow is correct. For example, if
-    forecasting produces "leg_forecast" but optimization requires "path_forecast"
-    then an exception will be thrown.
-    """
+        This allows the driver to check that the flow is correct. For example, if
+        forecasting produces "leg_forecast" but optimization requires "path_forecast"
+        then an exception will be thrown.
+        """
+        return []
 
-    produces: list[str] = []
-    """
-    A list of things this RM step produces, which may be required by later steps.
+    @property
+    def produces(self) -> list[str]:
+        """
+        A list of things this RM step produces, which may be required by later steps.
 
-    This allows the driver to check that the flow is correct. For example, if
-    forecasting produces "leg_forecast" but optimization requires "path_forecast"
-    then an exception will be thrown.
-    """
+        This allows the driver to check that the flow is correct. For example, if
+        forecasting produces "leg_forecast" but optimization requires "path_forecast"
+        then an exception will be thrown.
+        """
+        return []
 
     debug_filters: list[str] = []
 

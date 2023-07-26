@@ -22,7 +22,9 @@ def test_3mkt_alt(data_regression):
 
 def test_3mkt_2carrier(data_regression):
     input_file = demo_network("3mkt-2carrier")
-    sim = Simulation.from_yaml(input_file)
+    cfg = AirSimConfig.from_yaml(input_file)
+    cfg.db.engine = None  # no db connection
+    sim = Simulation(cfg)
     summary = sim.run(log_reports=False)
     assert isinstance(summary, SummaryTables)
     # TODO enable check when/if stable results can be created

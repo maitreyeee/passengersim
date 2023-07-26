@@ -4,16 +4,15 @@ from __future__ import annotations
 import inspect
 import operator
 import typing
-from collections.abc import Callable
 from functools import reduce
 from typing import Annotated, ClassVar, Literal
 
-from AirSim.airline import rm_forecast, rm_untruncation
 from pydantic import BaseModel, Field
 
 
 class RmStepBase(BaseModel, extra="forbid"):
     __subclasses: ClassVar[set[type[RmStepBase]]] = set()
+    name: str = ""
 
     def __init_subclass__(cls, **kwargs):
         """Capture a list of all concrete subclasses, including nested levels"""
@@ -50,10 +49,8 @@ class RmStepBase(BaseModel, extra="forbid"):
                 reduce(operator.__or__, cls.__subclasses),
                 Field(discriminator="step_type"),
             ]
-        else:
+        else:  # only the DummyStep
             return Annotated[reduce(operator.__or__, cls.__subclasses), Field()]
-
-    name: str = ""
 
     def _factory(self):
         if hasattr(self, "step_class"):
@@ -65,16 +62,5 @@ class RmStepBase(BaseModel, extra="forbid"):
             return self.model_copy(deep=True)
 
 
-class UntruncationStep(RmStepBase, extra="forbid"):
-    step_type: Literal["untruncation"]
-    step_class: ClassVar[Callable] = rm_untruncation.UntruncationStep
-    kind: Literal["leg", "path"] = "leg"
-    algorithm: str
-
-
-class ForecastStep(RmStepBase, extra="forbid"):
-    step_type: Literal["forecast"]
-    step_class: ClassVar[Callable] = rm_forecast.ForecastStep
-    algorithm: str
-    kind: Literal["leg", "path"] = "leg"
-    alpha: float = 0.15
+class DummyStep(RmStepBase):
+    step_type: Literal["dummy"]

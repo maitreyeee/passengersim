@@ -4,11 +4,10 @@ from pathlib import Path
 
 import pytest
 import yaml
-from AirSim.utils.SimDriver import SimDriver
+from AirSim.airline import ForecastStep, UntruncationStep
 from pydantic import ValidationError
 
 from simbywire import AirSimConfig
-from simbywire.config.rm_steps import ForecastStep, UntruncationStep
 
 
 def test_rm_systems():
@@ -21,13 +20,13 @@ def test_rm_systems():
           algorithm: bar
         - step_type: forecast
           name: baz
-          algorithm: spam
+          algorithm: exp_smoothing
           alpha: 0.42
       - name: SystemB
         steps:
         - step_type: forecast
           name: baz
-          algorithm: spam
+          algorithm: additive_pickup
     """
     content = yaml.safe_load(io.StringIO(demo1))
     loaded = AirSimConfig.model_validate(content)
@@ -42,7 +41,7 @@ def test_rm_systems():
     assert system1.name == "SystemB"
     assert isinstance(system1.steps[0], ForecastStep)
     assert system1.steps[0].step_type == "forecast"
-    assert system1.steps[0].algorithm == "spam"
+    assert system1.steps[0].algorithm == "additive_pickup"
     assert system1.steps[0].name == "baz"
 
     # there are several errors in demo2, the parser finds and reports them all with legible error message
@@ -65,7 +64,9 @@ def test_u10_loader():
     u10_config = Path(__file__).parents[2].joinpath("air-sim/networks/u10-config.yaml")
     if not u10_config.exists():
         pytest.skip("u10-config.yaml not available")
-    u10_network = Path(__file__).parents[2].joinpath("air-sim/networks/u10-network.yaml.gz")
+    u10_network = (
+        Path(__file__).parents[2].joinpath("air-sim/networks/u10-network.yaml.gz")
+    )
     if not u10_network.exists():
         pytest.skip("u10-network.yaml.gz not available")
     with open(u10_config) as f:
