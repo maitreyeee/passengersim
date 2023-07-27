@@ -12,12 +12,14 @@ from typing import Any
 import AirSim
 import pandas as pd
 from AirSim import PathClass
-from AirSim.utils import FileWriter, airsim_utils, db_utils
+from AirSim.utils import FileWriter, airsim_utils
 
 import simbywire.config.rm_systems
 from simbywire.config import AirSimConfig
 from simbywire.config.snapshot_filter import SnapshotFilter
 from simbywire.summary import SummaryTables
+
+from . import database
 
 logger = logging.getLogger("AirSim")
 
@@ -66,7 +68,7 @@ class Simulation:
         self.update_frequency = None
         self.random_generator = AirSim.Generator(42)
         self._initialize(config)
-        self.cnx = db_utils.get_database_connection(
+        self.cnx = database.get_database_connection(
             engine=self.db_engine,
             filename=self.db_filename,
         )
@@ -259,7 +261,7 @@ class Simulation:
 
     def setup_scenario(self):
         if self.cnx is not None:
-            db_utils.delete_experiment(self.cnx, self.sim.name)
+            database.delete_experiment(self.cnx, self.sim.name)
         logger.info("building connections")
         num_paths = self.sim.build_connections()
         logger.info(f"Connections done, num_paths = {num_paths}")
@@ -326,7 +328,10 @@ class Simulation:
                         ), f"Event queue still has {self.sim.num_events()} events"
                         break
                 if self.cnx:
-                    self.cnx.commit()
+                    try:
+                        self.cnx.commit()
+                    except AttributeError:
+                        pass
 
     def run_airline_models(self, info: Any = None, departed: bool = False, debug=False):
         dcp = 0 if info == "Done" else info[1]
@@ -353,7 +358,7 @@ class Simulation:
 
         #        # logger.info(f"************************** DCP = {dcp} **************************")
         if self.cnx is not None:
-            db_utils.save_details(self.cnx, self.sim, dcp)
+            database.save_details(self.cnx, self.sim, dcp)
         if self.file_writer is not None:
             self.file_writer.save_details(self.sim, dcp)
 
