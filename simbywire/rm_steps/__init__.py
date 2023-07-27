@@ -18,6 +18,8 @@ except ImportError:
 
 
 class RmStep(RmStepBase, ABC):
+    name: str = ""
+
     @property
     def requires(self) -> list[str]:
         """
@@ -26,6 +28,10 @@ class RmStep(RmStepBase, ABC):
         This allows the driver to check that the flow is correct. For example, if
         forecasting produces "leg_forecast" but optimization requires "path_forecast"
         then an exception will be thrown.
+
+        This property is defined in the base class as an empty list, but
+        derived classes that implement the RmStep interface should override this
+        property if they do require anything in particular.
         """
         return []
 
@@ -37,6 +43,10 @@ class RmStep(RmStepBase, ABC):
         This allows the driver to check that the flow is correct. For example, if
         forecasting produces "leg_forecast" but optimization requires "path_forecast"
         then an exception will be thrown.
+
+        This property is defined in the base class as an empty list, but
+        derived classes that implement the RmStep interface should override this
+        property if they do produce anything that may be required by a later step.
         """
         return []
 

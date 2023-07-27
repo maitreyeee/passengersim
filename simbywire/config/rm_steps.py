@@ -11,8 +11,16 @@ from pydantic import BaseModel, Field
 
 
 class RmStepBase(BaseModel, extra="forbid"):
+    """
+    Base class for RmSteps.
+
+    Every non-abstract derived class must have a `step_type` class attribute,
+    annotated with a `Literal` value type.
+
+    See `DummyStep` below for an example.
+    """
+
     __subclasses: ClassVar[set[type[RmStepBase]]] = set()
-    name: str = ""
 
     def __init_subclass__(cls, **kwargs):
         """Capture a list of all concrete subclasses, including nested levels"""
@@ -44,6 +52,7 @@ class RmStepBase(BaseModel, extra="forbid"):
 
     @classmethod
     def as_pydantic_field(cls):
+        """Pydantic field type as a union of all subclasses, discriminated on step_type."""
         if len(cls.__subclasses) > 1:
             return Annotated[
                 reduce(operator.__or__, cls.__subclasses),
@@ -53,13 +62,8 @@ class RmStepBase(BaseModel, extra="forbid"):
             return Annotated[reduce(operator.__or__, cls.__subclasses), Field()]
 
     def _factory(self):
-        if hasattr(self, "step_class"):
-            kwargs = self.model_dump()
-            # step_class = kwargs.pop("step_class")
-            kwargs.pop("step_type")
-            return self.step_class(**kwargs)
-        else:
-            return self.model_copy(deep=True)
+        """Generate a deep copy of this RmStep."""
+        return self.model_copy(deep=True)
 
 
 class DummyStep(RmStepBase):
