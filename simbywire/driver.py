@@ -58,8 +58,6 @@ class Simulation:
         self.fare_details_sold = defaultdict(int)
         self.fare_details_sold_business = defaultdict(int)
         self.fare_details_revenue = defaultdict(float)
-        self.db_engine = config.db.engine
-        self.db_filename = config.db.filename
         self.output_dir = output_dir
         self.demand_multiplier = 1.0
         self.airports = []
@@ -68,9 +66,11 @@ class Simulation:
         self.update_frequency = None
         self.random_generator = AirSim.Generator(42)
         self._initialize(config)
-        self.cnx = database.get_database_connection(
-            engine=self.db_engine,
-            filename=self.db_filename,
+        self.cnx = database.Database(
+            engine=config.db.engine,
+            filename=config.db.filename,
+            pragmas=config.db.pragmas,
+            commit_count_delay=config.db.commit_count_delay,
         )
 
     @property
@@ -93,6 +93,7 @@ class Simulation:
 
     def _initialize(self, config: AirSimConfig):
         self.sim = AirSim.AirSim(name=config.scenario)
+        self.sim.config = config
         self.sim.random_generator = self.random_generator
         self.sim.snapshot_filters = config.snapshot_filters
         for pname, pvalue in config.simulation_controls:
@@ -260,7 +261,7 @@ class Simulation:
                 print("    Bucket", bkg_class, auth)
 
     def setup_scenario(self):
-        if self.cnx is not None:
+        if self.cnx.is_open:
             database.delete_experiment(self.cnx, self.sim.name)
         logger.info("building connections")
         num_paths = self.sim.build_connections()
@@ -357,7 +358,7 @@ class Simulation:
             airline.rm_system.run(self.sim, airline.name, dcp_index, dcp)
 
         #        # logger.info(f"************************** DCP = {dcp} **************************")
-        if self.cnx is not None:
+        if self.cnx.is_open:
             database.save_details(self.cnx, self.sim, dcp)
         if self.file_writer is not None:
             self.file_writer.save_details(self.sim, dcp)

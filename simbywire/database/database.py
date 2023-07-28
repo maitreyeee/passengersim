@@ -1,0 +1,349 @@
+#
+# Utilities for reading and writing AirSim data
+# Uses SQLITE
+#
+from __future__ import annotations
+
+import logging
+import sqlite3
+import string
+from collections.abc import Iterable
+from datetime import datetime
+from pathlib import Path
+from typing import Literal
+
+from AirSim import AirSim
+
+from . import tables
+
+logger = logging.getLogger(__name__)
+
+
+class Database:
+    """A wrapper to manage transactions for AirSim on SQLite."""
+
+    def __init__(
+        self,
+        engine: Literal["sqlite", None] = "sqlite",
+        filename=None,
+        pragmas: Iterable[str] = (),
+        commit_count_delay: int | None = 250,
+    ):
+        self._connection = None
+        self.engine = engine
+        self.filename = filename
+        self.pragmas = pragmas
+        self._counter = 0
+        self._commit_count_delay = commit_count_delay
+        if self._commit_count_delay is not None:
+            self.commit = self._commit_by_count
+        else:
+            self.commit = self._commit_raw
+        self.open()
+
+    def __getattr__(self, item):
+        return getattr(self._connection, item)
+
+    def open(self, filename: str | None = None):
+        """Open the connection if it is not already open."""
+        if self._connection is not None:
+            raise ConnectionError("the connection is already open")
+        self.filename = filename or self.filename
+        if self.engine is None:
+            self._connection = None
+        elif self.engine == "sqlite" and self.filename is None:
+            self._connection = None
+        elif self.engine == "sqlite":
+            if self.filename != ":memory:":
+                Path(self.filename).parent.mkdir(exist_ok=True, parents=True)
+            logger.info(f"connecting to sqlite database: {self.filename}")
+            self._connection = sqlite3.Connection(self.filename)
+            for pragma in self.pragmas:
+                self._connection.execute(f"PRAGMA {pragma};")
+            logger.info("initializing sqlite tables")
+            tables.create_tables(self)
+            self._connection.execute("BEGIN TRANSACTION;")
+        else:
+            raise NotImplementedError(f"unknown engine {self.engine!r}")
+
+    def close(self):
+        """Flush pending operations and close the connection."""
+        if self._connection:
+            self._connection.execute("COMMIT;")
+            self._connection.close()
+            self._connection = None
+
+    def _commit_by_count(self):
+        self._counter += 1
+        if self._counter >= self._commit_count_delay:
+            self._commit_raw()
+            self._counter = 0
+
+    def _commit_raw(self):
+        if self._connection:
+            self._connection.execute("COMMIT;")
+            self._connection.execute("BEGIN TRANSACTION;")
+
+    def __enter__(self):
+        if self._connection:
+            return self._connection.__enter__()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self._connection:
+            return self._connection.__exit__(exc_type, exc_val, exc_tb)
+
+    @property
+    def is_open(self) -> bool:
+        return self._connection is not None
+
+    def sql_placeholders(self, n: int):
+        """A parenthesis enclosed set of `n` placeholders for the selected engine."""
+        if self.engine == "sqlite":
+            x = "?"
+        else:
+            x = "%s"
+        return "(" + ", ".join(x for _ in range(n)) + ")"
+
+
+def get_database_connection(
+    engine: Literal["sqlite", None] = "sqlite",
+    filename: Path = None,
+    pragmas: Iterable[str] = (),
+    commit_count_delay: int | None = 250,
+):
+    return Database(
+        engine=engine,
+        filename=filename,
+        pragmas=pragmas,
+        commit_count_delay=commit_count_delay,
+    )
+
+
+def compute_rrd(sim: AirSim, dep_time: float):
+    tmp = int(dep_time / 86400) * 86400
+    rrd = int((tmp - sim.last_event_time) / 86400)
+    if sim.num_events() == 0:
+        rrd = 0
+    return rrd
+
+
+def delete_experiment(cnx: Database, name):
+    with cnx:
+        logger.info(f"deleting existing scenario {name!r} from database")
+        cnx.execute(f"DELETE FROM leg_detail WHERE scenario = '{name}' ")
+        cnx.execute(f"DELETE FROM leg_bucket_detail WHERE scenario = '{name}' ")
+        cnx.execute(f"DELETE FROM demand_detail WHERE scenario = '{name}' ")
+        cnx.execute(f"DELETE FROM fare WHERE scenario = '{name}' ")
+
+
+n_commit = 0
+
+
+# Save details, can be done at each RRD/DCP and at the end of the run
+def save_details(cnx: Database, sim: AirSim, dcp: int):
+    if not sim.save_timeframe_details and dcp > 0:
+        return
+    save_demand_multi(cnx, sim, dcp)
+    if sim.config.db.fast and isinstance(cnx._connection, sqlite3.Connection):
+        sim.write_to_sqlite(cnx._connection, dcp)
+    else:
+        for leg in sim.legs:
+            save_leg(cnx, sim, leg, dcp)
+            save_leg_bucket_multi(cnx, sim, leg, dcp)
+        save_fare_multi(cnx, sim, dcp)
+    cnx.commit()
+
+
+def sql_placeholders(cnx, n: int):
+    if isinstance(cnx, Database):
+        return sql_placeholders(cnx._connection, n)
+    elif isinstance(cnx, sqlite3.Connection):
+        x = "?"
+    else:
+        x = "%s"
+    return ", ".join(x for _ in range(n))
+
+
+# TODO - How to model RRD / capture date?
+def save_leg(cnx, sim, leg, dcp) -> string:
+    dep_time = datetime.utcfromtimestamp(leg.dep_time).strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        cursor = cnx.cursor()
+        sql = f"""INSERT INTO leg_detail
+                (scenario, iteration, trial, sample, rrd, carrier, orig,
+                 dest, flt_no, dep_date, capacity, sold, revenue)
+                VALUES ({sql_placeholders(cnx, 13)})"""
+        cursor.execute(
+            sql,
+            (
+                sim.name,
+                sim.iteration,
+                sim.trial,
+                sim.sample,
+                dcp,
+                leg.carrier,
+                leg.orig,
+                leg.dest,
+                leg.flt_no,
+                dep_time,
+                leg.capacity,
+                leg.sold,
+                leg.revenue,
+            ),
+        )
+        return True
+    except Exception as err:
+        print(f"Doh !!! leg_detail: {err}")
+        return False
+
+
+leg_bucket_sql = {}
+
+
+def save_leg_bucket_multi(cnx: Database, sim: AirSim, leg, dcp, commit=False) -> string:
+    dep_time = datetime.utcfromtimestamp(leg.dep_time).strftime("%Y-%m-%d %H:%M:%S")
+    # print("dep_time = ", dep_time)
+    try:
+        cursor = cnx.cursor()
+        cnx_type = type(cnx).__name__
+        if cnx_type not in leg_bucket_sql:
+            sql = leg_bucket_sql[
+                cnx_type
+            ] = f"""INSERT INTO leg_bucket_detail
+                (scenario, iteration, trial, sample, rrd, carrier, orig, dest, flt_no,
+                dep_date, bucket_number, name, auth, revenue, sold, untruncated_demand,
+                demand_fcst) VALUES ({sql_placeholders(cnx, 17)})"""
+        else:
+            sql = leg_bucket_sql.get(cnx_type)
+        data_list = []
+        for n, bkt in enumerate(leg.buckets):
+            data = (
+                sim.name,
+                sim.iteration,
+                sim.trial,
+                sim.sample,
+                dcp,
+                leg.carrier,
+                leg.orig,
+                leg.dest,
+                leg.flt_no,
+                dep_time,
+                n,
+                bkt.name,
+                bkt.alloc,
+                bkt.revenue,
+                bkt.sold,
+                bkt.untruncated_demand,
+                bkt.fcst_mean,
+            )
+            data_list.append(data)
+
+        cursor.executemany(sql, data_list)
+        if commit:
+            cnx.commit()
+        cursor.close()
+        return True
+    except Exception as err:
+        print(f"Doh !!! leg_bucket_detail: {err}")
+        return False
+
+
+def save_demand_multi(cnx: Database, sim: AirSim, dcp) -> string:
+    data_list = []
+    for dmd in sim.demands:
+        data_list.append(
+            (
+                sim.name,
+                sim.iteration,
+                sim.trial,
+                sim.sample,
+                dcp,
+                dmd.orig,
+                dmd.dest,
+                dmd.segment,
+                dmd.scenario_demand,
+                dmd.sold,
+                dmd.revenue,
+            )
+        )
+        # if dmd.sold > dmd.scenario_demand:
+        #     print(f"{dmd.orig=}, {dmd.dest=}, {dmd.segment}, {dmd.sold}, {dmd.scenario_demand}")
+
+    try:
+        cursor = cnx.cursor()
+        sql = f"""INSERT INTO demand_detail
+                (scenario, iteration, trial, sample, rrd, orig, dest, segment, sample_demand, sold, revenue)
+                VALUES ({sql_placeholders(cnx, 11)})"""
+        cursor.executemany(sql, data_list)
+        return True
+    except Exception as err:
+        print(f"Doh !!! demand_detail: {err}")
+        return False
+
+
+def save_fare_multi(cnx: Database, sim: AirSim, dcp) -> string:
+    data_list = []
+    for fare in sim.fares:
+        data_list.append(
+            (
+                sim.name,
+                sim.iteration,
+                sim.trial,
+                sim.sample,
+                dcp,
+                fare.carrier,
+                fare.orig,
+                fare.dest,
+                fare.booking_class,
+                fare.sold,
+                fare.sold_business,
+                fare.price,
+            )
+        )
+    try:
+        cursor = cnx.cursor()
+        sql = f"""INSERT INTO fare
+                (scenario, iteration, trial, sample, rrd, carrier,
+                 orig, dest, booking_class, sold, sold_business, price)
+                VALUES ({sql_placeholders(cnx, 12)})"""
+        cursor.executemany(sql, data_list)
+        return True
+    except Exception as err:
+        print(f"Doh !!! fare: {err}")
+        return False
+
+
+#
+# def get_legs(cnx: Database, _scenario="PODS 1 Leg", _trial=0, _rrd=0):
+#     """Return a collection of legs
+#        Mostly used by the airline part of the simulation code"""
+#     legs = []
+#     sql = """SELECT a.iteration, a.trial, a.sample, a.rrd, a.carrier, a.orig, a.dest, a.flt_no,
+#                    a.capacity, a.sold, a.q_demand, a.untruncated_demand,
+#                    b.bucket_number, b.name AS bucket_name, b.auth, b.sold, b.revenue
+#             FROM leg_detail a
+#             JOIN leg_bucket_detail b USING(iteration, trial, sample, rrd, carrier, orig, dest, flt_no)
+#             WHERE a.scenario = %s
+#               AND a.trial = %s
+#               AND a.rrd = %s
+#             ORDER BY a.iteration, a.trial, a.sample, a.rrd, a.carrier, a.orig, a.dest, a.flt_no, b.bucket_number;"""
+#     try:
+#         cursor = cnx.cursor()
+#         cursor.execute(sql, (_scenario, _trial, _rrd))
+#         old_key = None
+#         for iteration, trial, sample, rrd, carrier, orig, dest, flt_no, \
+#                 capacity, sold, q_demand, untruncated_demand, \
+#                 bucket_number, bucket_name, auth, sold, bkt_revenue in cursor:
+#             key = (iteration, trial, sample, rrd, carrier, orig, dest, flt_no)
+#             if key != old_key:
+#                 tmp_leg = Leg(carrier, flt_no, orig, dest, capacity=capacity)
+#                 legs.append(tmp_leg)
+#             bkt = Bucket(bucket_name, sold=sold)
+#             bkt.revenue = bkt_revenue
+#             tmp_leg.add_bucket(bkt)
+#             old_key = key
+#     except Exception as err:
+#         print("Doh !!! get_legs: {}".format(err))
+#         return []
+#
+#     return legs
