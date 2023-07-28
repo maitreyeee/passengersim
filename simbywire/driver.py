@@ -286,6 +286,7 @@ class Simulation:
         logger.debug(
             f"run_sim, num_trials = {self.sim.num_trials}, num_samples = {self.sim.num_samples}"
         )
+        self.sim.update_db_write_flags()
         for trial in range(self.sim.num_trials):
             self.sim.trial = trial
             for sample in range(self.sim.num_samples):
@@ -358,7 +359,7 @@ class Simulation:
 
         #        # logger.info(f"************************** DCP = {dcp} **************************")
         if self.cnx.is_open:
-            database.save_details(self.cnx, self.sim, dcp)
+            self.cnx.save_details(self.sim, dcp)
         if self.file_writer is not None:
             self.file_writer.save_details(self.sim, dcp)
 

@@ -115,6 +115,37 @@ class Database:
         else:
             logger.info(f"database not open, cannot delete {name!r}")
 
+    def save_details(self: Database, sim: AirSim, dcp: int):
+        """
+        Save details, can be done at each RRD/DCP and at the end of the run
+        """
+        if not sim.save_timeframe_details and dcp > 0:
+            return
+        if sim.config.db.fast and isinstance(self._connection, sqlite3.Connection):
+            sim.write_to_sqlite(self._connection, dcp, sim.config.db.dcp_write_detail)
+        else:
+            for leg in sim.legs:
+                if "leg" in sim.config.db.dcp_write_detail:
+                    save_leg(self, sim, leg, dcp)
+                if "bucket" in sim.config.db.dcp_write_detail:
+                    save_leg_bucket_multi(self, sim, leg, dcp)
+            if "fare" in sim.config.db.dcp_write_detail:
+                save_fare_multi(self, sim, dcp)
+            if "demand" in sim.config.db.dcp_write_detail:
+                save_demand_multi(self, sim, dcp)
+        # hooks for custom writers written in Python, may be slow
+        for f in sim.config.db.dcp_write_hooks:
+            f(self, sim, dcp)
+        self.commit()
+
+    def dataframe(self, query: str):
+        """Run a SQL query and return the results as a pandas DataFrame."""
+        if not self.is_open:
+            raise ValueError("database is not open")
+        import pandas as pd
+
+        return pd.read_sql_query(query, self._connection)
+
 
 def get_database_connection(
     engine: Literal["sqlite", None] = "sqlite",
@@ -313,7 +344,7 @@ def save_fare_multi(cnx: Database, sim: AirSim, dcp) -> string:
         )
     try:
         cursor = cnx.cursor()
-        sql = f"""INSERT INTO fare
+        sql = f"""INSERT INTO fare_detail
                 (scenario, iteration, trial, sample, rrd, carrier,
                  orig, dest, booking_class, sold, sold_business, price)
                 VALUES ({sql_placeholders(cnx, 12)})"""

@@ -1,4 +1,5 @@
 import pathlib
+from collections.abc import Callable
 from typing import Literal
 
 from pydantic import BaseModel, field_validator
@@ -27,8 +28,14 @@ class DatabaseConfig(BaseModel, extra="forbid", validate_assignment=True):
     persistent storage less frequently.
     """
 
-    write_detail: set[str] = {"leg", "bucket", "fare", "demand"}
+    dcp_write_detail: set[str] = {"leg", "bucket", "fare", "demand"}
     """Which detailed items should be written to the database at each DCP."""
+
+    dcp_write_hooks: list[Callable] = []
+    """Additional callable functions that write to the database at each DCP.
+
+    Each should have a signature matching `f(db, sim, dcp)`.
+    """
 
     @field_validator("engine", mode="before")
     def _interpret_none(cls, v):
