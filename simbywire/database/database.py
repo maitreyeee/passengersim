@@ -110,7 +110,7 @@ class Database:
             self.execute("DELETE FROM leg_detail WHERE scenario = ?", (name,))
             self.execute("DELETE FROM leg_bucket_detail WHERE scenario = ?", (name,))
             self.execute("DELETE FROM demand_detail WHERE scenario = ?", (name,))
-            self.execute("DELETE FROM fare WHERE scenario = ?", (name,))
+            self.execute("DELETE FROM fare_detail WHERE scenario = ?", (name,))
             self._commit_raw()
         else:
             logger.info(f"database not open, cannot delete {name!r}")
@@ -144,7 +144,7 @@ def delete_experiment(cnx: Database, name):
         cnx.execute(f"DELETE FROM leg_detail WHERE scenario = '{name}' ")
         cnx.execute(f"DELETE FROM leg_bucket_detail WHERE scenario = '{name}' ")
         cnx.execute(f"DELETE FROM demand_detail WHERE scenario = '{name}' ")
-        cnx.execute(f"DELETE FROM fare WHERE scenario = '{name}' ")
+        cnx.execute(f"DELETE FROM fare_detail WHERE scenario = '{name}' ")
 
 
 n_commit = 0
