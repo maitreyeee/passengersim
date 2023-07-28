@@ -14,8 +14,6 @@ from typing import Literal
 
 from AirSim import AirSim
 
-from . import tables
-
 logger = logging.getLogger(__name__)
 
 
@@ -60,9 +58,11 @@ class Database:
             self._connection = sqlite3.Connection(self.filename)
             for pragma in self.pragmas:
                 self._connection.execute(f"PRAGMA {pragma};")
-            logger.info("initializing sqlite tables")
-            tables.create_tables(self)
             self._connection.execute("BEGIN TRANSACTION;")
+            logger.info("initializing sqlite tables")
+            from .tables import create_tables
+
+            create_tables(self)
         else:
             raise NotImplementedError(f"unknown engine {self.engine!r}")
 
@@ -103,6 +103,17 @@ class Database:
         else:
             x = "%s"
         return "(" + ", ".join(x for _ in range(n)) + ")"
+
+    def delete_experiment(self, name: str):
+        if self.is_open:
+            logger.info(f"deleting existing scenario {name!r} from database")
+            self.execute("DELETE FROM leg_detail WHERE scenario = ?", (name,))
+            self.execute("DELETE FROM leg_bucket_detail WHERE scenario = ?", (name,))
+            self.execute("DELETE FROM demand_detail WHERE scenario = ?", (name,))
+            self.execute("DELETE FROM fare WHERE scenario = ?", (name,))
+            self._commit_raw()
+        else:
+            logger.info(f"database not open, cannot delete {name!r}")
 
 
 def get_database_connection(

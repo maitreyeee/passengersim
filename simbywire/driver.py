@@ -261,8 +261,7 @@ class Simulation:
                 print("    Bucket", bkg_class, auth)
 
     def setup_scenario(self):
-        if self.cnx.is_open:
-            database.delete_experiment(self.cnx, self.sim.name)
+        self.cnx.delete_experiment(self.sim.name)
         logger.info("building connections")
         num_paths = self.sim.build_connections()
         logger.info(f"Connections done, num_paths = {num_paths}")
