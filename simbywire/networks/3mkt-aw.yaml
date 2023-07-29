@@ -11,7 +11,6 @@ simulation_controls:
   pax_type_k_factor: 0.2
   tf_k_factor: 0.1
   z_factor: 2.0
-  theft_nesting: false
   prorate_revenue: true
   dwm_lite: false
   max_connect_time: 120
@@ -66,7 +65,7 @@ rm_systems:
         kind: path
       - step_type: probp
         name: optimization
-      - step_type: aggregate
+      - step_type: aggregation
         name: aggregate
       - step_type: emsr
         name: optimization
@@ -98,6 +97,7 @@ choice_models:
 airlines:
   - name: AL1
     rm_system: rm_test1
+    control: leg
   - name: AL2
     rm_system: rm_test2
     control: vn
@@ -593,7 +593,7 @@ snapshot_filters:
   - type: rm
     title: Testing the snapshot filters
     sample: [20, 30]
-    dcp: 7
+    dcp: [42, 28, 14]
     flt_no: 201
   - type: pro_bp
     title: Testing the snapshot filters again

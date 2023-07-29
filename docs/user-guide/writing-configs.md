@@ -17,7 +17,6 @@ simulation_controls:
   pax_type_k_factor: 0.4
   tf_k_factor: 0.1
   z_factor: 2.0
-  theft_nesting: false
   prorate_revenue: true
   dwm_lite: false
   max_connect_time: 120

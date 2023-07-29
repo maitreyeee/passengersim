@@ -131,7 +131,8 @@ class Simulation:
             self.choice_models[cm_name] = x
 
         for airline_name, airline_config in config.airlines.items():
-            airline = AirSim.Airline(airline_name)
+            airline = AirSim.Airline(airline_name, airline_config.control)
+#            airline.control = airline_config.control
             airline.rm_system = self.rm_systems[airline_config.rm_system]
             self.sim.add_airline(airline)
         self.classes = config.classes
