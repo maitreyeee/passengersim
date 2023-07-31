@@ -146,6 +146,29 @@ class Database:
 
         return pd.read_sql_query(query, self._connection)
 
+    def backup(self, dst: Path | str | sqlite3.Connection, show_progress: bool = True):
+        """Back up this database to another copy."""
+        if self.engine != "sqlite":
+            raise NotImplementedError(f"no backup available for engine={self.engine!r}")
+        if not self.is_open:
+            raise OSError("database connection is not open")
+
+        def _progress(status, remaining, total):
+            if remaining:
+                print(f"Copied {total - remaining} of {total} pages...")
+            else:
+                print(f"Copied all {total} pages.")
+
+        if not isinstance(dst, sqlite3.Connection):
+            dst = sqlite3.connect(dst)
+        self._connection.execute("COMMIT;")
+        with dst:
+            self._connection.backup(
+                dst, pages=10000, progress=_progress if show_progress else None
+            )
+        self._connection.execute("BEGIN TRANSACTION;")
+        dst.close()
+
 
 def get_database_connection(
     engine: Literal["sqlite", None] = "sqlite",
