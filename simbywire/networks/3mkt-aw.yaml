@@ -4,7 +4,7 @@
 
 scenario: AW_test
 simulation_controls:
-  num_trials: 1
+  num_trials: 5
   num_samples: 600
   sys_k_factor: 0.1
   mkt_k_factor: 0.15
@@ -65,7 +65,7 @@ rm_systems:
         kind: path
       - step_type: probp
         name: optimization
-      - step_type: aggregate
+      - step_type: aggregation
         name: aggregate
       - step_type: emsr
         name: optimization
@@ -97,6 +97,7 @@ choice_models:
 airlines:
   - name: AL1
     rm_system: rm_test1
+    control: leg
   - name: AL2
     rm_system: rm_test2
     control: vn
@@ -592,7 +593,7 @@ snapshot_filters:
   - type: rm
     title: Testing the snapshot filters
     sample: [20, 30]
-    dcp: 7
+    dcp: [42, 28, 14]
     flt_no: 201
   - type: pro_bp
     title: Testing the snapshot filters again
