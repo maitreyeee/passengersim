@@ -17,7 +17,6 @@ simulation_controls:
   pax_type_k_factor: 0.4
   tf_k_factor: 0.1
   z_factor: 2.0
-  theft_nesting: false
   prorate_revenue: true
   dwm_lite: false
   max_connect_time: 120
@@ -33,7 +32,7 @@ to define one or more revenue management systems that may be used by carriers.
 
 
 These systems can either be defined as a list, where each item in the list defines
-both a name and steps, or you can write the same instruction as a nested mapping, 
+both a name and steps, or you can write the same instruction as a nested mapping,
 with the names as keys and the values giving the other attributes of each RM system,
 (for now, just a list of steps) like this:
 

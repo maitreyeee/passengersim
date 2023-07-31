@@ -27,7 +27,6 @@ class SimulationSettings(BaseModel, extra="allow"):
     tf_k_factor: confloat(gt=0, lt=5.0) = 0.1
     z_factor: confloat(gt=0, lt=5.0) = 2.0
 
-    theft_nesting: bool = False
     prorate_revenue: bool = True
 
     dwm_lite: bool = True
