@@ -591,12 +591,12 @@ snapshot_filters:
 #    dcp: 0
 #    flt_no: 202
   - type: rm
-    title: Testing the snapshot filters
+    title: RM Snapshot, EMSRb leg optimization
     sample: [20, 30]
     dcp: [42, 28, 14]
     flt_no: 201
   - type: pro_bp
-    title: Testing the snapshot filters again
+    title: ProBP Snapshot
     sample: [20, 30]
     dcp: 56
     flt_no: 211

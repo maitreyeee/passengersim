@@ -382,10 +382,6 @@ class Simulation:
                 self.fare_details_sold_business[key3] += f.sold_business
                 self.fare_details_revenue[key3] += f.price * f.sold
 
-                # if f.carrier == "AL1" and f.orig == "BOS" and f.dest == "ORD" and f.booking_class == "Y1":
-                #    print(f"    {f.carrier}:{f.orig}-{f.dest}, {f.booking_class},
-                #    tmp_dcp={prev_dcp}, dcp_index={dcp_index}, {f.sold}, {f.sold_business}")
-
     def generate_demands(self, system_rn=None, debug=False):
         """Generate demands, following the procedure used in PODS
         The biggest difference is that we can put all the timeframe (DCP) demands
@@ -401,7 +397,7 @@ class Simulation:
         mrn_ref = {}
 
         # Need to have leisure / business split for PODS
-        {
+        trn_ref = {
             "business": self.random_generator.get_normal(),
             "leisure": self.random_generator.get_normal(),
         }
