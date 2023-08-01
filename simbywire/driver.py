@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import pathlib
+import sqlite3
 import time
 from collections import defaultdict
 from datetime import datetime
@@ -665,3 +666,12 @@ class Simulation:
             f"Th' th' that's all folks !!!    (Elapsed time = {round(time.time() - start_time, 2)})"
         )
         return summary
+
+    def backup_db(self, dst: pathlib.Path | str | sqlite3.Connection):
+        """Back up this database to another copy.
+
+        Parameters
+        ----------
+        dst : Path-like or sqlite3.Connection
+        """
+        return self.cnx.backup(dst)
