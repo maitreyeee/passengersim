@@ -16,11 +16,36 @@ def create_timestamp(base_date, offset, hh, mm) -> int:
 class Leg(BaseModel, extra="forbid"):
     carrier: str
     fltno: int
+    """A unique identifier for this leg.
+
+    Each leg in a network should have a globally unique identifier (i.e. even
+    if the carrier is different, `fltno` values should be unique.
+    """
+
     orig: str
+    """Origination location for this leg."""
+
     dest: str
+    """Destination location for this leg."""
+
     date: datetime = datetime.fromisoformat("2022-09-21")
+
     dep_time: int
+    """Departure time for this leg in Unix time.
+
+    In input files, this can be specified as a string in the format "HH:MM",
+    with the hour in 24-hour format.
+
+    Unix time is the number of seconds since 00:00:00 UTC on 1 Jan 1970."""
+
     arr_time: int
+    """Arrival time for this leg in Unix time.
+
+    In input files, this can be specified as a string in the format "HH:MM",
+    with the hour in 24-hour format.
+
+    Unix time is the number of seconds since 00:00:00 UTC on 1 Jan 1970."""
+
     capacity: int
     distance: float | None = None
 

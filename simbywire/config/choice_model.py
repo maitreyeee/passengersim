@@ -29,11 +29,26 @@ class LogitChoiceModel(Named, extra="forbid"):
     kind: Literal["logit"]
 
     intercept: float = 0
+    """This is the alternative specific constant for the no-purchase alternative."""
+
     nonstop: float = 0
     duration: float = 0
     price: float = 0
+
     tod_sin2p: float = 0
+    """Schedule parameter.
+
+    If `t` is departure time (in minutes after midnight local time) divided
+    by 1440, this parameter is multiplied by `sin( 2 \pi t)` and the result is
+    added to the utility of the particular alternative."""
+
     tod_sin4p: float = 0
+    """Schedule parameter.
+
+    If `t` is departure time (in minutes after midnight local time) divided
+    by 1440, this parameter is multiplied by `sin( 4 \pi t)` and the result is
+    added to the utility of the particular alternative."""
+
     tod_sin6p: float = 0
     tod_cos2p: float = 0
     tod_cos4p: float = 0

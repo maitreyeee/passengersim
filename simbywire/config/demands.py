@@ -10,7 +10,13 @@ class Demand(BaseModel, extra="forbid"):
     base_demand: float
     reference_fare: float
     choice_model: str | None = None
+    """The name of the choice model that is applied for this demand."""
+
     curve: str | None = None
+    """The name of the booking curve that is applied for this demand.
+
+    Each demand is attached to a booking curve that describes the temporal
+    distribution of customer arrivals."""
 
     @property
     def choice_model_(self):
