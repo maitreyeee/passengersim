@@ -4,6 +4,7 @@ import re
 from pathlib import Path
 
 import mkdocs_gen_files
+
 import simbywire
 
 public_module_display_name = "SimByWire"
@@ -18,7 +19,7 @@ for path in sorted(sw_path.joinpath("simbywire/config").rglob("*.py")):
     title = None
     classes = []
     skip = False
-    with open(sw_path.joinpath(module_path).with_suffix(".py"), "r") as text_file:
+    with open(sw_path.joinpath(module_path).with_suffix(".py")) as text_file:
         file_lines = text_file.readlines()
         for line in file_lines:
             if line.startswith("# SKIP-DOC"):

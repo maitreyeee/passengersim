@@ -398,7 +398,7 @@ class Simulation:
         mrn_ref = {}
 
         # Need to have leisure / business split for PODS
-        trn_ref = {
+        trn_ref = {  # noqa: F841 # allow unused variable
             "business": self.random_generator.get_normal(),
             "leisure": self.random_generator.get_normal(),
         }

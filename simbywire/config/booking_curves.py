@@ -1,7 +1,7 @@
 # TITLE: Booking Curves
 from __future__ import annotations
 
-from pydantic import FieldValidationInfo, field_validator, model_validator
+from pydantic import FieldValidationInfo, field_validator
 
 from .named import Named
 
@@ -13,17 +13,17 @@ class BookingCurve(Named, extra="forbid"):
 
     curve: dict[int, float]
     """Define a booking curve.
-    
-    For a given customer type, the booking curve gives the cumulative fraction 
+
+    For a given customer type, the booking curve gives the cumulative fraction
     of those customers who are expected to have already "arrived" at any given
     data collection point (DCP).  An "arriving" customer is one who is interested
     in booking, but may or may not actually purchase a travel product from one
     of the carriers, depending on the availability of products at the time of their
     arrival.
-    
-    The values (cumulative fraction of customers arriving) should increase 
+
+    The values (cumulative fraction of customers arriving) should increase
     monotonically as the keys (DCPs, e.g. days to departure) decrease.
-    
+
     Example
     -------
     ```{yaml}
