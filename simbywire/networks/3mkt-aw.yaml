@@ -99,8 +99,8 @@ airlines:
     rm_system: rm_test1
     control: leg
   - name: AL2
-    rm_system: rm_test2
-    control: vn
+    rm_system: rm_test1
+    control: leg
 
 classes:
   - Y0
