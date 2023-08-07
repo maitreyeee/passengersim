@@ -14,7 +14,7 @@ extra_css:
 plugins:
   - offline
   - mkdocs-jupyter:
-      execute: true
+      execute: false
   - mkdocstrings:
       handlers:
         python:
@@ -48,6 +48,13 @@ markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:materialx.emoji.twemoji
       emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.arithmatex:
+      generic: true
 
 repo_url: https://github.com/jpn--/SimByWire
 repo_name: jpn--/sim-by-wire
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js

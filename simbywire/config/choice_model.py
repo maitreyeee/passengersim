@@ -12,6 +12,7 @@ class PodsChoiceModel(Named, extra="forbid"):
     kind: Literal["pods"]
 
     emult: float | None = None
+
     basefare_mult: float | None = None
     connect_disutility: float | None = None
     path_quality: tuple[float, float] | None = None
@@ -34,19 +35,20 @@ class LogitChoiceModel(Named, extra="forbid"):
     nonstop: float = 0
     duration: float = 0
     price: float = 0
+    """This is the parameter for the price of each alternative."""
 
     tod_sin2p: float = 0
     """Schedule parameter.
 
-    If `t` is departure time (in minutes after midnight local time) divided
-    by 1440, this parameter is multiplied by `sin( 2 \pi t)` and the result is
+    If $t$ is departure time (in minutes after midnight local time) divided
+    by 1440, this parameter is multiplied by $sin( 2 \pi t)$ and the result is
     added to the utility of the particular alternative."""
 
     tod_sin4p: float = 0
     """Schedule parameter.
 
-    If `t` is departure time (in minutes after midnight local time) divided
-    by 1440, this parameter is multiplied by `sin( 4 \pi t)` and the result is
+    If $t$ is departure time (in minutes after midnight local time) divided
+    by 1440, this parameter is multiplied by $sin( 4 \pi t)$ and the result is
     added to the utility of the particular alternative."""
 
     tod_sin6p: float = 0
