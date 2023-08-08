@@ -2,7 +2,7 @@ site_name: AirSim
 theme:
   name: material
   icon:
-    logo: material/shield-airplane
+    logo: material/seat-recline-extra
   features:
     - content.code.copy
     - content.code.annotate
