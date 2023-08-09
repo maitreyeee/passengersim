@@ -522,7 +522,20 @@ class Simulation:
                 f"\n- num_samples = {sim.num_samples}"
                 f"\n- burn_samples = {sim.burn_samples}"
             )
-        tot_rev = 0.0
+
+        dmd_df = self.compute_demand_report(sim, to_log)
+        leg_df = self.compute_leg_report(sim, to_log)
+        path_df = self.compute_path_report(sim, to_log)
+        airline_df = self.compute_airline_report(sim, to_log)
+
+        return SummaryTables(
+            demands=dmd_df,
+            legs=leg_df,
+            paths=path_df,
+            airlines=airline_df,
+        )
+
+    def compute_demand_report(self, sim: AirSim.AirSim, to_log=True):
         dmd_df = []
         for m in sim.demands:
             avg_price = m.revenue / m.sold if m.sold > 0 else 0
@@ -546,12 +559,11 @@ class Simulation:
                     f"Rev = {m.revenue}, "
                     f"AvgFare = {avg_price:.2f}"
                 )
-            tot_rev += m.revenue
         dmd_df = pd.DataFrame(dmd_df)
+        return dmd_df
 
-        avg_lf, n = 0, 0
-        airline_asm = defaultdict(float)
-        airline_rpm = defaultdict(float)
+    def compute_leg_report(self, sim: AirSim.AirSim, to_log=True):
+        num_samples = sim.num_trials * (sim.num_samples - sim.burn_samples)
         leg_df = []
         for leg in sim.legs:
             avg_sold = leg.gt_sold / num_samples
@@ -573,11 +585,20 @@ class Simulation:
                     lf=lf,
                 )
             )
+        leg_df = pd.DataFrame(leg_df)
+        return leg_df
+
+    def compute_path_report(self, sim: AirSim.AirSim, to_log=True):
+        num_samples = sim.num_trials * (sim.num_samples - sim.burn_samples)
+        avg_lf, n = 0.0, 0
+        for leg in sim.legs:
+            lf = 100.0 * leg.gt_sold / (leg.capacity * num_samples)
             avg_lf += lf
             n += 1
-            airline_asm[leg.carrier] += leg.distance * leg.capacity * num_samples
-            airline_rpm[leg.carrier] += leg.distance * leg.gt_sold
-        leg_df = pd.DataFrame(leg_df)
+
+        tot_rev = 0.0
+        for m in sim.demands:
+            tot_rev += m.revenue
 
         avg_lf = avg_lf / n if n > 0 else 0
         if to_log:
@@ -620,8 +641,18 @@ class Simulation:
             else:
                 raise NotImplementedError("path with other than 1 or 2 legs")
         path_df = pd.DataFrame(path_df)
+        return path_df
 
+    def compute_airline_report(self, sim: AirSim.AirSim, to_log=True):
+        num_samples = sim.num_trials * (sim.num_samples - sim.burn_samples)
         airline_df = []
+
+        airline_asm = defaultdict(float)
+        airline_rpm = defaultdict(float)
+        for leg in sim.legs:
+            airline_asm[leg.carrier] += leg.distance * leg.capacity * num_samples
+            airline_rpm[leg.carrier] += leg.distance * leg.gt_sold
+
         for cxr in sim.airlines:
             avg_sold = round(cxr.gt_sold / num_samples)
             avg_rev = cxr.gt_revenue / num_samples
@@ -645,13 +676,7 @@ class Simulation:
             )
             # logger.info(f"ASM = {airline_asm[cxr.name]:.2f}, RPM = {airline_rpm[cxr.name]:.2f}, LF = {lf2:.2f}%") #***
         airline_df = pd.DataFrame(airline_df)
-
-        return SummaryTables(
-            demands=dmd_df,
-            legs=leg_df,
-            paths=path_df,
-            airlines=airline_df,
-        )
+        return airline_df
 
     def reseed(self, seed=42):
         logger.info(f"reseeding random_generator: {seed}")
