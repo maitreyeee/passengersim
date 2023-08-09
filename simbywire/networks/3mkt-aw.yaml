@@ -4,7 +4,7 @@
 
 scenario: AW_test
 simulation_controls:
-  num_trials: 5
+  num_trials: 1
   num_samples: 600
   sys_k_factor: 0.1
   mkt_k_factor: 0.15
@@ -99,8 +99,8 @@ airlines:
     rm_system: rm_test1
     control: leg
   - name: AL2
-    rm_system: rm_test1
-    control: leg
+    rm_system: rm_test2
+    control: vn
 
 classes:
   - Y0
