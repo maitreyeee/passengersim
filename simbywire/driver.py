@@ -643,7 +643,22 @@ class Simulation:
         path_df = pd.DataFrame(path_df)
         return path_df
 
-    def compute_airline_report(self, sim: AirSim.AirSim, to_log=True):
+    def compute_airline_report(
+        self, sim: AirSim.AirSim, to_log: bool = True
+    ) -> pd.DataFrame:
+        """
+        Compute an airline summary table.
+
+        The resulting table has one row per simulated carrier, and the following
+        columns:
+
+        - name
+        - avg_sold
+        - load_factor
+        - avg_rev,
+        - asm (available seat miles)
+        - rpm (revenue passenger miles)
+        """
         num_samples = sim.num_trials * (sim.num_samples - sim.burn_samples)
         airline_df = []
 
