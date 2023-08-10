@@ -46,7 +46,7 @@ author_email = "jeff@newman.me"
 
 [tool.ruff]
 # Enable flake8-bugbear (`B`) and pyupgrade ('UP') rules.
-select = ["E", "F", "B", "UP", "TID"]
+select = ["E", "F", "B", "UP", "TID", "I001"]
 fix = true
 ignore-init-module-imports = true
 line-length = 120

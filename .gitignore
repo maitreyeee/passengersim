@@ -163,3 +163,7 @@ sandbox.py
 
 # generated database files
 *.sqlite
+*.sqlite-journal
+
+# notebooks executed for documentation
+*.nbconvert.ipynb
