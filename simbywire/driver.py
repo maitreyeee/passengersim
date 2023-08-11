@@ -334,6 +334,8 @@ class Simulation:
                         self.cnx.commit()
                     except AttributeError:
                         pass
+        if self.cnx.is_open:
+            self.cnx.save_final(self.sim)
 
     def run_airline_models(self, info: Any = None, departed: bool = False, debug=False):
         dcp = 0 if info == "Done" else info[1]
@@ -363,7 +365,9 @@ class Simulation:
             self.cnx.save_details(self.sim, dcp)
         if self.file_writer is not None:
             self.file_writer.save_details(self.sim, dcp)
+        self._accum_by_tf(dcp_index)
 
+    def _accum_by_tf(self, dcp_index):
         if dcp_index > 0:
             prev_dcp = self.dcp_list[dcp_index - 1]
             for f in self.sim.fares:

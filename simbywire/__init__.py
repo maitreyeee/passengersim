@@ -1,5 +1,9 @@
-
-from AirSim import airline  # noqa: F401 # declarations of usual RmStep classes
+try:
+    # before loading any other subpackages, first try to
+    # load declarations of all the usual RmStep classes
+    from AirSim import airline  # noqa: F401
+except ImportError:
+    pass
 
 from .config import AirSimConfig
 from .driver import Simulation

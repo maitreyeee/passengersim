@@ -138,6 +138,9 @@ class Database:
             f(self, sim, dcp)
         self.commit()
 
+    def save_final(self: Database, sim: AirSim):
+        sim.final_write_to_sqlite(self._connection, sim.config.db.dcp_write_detail)
+
     def dataframe(self, query: str, params: list | tuple | dict | None = None):
         """Run a SQL query and return the results as a pandas DataFrame."""
         if not self.is_open:

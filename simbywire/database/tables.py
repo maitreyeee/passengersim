@@ -129,6 +129,32 @@ def create_table_fare_detail(cnx: Database, primary_key: bool = False):
     cnx.execute(sql)
 
 
+def create_table_bookings_by_timeframe(cnx: Database, primary_key: bool = False):
+    sql = """
+    CREATE TABLE IF NOT EXISTS bookings_by_timeframe
+    (
+        scenario		VARCHAR(20) NOT NULL,
+        carrier			VARCHAR(10) NOT NULL,
+        booking_class   VARCHAR(10) NOT NULL,
+        rrd       		INT NOT NULL,
+        avg_sold		FLOAT,
+        avg_business	FLOAT,
+        avg_leisure     FLOAT,
+        avg_revenue     FLOAT,
+        avg_price       FLOAT,
+        updated_at		DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        {primary_key}
+    );
+    """
+    if primary_key is True:
+        sql = sql.format(
+            primary_key=", PRIMARY KEY(scenario, carrier, booking_class, rrd)"
+        )
+    else:
+        sql = sql.format(primary_key="")
+    cnx.execute(sql)
+
+
 def create_table_booking_curve(cnx: Database, primary_key: bool = True):
     sql = """
     CREATE TABLE IF NOT EXISTS booking_curve (
@@ -175,6 +201,7 @@ def create_tables(cnx: Database, primary_keys: dict[str, bool] | None = None):
         fare=False,
         booking_curve=True,
         distance=True,
+        bookings=True,
     )
     if primary_keys is not None:
         pk.update(primary_keys)
@@ -182,6 +209,7 @@ def create_tables(cnx: Database, primary_keys: dict[str, bool] | None = None):
     create_table_leg_bucket_detail(cnx, pk["leg_bucket"])
     create_table_demand_detail(cnx, pk["demand"])
     create_table_fare_detail(cnx, pk["fare"])
+    create_table_bookings_by_timeframe(cnx, pk["bookings"])
     create_table_booking_curve(cnx, pk["booking_curve"])
     create_table_distance(cnx, pk["distance"])
     cnx._commit_raw()
