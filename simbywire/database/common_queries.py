@@ -1,7 +1,9 @@
+import pandas as pd
+
 from .database import Database
 
 
-def fare_class_mix(cnx: Database, scenario: str):
+def fare_class_mix(cnx: Database, scenario: str) -> pd.DataFrame:
     qry = """
     SELECT carrier, booking_class,
            (AVG(sold)) AS avg_sold,
@@ -29,7 +31,7 @@ def fare_class_mix(cnx: Database, scenario: str):
     return cnx.dataframe(qry, (scenario,))
 
 
-def load_factors(cnx: Database, scenario: str):
+def load_factors(cnx: Database, scenario: str) -> pd.DataFrame:
     qry = """
     SELECT carrier,
            ROUND(AVG(sold)) AS avg_sold,
@@ -54,3 +56,20 @@ def load_factors(cnx: Database, scenario: str):
          ) tmp
     """
     return cnx.dataframe(qry, (scenario,))
+
+
+def total_demand(cnx: Database, scenario: str) -> float:
+    qry = """
+    SELECT AVG(sample_demand)
+    FROM (
+        SELECT
+            trial, sample, SUM(sample_demand) AS sample_demand
+        FROM
+            demand_detail
+        WHERE
+            rrd = 0
+            AND sample > 100
+        GROUP BY
+            trial, sample) tmp;
+    """
+    return cnx.dataframe(qry, (scenario,)).iloc[0, 0]
