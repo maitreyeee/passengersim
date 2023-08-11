@@ -138,13 +138,13 @@ class Database:
             f(self, sim, dcp)
         self.commit()
 
-    def dataframe(self, query: str):
+    def dataframe(self, query: str, params: list | tuple | dict | None = None):
         """Run a SQL query and return the results as a pandas DataFrame."""
         if not self.is_open:
             raise ValueError("database is not open")
         import pandas as pd
 
-        return pd.read_sql_query(query, self._connection)
+        return pd.read_sql_query(query, self._connection, params=params)
 
     def backup(self, dst: Path | str | sqlite3.Connection, show_progress: bool = True):
         """Back up this database to another copy."""

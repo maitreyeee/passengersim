@@ -513,7 +513,12 @@ class Simulation:
                 sold_leisure,
             )
 
-    def compute_reports(self, sim: AirSim.AirSim, to_log=True):
+    def compute_reports(
+        self,
+        sim: AirSim.AirSim,
+        to_log=True,
+        additional=("fare_class_mix", "load_factors"),
+    ):
         num_samples = sim.num_trials * (sim.num_samples - sim.burn_samples)
         if num_samples <= 0:
             raise ValueError(
@@ -528,12 +533,24 @@ class Simulation:
         path_df = self.compute_path_report(sim, to_log)
         airline_df = self.compute_airline_report(sim, to_log)
 
-        return SummaryTables(
+        summary = SummaryTables(
             demands=dmd_df,
             legs=leg_df,
             paths=path_df,
             airlines=airline_df,
         )
+
+        if "fare_class_mix" in additional and self.cnx.is_open:
+            summary.fare_class_mix = database.common_queries.fare_class_mix(
+                self.cnx, sim.name
+            )
+
+        if "load_factors" in additional and self.cnx.is_open:
+            summary.load_factors = database.common_queries.load_factors(
+                self.cnx, sim.name
+            )
+
+        return summary
 
     def compute_demand_report(self, sim: AirSim.AirSim, to_log=True):
         dmd_df = []
