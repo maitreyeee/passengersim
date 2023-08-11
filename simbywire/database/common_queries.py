@@ -73,3 +73,51 @@ def total_demand(cnx: Database, scenario: str) -> float:
             trial, sample) tmp;
     """
     return cnx.dataframe(qry, (scenario,)).iloc[0, 0]
+
+
+def bookings_by_timeframe(
+    cnx: Database, scenario: str, from_fare_detail: bool = False
+) -> pd.DataFrame:
+    qry_fare = """
+    SELECT carrier, booking_class AS class, rrd,
+           (AVG(sold)) AS avg_sold,
+           (AVG(sold_business)) AS avg_business,
+           (AVG(sold_leisure)) AS avg_leisure,
+           (AVG(revenue)) AS avg_revenue,
+           (AVG(revenue) / AVG(sold)) AS avg_price
+    FROM (SELECT trial, scenario, carrier, booking_class, rrd,
+                 SUM(sold) AS sold,
+                 SUM(sold_business) AS sold_business,
+                 SUM(sold - sold_business) AS sold_leisure,
+                 SUM(sold * price) AS revenue
+          FROM fare_detail
+          WHERE
+                sample > 100
+                AND scenario = ?1
+          GROUP BY trial, sample, carrier, booking_class, rrd) a
+    GROUP BY carrier, booking_class, rrd
+    ORDER BY carrier, booking_class, rrd;
+    """
+
+    if from_fare_detail:
+        return cnx.dataframe(qry_fare, (scenario,))
+
+    qry_bookings = """
+    SELECT
+        carrier,
+        booking_class AS class,
+        rrd,
+        avg_sold,
+        avg_business,
+        avg_leisure,
+        avg_revenue,
+        avg_price
+    FROM
+        bookings_by_timeframe
+    WHERE
+        scenario = ?1
+    ORDER BY
+        carrier, booking_class, rrd;
+    """
+
+    return cnx.dataframe(qry_bookings, (scenario,))

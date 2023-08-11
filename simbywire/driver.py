@@ -521,7 +521,7 @@ class Simulation:
         self,
         sim: AirSim.AirSim,
         to_log=True,
-        additional=("fare_class_mix", "load_factors"),
+        additional=("fare_class_mix", "load_factors", "bookings_by_timeframe"),
     ):
         num_samples = sim.num_trials * (sim.num_samples - sim.burn_samples)
         if num_samples <= 0:
@@ -552,6 +552,11 @@ class Simulation:
         if "load_factors" in additional and self.cnx.is_open:
             summary.load_factors = database.common_queries.load_factors(
                 self.cnx, sim.name
+            )
+
+        if "bookings_by_timeframe" in additional and self.cnx.is_open:
+            summary.bookings_by_timeframe = (
+                database.common_queries.bookings_by_timeframe(self.cnx, sim.name)
             )
 
         return summary
