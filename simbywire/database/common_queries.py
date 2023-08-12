@@ -76,7 +76,10 @@ def total_demand(cnx: Database, scenario: str) -> float:
 
 
 def bookings_by_timeframe(
-    cnx: Database, scenario: str, from_fare_detail: bool = False
+    cnx: Database,
+    scenario: str,
+    from_fare_detail: bool = False,
+    burn_samples=100,
 ) -> pd.DataFrame:
     qry_fare = """
     SELECT carrier, booking_class AS class, rrd,
@@ -84,7 +87,8 @@ def bookings_by_timeframe(
            (AVG(sold_business)) AS avg_business,
            (AVG(sold_leisure)) AS avg_leisure,
            (AVG(revenue)) AS avg_revenue,
-           (AVG(revenue) / AVG(sold)) AS avg_price
+           (AVG(revenue) / AVG(sold)) AS avg_price,
+           (SUM(sold)) AS tot_sold
     FROM (SELECT trial, scenario, carrier, booking_class, rrd,
                  SUM(sold) AS sold,
                  SUM(sold_business) AS sold_business,
@@ -92,7 +96,7 @@ def bookings_by_timeframe(
                  SUM(sold * price) AS revenue
           FROM fare_detail
           WHERE
-                sample > 100
+                sample >= ?2
                 AND scenario = ?1
           GROUP BY trial, sample, carrier, booking_class, rrd) a
     GROUP BY carrier, booking_class, rrd
@@ -100,7 +104,7 @@ def bookings_by_timeframe(
     """
 
     if from_fare_detail:
-        return cnx.dataframe(qry_fare, (scenario,))
+        return cnx.dataframe(qry_fare, (scenario, burn_samples))
 
     qry_bookings = """
     SELECT
@@ -111,7 +115,8 @@ def bookings_by_timeframe(
         avg_business,
         avg_leisure,
         avg_revenue,
-        avg_price
+        avg_price,
+        tot_sold
     FROM
         bookings_by_timeframe
     WHERE

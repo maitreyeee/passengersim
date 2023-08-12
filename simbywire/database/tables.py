@@ -137,6 +137,7 @@ def create_table_bookings_by_timeframe(cnx: Database, primary_key: bool = False)
         carrier			VARCHAR(10) NOT NULL,
         booking_class   VARCHAR(10) NOT NULL,
         rrd       		INT NOT NULL,
+        tot_sold		FLOAT,
         avg_sold		FLOAT,
         avg_business	FLOAT,
         avg_leisure     FLOAT,
@@ -201,7 +202,7 @@ def create_tables(cnx: Database, primary_keys: dict[str, bool] | None = None):
         fare=False,
         booking_curve=True,
         distance=True,
-        bookings=True,
+        bookings=False,
     )
     if primary_keys is not None:
         pk.update(primary_keys)
