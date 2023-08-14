@@ -29,19 +29,26 @@ from .snapshot_filter import SnapshotFilter
 
 class AirSimConfig(BaseModel, extra="forbid"):
     scenario: str = Field(default_factory=random_label)
-    """Name for this scenario."""
+    """Name for this scenario. The scenario name is helpful when writing different simulations 
+    to the same database so you can uniquely identify and query results for a particular scenario."""
 
     simulation_controls: SimulationSettings = SimulationSettings()
     db: DatabaseConfig = DatabaseConfig()
     rm_systems: DictOfNamed[RmSystem] = []
+    """A list of RM systems "created" by the user.  A RM system is defined by a forecasting method, unconstraining method, optimization method, forecasting and optimization 
+    levels of analysis (such as path or leg), etc. You can use the rm_systems variable to (1) run simulations in which multiple airlines are running the same RM system or 
+    (2) run simualtiosn in which airlines are running different RM systems."""
     choice_models: DictOfNamed[ChoiceModel] = {}
     airlines: DictOfNamed[Airline] = {}
+    """A list of airlines.  One convention is to use Airline1, Airline2, ... to list the airlines in the network.  
+    Another convention is to use IATA industry-standard two-letter airline codes.  See href="https://www.iata.org/en/publications/directories/code-search/" for more information"""
     classes: list[str] = []
+    """A list of fare classes.  One convention is to use Y0, Y1, ... to label fare classes from the highest fare (Y0) to the lowest fare (Yn)."""
     dcps: list[int] = []
     """A list of DCPs (data collection points).
 
     The DCPs are given as integers, which represent the number of days
-    before departure.
+    before departure.  
     """
     booking_curves: DictOfNamed[BookingCurve] = {}
     legs: list[Leg] = []
