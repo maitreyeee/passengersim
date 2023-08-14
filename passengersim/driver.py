@@ -524,7 +524,7 @@ class Simulation:
 
     def compute_reports(
         self,
-        sim: AirSim.AirSim,
+        sim: SimulationEngine.AirSim,
         to_log=True,
         additional=(
             "fare_class_mix",
@@ -578,7 +578,7 @@ class Simulation:
 
         return summary
 
-    def compute_demand_report(self, sim: AirSim.AirSim, to_log=True):
+    def compute_demand_report(self, sim: SimulationEngine, to_log=True):
         dmd_df = []
         for m in sim.demands:
             avg_price = m.revenue / m.sold if m.sold > 0 else 0
@@ -605,7 +605,7 @@ class Simulation:
         dmd_df = pd.DataFrame(dmd_df)
         return dmd_df
 
-    def compute_leg_report(self, sim: AirSim.AirSim, to_log=True):
+    def compute_leg_report(self, sim: SimulationEngine, to_log=True):
         num_samples = sim.num_trials * (sim.num_samples - sim.burn_samples)
         leg_df = []
         for leg in sim.legs:
@@ -631,7 +631,7 @@ class Simulation:
         leg_df = pd.DataFrame(leg_df)
         return leg_df
 
-    def compute_path_report(self, sim: AirSim.AirSim, to_log=True):
+    def compute_path_report(self, sim: SimulationEngine, to_log=True):
         num_samples = sim.num_trials * (sim.num_samples - sim.burn_samples)
         avg_lf, n = 0.0, 0
         for leg in sim.legs:
@@ -687,7 +687,7 @@ class Simulation:
         return path_df
 
     def compute_airline_report(
-        self, sim: AirSim.AirSim, to_log: bool = True
+        self, sim: SimulationEngine, to_log: bool = True
     ) -> pd.DataFrame:
         """
         Compute an airline summary table.

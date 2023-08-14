@@ -1,5 +1,5 @@
 #
-# Utilities for reading and writing AirSim data
+# Utilities for reading and writing PassengerSim data
 # Uses SQLITE
 #
 from __future__ import annotations
@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
-from AirSim import AirSim
+from passengersim import SimulationEngine
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +115,7 @@ class Database:
         else:
             logger.info(f"database not open, cannot delete {name!r}")
 
-    def save_details(self: Database, sim: AirSim, dcp: int):
+    def save_details(self: Database, sim: SimulationEngine, dcp: int):
         """
         Save details, can be done at each RRD/DCP and at the end of the run
         """
@@ -138,7 +138,7 @@ class Database:
             f(self, sim, dcp)
         self.commit()
 
-    def save_final(self: Database, sim: AirSim):
+    def save_final(self: Database, sim: SimulationEngine):
         sim.final_write_to_sqlite(self._connection, sim.config.db.write_items)
 
     def dataframe(self, query: str, params: list | tuple | dict | None = None):
@@ -187,7 +187,7 @@ def get_database_connection(
     )
 
 
-def compute_rrd(sim: AirSim, dep_time: float):
+def compute_rrd(sim: SimulationEngine, dep_time: float):
     tmp = int(dep_time / 86400) * 86400
     rrd = int((tmp - sim.last_event_time) / 86400)
     if sim.num_events() == 0:
@@ -208,7 +208,7 @@ n_commit = 0
 
 
 # Save details, can be done at each RRD/DCP and at the end of the run
-def save_details(cnx: Database, sim: AirSim, dcp: int):
+def save_details(cnx: Database, sim: SimulationEngine, dcp: int):
     if not sim.save_timeframe_details and dcp > 0:
         return
     save_demand_multi(cnx, sim, dcp)
@@ -268,7 +268,7 @@ def save_leg(cnx, sim, leg, dcp) -> string:
 leg_bucket_sql = {}
 
 
-def save_leg_bucket_multi(cnx: Database, sim: AirSim, leg, dcp, commit=False) -> string:
+def save_leg_bucket_multi(cnx: Database, sim: SimulationEngine, leg, dcp, commit=False) -> string:
     dep_time = datetime.utcfromtimestamp(leg.dep_time).strftime("%Y-%m-%d %H:%M:%S")
     # print("dep_time = ", dep_time)
     try:
@@ -316,7 +316,7 @@ def save_leg_bucket_multi(cnx: Database, sim: AirSim, leg, dcp, commit=False) ->
         return False
 
 
-def save_demand_multi(cnx: Database, sim: AirSim, dcp) -> string:
+def save_demand_multi(cnx: Database, sim: SimulationEngine, dcp) -> string:
     data_list = []
     for dmd in sim.demands:
         data_list.append(
@@ -349,7 +349,7 @@ def save_demand_multi(cnx: Database, sim: AirSim, dcp) -> string:
         return False
 
 
-def save_fare_multi(cnx: Database, sim: AirSim, dcp) -> string:
+def save_fare_multi(cnx: Database, sim: SimulationEngine, dcp) -> string:
     data_list = []
     for fare in sim.fares:
         data_list.append(

@@ -1,3 +1,3 @@
-::: AirSim.Path
+::: passengersim.Path
     options:
       show_source: false

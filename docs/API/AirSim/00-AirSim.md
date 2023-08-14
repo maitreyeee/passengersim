@@ -1,6 +1,6 @@
 # Core Simulator
 
-::: AirSim.AirSim
+::: passengersim.AirSim
     options:
       show_source: false
       filters:

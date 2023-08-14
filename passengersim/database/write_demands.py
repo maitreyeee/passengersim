@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from AirSim import AirSim
+from passengersim_core import SimulationEngine
 
 from passengersim.database import Database
 
 
-def save_demand_to_database(cnx: Database, sim: AirSim, dcp: int):
+def save_demand_to_database(cnx: Database, sim: SimulationEngine, dcp: int):
     """Write simulation demands to the database."""
     data_list = []
     for dmd in sim.demands:
