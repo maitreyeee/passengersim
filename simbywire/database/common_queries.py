@@ -44,16 +44,17 @@ def load_factors(cnx: Database, scenario: str) -> pd.DataFrame:
     FROM (SELECT trial, sample, carrier,
                  SUM(sold) AS sold,
                  SUM(capacity) AS cap,
-                 SUM(sold * d.miles) AS rpm,
-                 SUM(capacity * d.miles) AS asm,
+                 SUM(sold * distance) AS rpm,
+                 SUM(capacity * distance) AS asm,
                  SUM(revenue) AS revenue
-          FROM leg_detail a
-                   JOIN distance d USING (orig, dest)
+          FROM leg_detail
+                   JOIN leg_defs USING (flt_no)
           WHERE rrd = 0
             AND sample > 100
             AND scenario = ?1
           GROUP BY trial, sample, carrier
          ) tmp
+    GROUP BY carrier
     """
     return cnx.dataframe(qry, (scenario,))
 

@@ -1,2 +1,2 @@
-from . import common_queries
+from . import common_queries, tables
 from .database import Database

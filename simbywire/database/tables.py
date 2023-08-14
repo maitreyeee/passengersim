@@ -1,6 +1,52 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
+
 from .database import Database
+
+
+def create_table_legs(cnx: Database, legs: Iterable | None = None):
+    sql = """
+    CREATE TABLE IF NOT EXISTS leg_defs
+    (
+        flt_no INTEGER PRIMARY KEY,
+        carrier TEXT,
+        orig TEXT,
+        dest TEXT,
+        dep_time INTEGER,
+        arr_time INTEGER,
+        capacity INTEGER,
+        distance FLOAT
+    );
+    """
+    cnx.execute(sql)
+    for leg in legs:
+        cnx.execute(
+            """
+            INSERT OR REPLACE INTO leg_defs(
+                flt_no,
+                carrier,
+                orig,
+                dest,
+                dep_time,
+                arr_time,
+                capacity,
+                distance
+            ) VALUES (
+                ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8
+            )
+            """,
+            (
+                leg.flt_no,
+                leg.carrier,
+                leg.orig,
+                leg.dest,
+                leg.dep_time,
+                leg.arr_time,
+                leg.capacity,
+                leg.distance,
+            ),
+        )
 
 
 def create_table_leg_detail(cnx: Database, primary_key: bool = False):
@@ -12,13 +58,8 @@ def create_table_leg_detail(cnx: Database, primary_key: bool = False):
         trial	        	INT NOT NULL,
         sample  	    	INT NOT NULL,
         rrd             	INT NOT NULL,
-        carrier		    	VARCHAR(10) NOT NULL,
-        orig		    	VARCHAR(10) NOT NULL,
-        dest		    	VARCHAR(10) NOT NULL,
         flt_no		    	INT NOT NULL,
-        dep_date	    	DATETIME NOT NULL,
         updated_at	    	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        capacity	    	INT,
         sold	    		INT,
         revenue             FLOAT,
         q_demand            FLOAT,
