@@ -368,9 +368,10 @@ class Simulation:
             self.cnx.save_details(self.sim, dcp)
         if self.file_writer is not None:
             self.file_writer.save_details(self.sim, dcp)
-        self._accum_by_tf(dcp_index)
+        # self._accum_by_tf(dcp_index)
 
     def _accum_by_tf(self, dcp_index):
+        # This is now replaced by C++ native counters ...
         if dcp_index > 0:
             prev_dcp = self.dcp_list[dcp_index - 1]
             for f in self.sim.fares:
@@ -723,7 +724,7 @@ class Simulation:
         return airline_df
 
     def reseed(self, seed: int | list[int] | None = 42):
-        logger.info(f"reseeding random_generator: {seed}")
+        logger.debug("reseeding random_generator: %s", seed)
         self.sim.random_generator.seed(seed)
 
     def run(self, log_reports=True):
