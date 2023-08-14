@@ -51,9 +51,9 @@ def test_3mkt_db_detail(fast):
     config.db.engine = "sqlite"
     config.db.filename = ":memory:"
     config.db.fast = fast
-    if "demand" in config.db.dcp_write_detail:
+    if "demand" in config.db.write_items:
         # remove demand to test plug in hook
-        config.db.dcp_write_detail.remove("demand")
+        config.db.write_items.remove("demand")
     config.db.dcp_write_hooks.append(save_demand_to_database)
     config.simulation_controls.write_raw_files = False
     sim = Simulation(config, output_dir=None)

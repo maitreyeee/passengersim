@@ -292,11 +292,15 @@ class Simulation:
             self.sim.trial = trial
             for sample in range(self.sim.num_samples):
                 self.sim.sample = sample
+                if self.sim.config.simulation_controls.random_seed is not None:
+                    self.reseed(
+                        [self.sim.config.simulation_controls.random_seed, trial, sample]
+                    )
                 if update_freq is not None and self.sim.sample % update_freq == 0:
-                    avg_rev, n = 0.0, 0
+                    total_rev, n = 0.0, 0
                     airline_info = ""
                     for cxr in self.sim.airlines:
-                        avg_rev += cxr.revenue
+                        total_rev += cxr.revenue
                         n += 1
                         airline_info += (
                             f"{', ' if n > 0 else ''}{cxr.name}=${cxr.revenue:8.0f}"
@@ -309,9 +313,8 @@ class Simulation:
                         else:
                             dmd_l += dmd.scenario_demand
                     d_info = f", {int(dmd_b)}, {int(dmd_l)}"
-                    avg_rev = avg_rev / n
                     # logger.info(
-                    # f"********** Trial = {self.sim.trial}, Sample = {self.sim.sample}, AvgRev = ${avg_rev:11,.2f}"
+                    # f"********** Trial = {self.sim.trial}, Sample = {self.sim.sample}, AvgRev = ${total_rev/n:11,.2f}"
                     # )
                     logger.info(
                         f"Trial={self.sim.trial}, Sample={self.sim.sample}{airline_info}{d_info}"
@@ -719,7 +722,7 @@ class Simulation:
         airline_df = pd.DataFrame(airline_df)
         return airline_df
 
-    def reseed(self, seed=42):
+    def reseed(self, seed: int | list[int] | None = 42):
         logger.info(f"reseeding random_generator: {seed}")
         self.sim.random_generator.seed(seed)
 

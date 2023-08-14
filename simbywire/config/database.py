@@ -28,8 +28,35 @@ class DatabaseConfig(BaseModel, extra="forbid", validate_assignment=True):
     persistent storage less frequently.
     """
 
-    dcp_write_detail: set[str] = {"leg", "bucket", "fare", "demand"}
-    """Which detailed items should be written to the database at each DCP."""
+    write_items: set[
+        Literal[
+            "leg",
+            "bucket",
+            "fare",
+            "demand",
+            "leg_final",
+            "bucket_final",
+            "fare_final",
+            "demand_final",
+            "bookings",
+        ]
+    ] = {"leg_final", "fare_final", "demand_final", "bookings"}
+    """Which items should be written to the database.
+
+    The following values can be provided in this set:
+
+    - *leg*: write every leg to the `leg_detail` table at every DCP.
+    - *leg_final*: write every leg to the `leg_detail` table only at DCP 0.
+    - *bucket*: write every leg bucket to the `leg_bucket_detail` table at every DCP.
+    - *bucket_final*: write every leg bucket to the `leg_bucket_detail` table only
+        at DCP 0.
+    - *fare*: write every fare to the `fare_detail` table at every DCP.
+    - *fare_final*: write every fare to the `fare_detail` table only at DCP 0.
+    - *demand*: write every demand to the `demand_detail` table at every DCP.
+    - *bookings*: store booking summary data at every DCP and write an aggregate
+        summary of bookings by DCP to the `bookings_by_timeframe` table at the end
+        of the simulation.
+    """
 
     dcp_write_hooks: list[Callable] = []
     """Additional callable functions that write to the database at each DCP.

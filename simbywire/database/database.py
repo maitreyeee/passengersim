@@ -122,16 +122,16 @@ class Database:
         if not sim.save_timeframe_details and dcp > 0:
             return
         if sim.config.db.fast and isinstance(self._connection, sqlite3.Connection):
-            sim.write_to_sqlite(self._connection, dcp, sim.config.db.dcp_write_detail)
+            sim.write_to_sqlite(self._connection, dcp, sim.config.db.write_items)
         else:
             for leg in sim.legs:
-                if "leg" in sim.config.db.dcp_write_detail:
+                if "leg" in sim.config.db.write_items:
                     save_leg(self, sim, leg, dcp)
-                if "bucket" in sim.config.db.dcp_write_detail:
+                if "bucket" in sim.config.db.write_items:
                     save_leg_bucket_multi(self, sim, leg, dcp)
-            if "fare" in sim.config.db.dcp_write_detail:
+            if "fare" in sim.config.db.write_items:
                 save_fare_multi(self, sim, dcp)
-            if "demand" in sim.config.db.dcp_write_detail:
+            if "demand" in sim.config.db.write_items:
                 save_demand_multi(self, sim, dcp)
         # hooks for custom writers written in Python, may be slow
         for f in sim.config.db.dcp_write_hooks:
@@ -139,7 +139,7 @@ class Database:
         self.commit()
 
     def save_final(self: Database, sim: AirSim):
-        sim.final_write_to_sqlite(self._connection, sim.config.db.dcp_write_detail)
+        sim.final_write_to_sqlite(self._connection, sim.config.db.write_items)
 
     def dataframe(self, query: str, params: list | tuple | dict | None = None):
         """Run a SQL query and return the results as a pandas DataFrame."""
