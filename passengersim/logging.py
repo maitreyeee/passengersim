@@ -3,7 +3,7 @@ import sys
 import time
 from contextlib import contextmanager
 
-LOGGER_NAME = "AirSim"
+LOGGER_NAME = "passengersim"
 FILE_LOG_FORMAT = "%(name)s.%(levelname)s: %(message)s"
 # CONSOLE_LOG_FORMAT = "[%(asctime)s] %(name)s.%(levelname)s: %(message)s"
 CONSOLE_LOG_FORMAT = "%(name)s.%(levelname)s: %(message)s"
@@ -69,7 +69,7 @@ def log_to_file(filename, level=None):
 
 
 # logger = log = log_to_console()
-logger = log = logging.getLogger("AirSim")
+logger = log = logging.getLogger("passengersim")
 
 
 @contextmanager

@@ -62,7 +62,7 @@ class LogitChoiceModel(Named, extra="forbid"):
 
 ChoiceModel = Annotated[PodsChoiceModel | LogitChoiceModel, Field(discriminator="kind")]
 """
-Two types of choice models are available in AirSim.
+Two types of choice models are available in PassengerSim.
 
 Use the `kind` key to select which kind of choice model you wish to parameterize.
 """

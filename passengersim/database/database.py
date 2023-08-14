@@ -12,13 +12,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
-from passengersim import SimulationEngine
+from ..core import SimulationEngine
 
 logger = logging.getLogger(__name__)
 
 
 class Database:
-    """A wrapper to manage transactions for AirSim on SQLite."""
+    """A wrapper to manage transactions for PassengerSim on SQLite."""
 
     def __init__(
         self,

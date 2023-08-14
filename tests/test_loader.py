@@ -4,10 +4,10 @@ from pathlib import Path
 
 import pytest
 import yaml
-from AirSim.airline import ForecastStep, UntruncationStep
+from passengersim_core.airline import ForecastStep, UntruncationStep
 from pydantic import ValidationError
 
-from passengersim import AirSimConfig
+from passengersim import Config
 
 
 def test_rm_systems():
@@ -29,7 +29,7 @@ def test_rm_systems():
           algorithm: additive_pickup
     """
     content = yaml.safe_load(io.StringIO(demo1))
-    loaded = AirSimConfig.model_validate(content)
+    loaded = Config.model_validate(content)
 
     system0 = loaded.rm_systems["SystemA"]
     assert system0.name == "SystemA"
@@ -57,7 +57,7 @@ def test_rm_systems():
     """
     content = yaml.safe_load(io.StringIO(demo2))
     with pytest.raises(ValidationError):
-        loaded = AirSimConfig.model_validate(content)
+        loaded = Config.model_validate(content)
 
 
 def test_u10_loader():
@@ -73,7 +73,7 @@ def test_u10_loader():
         content = yaml.safe_load(f)
     with gzip.open(u10_network) as f:
         content.update(yaml.safe_load(f))
-    u10 = AirSimConfig.model_validate(content)
+    u10 = Config.model_validate(content)
     assert len(u10.airlines) == 4
     assert u10.airlines["AL2"].name == "AL2"
 

@@ -1,14 +1,14 @@
 import pytest
 
 from passengersim import Simulation, demo_network
-from passengersim.config import AirSimConfig
+from passengersim.config import Config
 from passengersim.database.write_demands import save_demand_to_database
 from passengersim.summary import SummaryTables
 
 
 def test_3mkt(data_regression):
     input_file = demo_network("3mkt")
-    config = AirSimConfig.from_yaml(input_file)
+    config = Config.from_yaml(input_file)
     config.simulation_controls.num_trials = 1
     config.simulation_controls.num_samples = 10
     config.simulation_controls.burn_samples = 9
@@ -18,15 +18,15 @@ def test_3mkt(data_regression):
 
 
 def test_3mkt_alt():
-    cfg0 = AirSimConfig.from_yaml(demo_network("3mkt"))
-    cfg1 = AirSimConfig.from_yaml(demo_network("3mkt-alt"))
+    cfg0 = Config.from_yaml(demo_network("3mkt"))
+    cfg1 = Config.from_yaml(demo_network("3mkt-alt"))
     assert cfg0.model_dump() == cfg1.model_dump()
 
 
 @pytest.mark.parametrize("fast", [True, False])
 def test_3mkt_db_detail(fast):
     input_file = demo_network("3mkt")
-    config = AirSimConfig.from_yaml(input_file)
+    config = Config.from_yaml(input_file)
 
     n_legs = len(config.legs)
     assert n_legs == 9
@@ -71,7 +71,7 @@ def test_3mkt_db_detail(fast):
 
 def test_3mkt_2carrier(data_regression):
     input_file = demo_network("3mkt-2carrier")
-    cfg = AirSimConfig.from_yaml(input_file)
+    cfg = Config.from_yaml(input_file)
     cfg.db.engine = None  # no db connection
     sim = Simulation(cfg)
     summary = sim.run(log_reports=False)

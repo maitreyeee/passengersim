@@ -1,4 +1,4 @@
-# TITLE: AirSimConfig
+# TITLE: Config
 # DOC-NAME: 00-configs
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ from .simulation_controls import SimulationSettings
 from .snapshot_filter import SnapshotFilter
 
 
-class AirSimConfig(BaseModel, extra="forbid"):
+class Config(BaseModel, extra="forbid"):
     scenario: str = Field(default_factory=random_label)
     """Name for this scenario.
 
@@ -78,7 +78,7 @@ class AirSimConfig(BaseModel, extra="forbid"):
     snapshot_filters: list[SnapshotFilter] = []
 
     @model_validator(mode="after")
-    def _airlines_have_rm_systems(cls, m: AirSimConfig):
+    def _airlines_have_rm_systems(cls, m: Config):
         """Check that all airlines have RM systems that have been defined."""
         for airline in m.airlines.values():
             if airline.rm_system not in m.rm_systems:
@@ -88,7 +88,7 @@ class AirSimConfig(BaseModel, extra="forbid"):
         return m
 
     @model_validator(mode="after")
-    def _booking_curves_match_dcps(cls, m: AirSimConfig):
+    def _booking_curves_match_dcps(cls, m: Config):
         """Check that all booking curves are complete and valid."""
         sorted_dcps = reversed(sorted(m.dcps))
         for curve in m.booking_curves.values():
@@ -126,9 +126,9 @@ class AirSimConfig(BaseModel, extra="forbid"):
         *args,
         **kwargs,
     ) -> typing.Self:
-        """Validate the AirSimConfig inputs.
+        """Validate the passengersim Config inputs.
 
-        This method reloads the AirSimConfig class to ensure all imported
+        This method reloads the Config class to ensure all imported
         RmSteps are properly registered before validation.
 
         Args:

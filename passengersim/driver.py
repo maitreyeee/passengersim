@@ -10,19 +10,19 @@ from datetime import datetime
 from math import sqrt
 from typing import Any
 
-import AirSim
+import passengersim_core
 import pandas as pd
-from AirSim import PathClass
-from AirSim.utils import FileWriter, airsim_utils
+from passengersim_core import PathClass, SimulationEngine
+from passengersim_core.utils import FileWriter, airsim_utils
 
 import passengersim.config.rm_systems
-from passengersim.config import AirSimConfig
+from passengersim.config import Config
 from passengersim.config.snapshot_filter import SnapshotFilter
 from passengersim.summary import SummaryTables
 
 from . import database
 
-logger = logging.getLogger("AirSim")
+logger = logging.getLogger("passengersim")
 
 
 class Simulation:
@@ -32,12 +32,12 @@ class Simulation:
         filenames: pathlib.Path | list[pathlib.Path],
         output_dir: pathlib.Path | None = None,
     ):
-        config = passengersim.config.AirSimConfig.from_yaml(filenames)
+        config = passengersim.config.Config.from_yaml(filenames)
         return cls(config, output_dir)
 
     def __init__(
         self,
-        config: AirSimConfig,
+        config: Config,
         output_dir: pathlib.Path | None = None,
     ):
         if output_dir is None:
@@ -65,7 +65,7 @@ class Simulation:
         self.choice_models = {}
         self.debug = False
         self.update_frequency = None
-        self.random_generator = AirSim.Generator(42)
+        self.random_generator = passengersim_core.Generator(42)
         self._initialize(config)
         self.cnx = database.Database(
             engine=config.db.engine,
@@ -93,8 +93,8 @@ class Simulation:
             ) from err
         sim.snapshot_filters = x
 
-    def _initialize(self, config: AirSimConfig):
-        self.sim = AirSim.AirSim(name=config.scenario)
+    def _initialize(self, config: Config):
+        self.sim = passengersim_core.SimulationEngine(name=config.scenario)
         self.sim.config = config
         self.sim.random_generator = self.random_generator
         self.sim.snapshot_filters = config.snapshot_filters
@@ -115,14 +115,14 @@ class Simulation:
 
         self.rm_systems = {}
         for rm_name, rm_system in config.rm_systems.items():
-            from AirSim.airline.rm_system import Rm_System
+            from passengersim_core.airline.rm_system import Rm_System
 
             x = self.rm_systems[rm_name] = Rm_System(rm_name)
             for step in rm_system.steps:
                 x.add_step(step._factory())
 
         for cm_name, cm in config.choice_models.items():
-            x = AirSim.ChoiceModel(cm_name, cm.kind)
+            x = passengersim_core.ChoiceModel(cm_name, cm.kind)
             for pname, pvalue in cm:
                 if pname in ("kind", "name"):
                     continue
@@ -136,7 +136,7 @@ class Simulation:
             self.choice_models[cm_name] = x
 
         for airline_name, airline_config in config.airlines.items():
-            airline = AirSim.Airline(airline_name, airline_config.control)
+            airline = passengersim_core.Airline(airline_name, airline_config.control)
             airline.rm_system = self.rm_systems[airline_config.rm_system]
             self.sim.add_airline(airline)
         self.classes = config.classes
@@ -145,7 +145,7 @@ class Simulation:
 
         self.curves = {}
         for curve_name, curve_config in config.booking_curves.items():
-            bc = AirSim.BookingCurve(curve_name)
+            bc = passengersim_core.BookingCurve(curve_name)
             bc.random_generator = self.random_generator
             for dcp, pct in curve_config.curve.items():
                 bc.add_dcp(dcp, pct)
@@ -153,7 +153,7 @@ class Simulation:
 
         self.legs = {}
         for leg_config in config.legs:
-            leg = AirSim.Leg(
+            leg = passengersim_core.Leg(
                 leg_config.carrier,
                 leg_config.fltno,
                 leg_config.orig,
@@ -174,7 +174,7 @@ class Simulation:
             self.legs[leg.flt_no] = leg
 
         for dmd_config in config.demands:
-            dmd = AirSim.Demand(dmd_config.orig, dmd_config.dest, dmd_config.segment)
+            dmd = passengersim_core.Demand(dmd_config.orig, dmd_config.dest, dmd_config.segment)
             dmd.base_demand = dmd_config.base_demand * self.demand_multiplier
             dmd.price = dmd_config.reference_fare
             dmd.reference_fare = dmd_config.reference_fare
@@ -197,7 +197,7 @@ class Simulation:
 
         # self.fares = []
         for fare_config in config.fares:
-            fare = AirSim.Fare(
+            fare = passengersim_core.Fare(
                 fare_config.carrier,
                 fare_config.orig,
                 fare_config.dest,
@@ -213,7 +213,7 @@ class Simulation:
             # self.fares.append(fare)
 
         for path_config in config.paths:
-            p = AirSim.Path(path_config.orig, path_config.dest, 0.0)
+            p = passengersim_core.Path(path_config.orig, path_config.dest, 0.0)
             p.path_quality_index = path_config.path_quality_index
             leg_index1 = path_config.legs[0]
             tmp_leg = self.legs[leg_index1]
@@ -256,7 +256,7 @@ class Simulation:
         for bkg_class in self.classes:
             # Input as a percentage
             auth = int(cap * self.init_rm.get(bkg_class, 100.0) / 100.0)
-            b = AirSim.Bucket(bkg_class, alloc=auth)
+            b = passengersim_core.Bucket(bkg_class, alloc=auth)
             # print("adding bucket", b)
             _leg.add_bucket(b)
             if debug:
@@ -524,7 +524,7 @@ class Simulation:
 
     def compute_reports(
         self,
-        sim: SimulationEngine.AirSim,
+        sim: SimulationEngine,
         to_log=True,
         additional=(
             "fare_class_mix",

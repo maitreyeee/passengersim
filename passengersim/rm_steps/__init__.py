@@ -12,9 +12,9 @@ from abc import ABC, abstractmethod
 from passengersim.config.rm_steps import RmStepBase
 
 try:
-    from AirSim import AirSim
+    from passengersim_core import SimulationEngine
 except ImportError:
-    AirSim = None
+    SimulationEngine = None
 
 
 class RmStep(RmStepBase, ABC):

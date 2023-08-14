@@ -1,9 +1,9 @@
-# TITLE: AirSimConfig
+# TITLE: Config
 # DOC-NAME: 00-configs
 from __future__ import annotations
 
 from .airlines import Airline
-from .base import AirSimConfig
+from .base import Config
 from .booking_curves import BookingCurve
 from .choice_model import ChoiceModel
 from .database import DatabaseConfig

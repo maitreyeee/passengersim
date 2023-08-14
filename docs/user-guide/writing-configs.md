@@ -27,7 +27,7 @@ simulation_controls:
 
 ## RM Systems
 
-The [`rm_systems`][passengersim.config.AirSimConfig.rm_systems] key allows the user
+The [`rm_systems`][passengersim.config.Config.rm_systems] key allows the user
 to define one or more revenue management systems that may be used by carriers.
 
 
