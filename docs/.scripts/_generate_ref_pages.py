@@ -11,9 +11,9 @@ public_module_display_name = "SimByWire"
 
 sw_path = Path(simbywire.__path__[0]).parent
 
-for path in sorted(sw_path.joinpath("simbywire/config").rglob("*.py")):
+for path in sorted(sw_path.joinpath("passengersim/config").rglob("*.py")):
     module_path = path.relative_to(sw_path).with_suffix("")
-    doc_path = path.relative_to(sw_path.joinpath("simbywire")).with_suffix(".md")
+    doc_path = path.relative_to(sw_path.joinpath("passengersim")).with_suffix(".md")
     full_doc_path = Path("API", public_module_display_name, doc_path)
 
     title = None
@@ -31,7 +31,7 @@ for path in sorted(sw_path.joinpath("simbywire/config").rglob("*.py")):
                 doc_name = line[11:].strip()
                 doc_path = (
                     path.parent.joinpath(doc_name)
-                    .relative_to(sw_path.joinpath("simbywire"))
+                    .relative_to(sw_path.joinpath("passengersim"))
                     .with_suffix(".md")
                 )
                 full_doc_path = Path("API", public_module_display_name, doc_path)

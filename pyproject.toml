@@ -9,10 +9,10 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
 fallback_version = "0.1.0"
-write_to = "simbywire/_version.py"
+write_to = "passengersim/_version.py"
 
 [project]
-name = "simbywire"
+name = "passengersim"
 dynamic = ["version"]
 requires-python = ">=3.10"
 dependencies = [
@@ -30,19 +30,18 @@ test = [
 
 [tool.setuptools.packages.find]
 where = ["."]  # list of folders that contain the packages (["."] by default)
-include = ["simbywire*"]  # package names should match these glob patterns (["*"] by default)
-exclude = ["simbywire.tests*"]  # exclude packages matching these glob patterns (empty by default)
+include = ["passengersim*"]  # package names should match these glob patterns (["*"] by default)
+exclude = ["passengersim.tests*"]  # exclude packages matching these glob patterns (empty by default)
 namespaces = false  # to disable scanning PEP 420 namespaces (true by default)
 
 [tool.setuptools.package-data]
-simbywire = [
+passengersim = [
     "networks/*.yaml",
 ]
 
 [metadata]
-description = "User interface for AirSim"
-author = "Atlanta Analytics LLC"
-author_email = "jeff@newman.me"
+description = "User interface for PassengerSim"
+author = "Passenger Simulation Labs, LLC"
 
 [tool.ruff]
 # Enable flake8-bugbear (`B`) and pyupgrade ('UP') rules.
@@ -54,7 +53,7 @@ ignore = ["B905"]
 target-version = "py310"
 
 [tool.ruff.isort]
-known-first-party = ["simbywire"]
+known-first-party = ["passengersim"]
 required-imports = ["from __future__ import annotations"]
 
 [tool.ruff.pydocstyle]
