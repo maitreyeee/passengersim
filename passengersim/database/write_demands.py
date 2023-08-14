@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from AirSim import AirSim
 
-from simbywire.database import Database
+from passengersim.database import Database
 
 
 def save_demand_to_database(cnx: Database, sim: AirSim, dcp: int):

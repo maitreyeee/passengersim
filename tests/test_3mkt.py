@@ -1,9 +1,9 @@
 import pytest
 
-from simbywire import Simulation, demo_network
-from simbywire.config import AirSimConfig
-from simbywire.database.write_demands import save_demand_to_database
-from simbywire.summary import SummaryTables
+from passengersim import Simulation, demo_network
+from passengersim.config import AirSimConfig
+from passengersim.database.write_demands import save_demand_to_database
+from passengersim.summary import SummaryTables
 
 
 def test_3mkt(data_regression):

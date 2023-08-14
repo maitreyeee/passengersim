@@ -52,7 +52,7 @@ markdown_extensions:
   - pymdownx.arithmatex:
       generic: true
 
-repo_url: https://github.com/jpn--/SimByWire
+repo_url: https://github.com/PassengerSim/passengersim
 repo_name: jpn--/sim-by-wire
 
 extra_javascript:

@@ -1,4 +1,4 @@
 # Program Structure
 
-There are two modules: `AirSim` and `SimByWire`.
+There are two modules: `passengersim_core` and `passengersim`.
 

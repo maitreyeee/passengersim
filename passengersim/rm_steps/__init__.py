@@ -9,7 +9,7 @@
 
 from abc import ABC, abstractmethod
 
-from simbywire.config.rm_steps import RmStepBase
+from passengersim.config.rm_steps import RmStepBase
 
 try:
     from AirSim import AirSim

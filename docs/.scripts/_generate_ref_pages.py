@@ -5,11 +5,11 @@ from pathlib import Path
 
 import mkdocs_gen_files
 
-import simbywire
+import passengersim
 
-public_module_display_name = "SimByWire"
+public_module_display_name = "PassengerSim"
 
-sw_path = Path(simbywire.__path__[0]).parent
+sw_path = Path(passengersim.__path__[0]).parent
 
 for path in sorted(sw_path.joinpath("passengersim/config").rglob("*.py")):
     module_path = path.relative_to(sw_path).with_suffix("")

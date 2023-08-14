@@ -15,10 +15,10 @@ import pandas as pd
 from AirSim import PathClass
 from AirSim.utils import FileWriter, airsim_utils
 
-import simbywire.config.rm_systems
-from simbywire.config import AirSimConfig
-from simbywire.config.snapshot_filter import SnapshotFilter
-from simbywire.summary import SummaryTables
+import passengersim.config.rm_systems
+from passengersim.config import AirSimConfig
+from passengersim.config.snapshot_filter import SnapshotFilter
+from passengersim.summary import SummaryTables
 
 from . import database
 
@@ -32,7 +32,7 @@ class Simulation:
         filenames: pathlib.Path | list[pathlib.Path],
         output_dir: pathlib.Path | None = None,
     ):
-        config = simbywire.config.AirSimConfig.from_yaml(filenames)
+        config = passengersim.config.AirSimConfig.from_yaml(filenames)
         return cls(config, output_dir)
 
     def __init__(

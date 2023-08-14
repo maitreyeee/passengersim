@@ -7,7 +7,7 @@ import yaml
 from AirSim.airline import ForecastStep, UntruncationStep
 from pydantic import ValidationError
 
-from simbywire import AirSimConfig
+from passengersim import AirSimConfig
 
 
 def test_rm_systems():

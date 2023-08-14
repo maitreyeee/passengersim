@@ -11,7 +11,7 @@ import typing
 import yaml
 from pydantic import BaseModel, Field, model_validator
 
-from simbywire.pseudonym import random_label
+from passengersim.pseudonym import random_label
 
 from .airlines import Airline
 from .booking_curves import BookingCurve
