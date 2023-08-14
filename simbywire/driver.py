@@ -551,17 +551,19 @@ class Simulation:
 
         if "fare_class_mix" in additional and self.cnx.is_open:
             summary.fare_class_mix = database.common_queries.fare_class_mix(
-                self.cnx, sim.name
+                self.cnx, sim.name, burn_samples=sim.burn_samples
             )
 
         if "load_factors" in additional and self.cnx.is_open:
             summary.load_factors = database.common_queries.load_factors(
-                self.cnx, sim.name
+                self.cnx, sim.name, burn_samples=sim.burn_samples
             )
 
         if "bookings_by_timeframe" in additional and self.cnx.is_open:
             summary.bookings_by_timeframe = (
-                database.common_queries.bookings_by_timeframe(self.cnx, sim.name)
+                database.common_queries.bookings_by_timeframe(
+                    self.cnx, sim.name, burn_samples=sim.burn_samples
+                )
             )
 
         return summary
@@ -686,7 +688,7 @@ class Simulation:
         - name
         - avg_sold
         - load_factor
-        - avg_rev,
+        - avg_rev
         - asm (available seat miles)
         - rpm (revenue passenger miles)
         """

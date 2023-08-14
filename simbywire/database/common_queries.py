@@ -3,7 +3,9 @@ import pandas as pd
 from .database import Database
 
 
-def fare_class_mix(cnx: Database, scenario: str) -> pd.DataFrame:
+def fare_class_mix(
+    cnx: Database, scenario: str, burn_samples: int = 100
+) -> pd.DataFrame:
     qry = """
     SELECT carrier, booking_class,
            (AVG(sold)) AS avg_sold,
@@ -20,7 +22,7 @@ def fare_class_mix(cnx: Database, scenario: str) -> pd.DataFrame:
                 fare_detail
             WHERE
                 rrd = 0
-                AND sample > 100
+                AND sample >= ?2
                 AND scenario = ?1
             GROUP BY
                 trial, sample, carrier, booking_class
@@ -28,10 +30,10 @@ def fare_class_mix(cnx: Database, scenario: str) -> pd.DataFrame:
     GROUP BY carrier, booking_class
     ORDER BY carrier, booking_class;
     """
-    return cnx.dataframe(qry, (scenario,))
+    return cnx.dataframe(qry, (scenario, burn_samples))
 
 
-def load_factors(cnx: Database, scenario: str) -> pd.DataFrame:
+def load_factors(cnx: Database, scenario: str, burn_samples: int = 100) -> pd.DataFrame:
     qry = """
     SELECT carrier,
            ROUND(AVG(sold)) AS avg_sold,
@@ -50,16 +52,16 @@ def load_factors(cnx: Database, scenario: str) -> pd.DataFrame:
           FROM leg_detail
                    JOIN leg_defs USING (flt_no)
           WHERE rrd = 0
-            AND sample > 100
+            AND sample >= ?2
             AND scenario = ?1
           GROUP BY trial, sample, carrier
          ) tmp
     GROUP BY carrier
     """
-    return cnx.dataframe(qry, (scenario,))
+    return cnx.dataframe(qry, (scenario, burn_samples))
 
 
-def total_demand(cnx: Database, scenario: str) -> float:
+def total_demand(cnx: Database, scenario: str, burn_samples: int = 100) -> float:
     qry = """
     SELECT AVG(sample_demand)
     FROM (
@@ -69,11 +71,12 @@ def total_demand(cnx: Database, scenario: str) -> float:
             demand_detail
         WHERE
             rrd = 0
-            AND sample > 100
+            AND sample >= ?2
+            AND scenario = ?1
         GROUP BY
             trial, sample) tmp;
     """
-    return cnx.dataframe(qry, (scenario,)).iloc[0, 0]
+    return cnx.dataframe(qry, (scenario, burn_samples)).iloc[0, 0]
 
 
 def bookings_by_timeframe(
