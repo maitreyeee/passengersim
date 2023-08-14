@@ -11,6 +11,7 @@ class SummaryTables:
         fare_class_mix: pd.DataFrame | None = None,
         load_factors: pd.DataFrame | None = None,
         bookings_by_timeframe: pd.DataFrame | None = None,
+        total_demand: float | None = None,
     ):
         self.demands = demands
         self.legs = legs
@@ -19,6 +20,7 @@ class SummaryTables:
         self.fare_class_mix = fare_class_mix
         self.load_factors = load_factors
         self.bookings_by_timeframe = bookings_by_timeframe
+        self.total_demand = total_demand
 
     def to_records(self):
         return {k: v.to_dict(orient="records") for (k, v) in self.__dict__.items()}
