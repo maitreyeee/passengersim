@@ -7,12 +7,14 @@ theme:
     - content.code.copy
     - content.code.annotate
     - navigation.tabs
+    - navigation.indexes
 
 extra_css:
   - stylesheets/extra.css
 
 plugins:
   - offline
+  - autorefs
   - mkdocs-jupyter:
       include: ["*.nbconvert.ipynb"]
       execute: false
@@ -59,3 +61,42 @@ extra_javascript:
   - javascripts/mathjax.js
   - https://polyfill.io/v3/polyfill.min.js?features=es6
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
+nav:
+  - index.md
+  - User Guide:
+    - Installation: 'user-guide/installation.md'
+    - Counting Simulations: user-guide/counting-simulations.md
+    - Randomness: user-guide/randomness.md
+    - RM Systems: user-guide/rm-systems.md
+    - Writing Configs: user-guide/writing-configs.md
+  - API:
+    - API/index.md
+    - Config:
+      - API/config/00-configs.md
+      - API/config/01-simulation-controls.md
+      - API/config/airlines.md
+      - API/config/booking_curves.md
+      - API/config/choice_model.md
+      - API/config/database.md
+      - API/config/demands.md
+      - API/config/fares.md
+      - API/config/legs.md
+      - API/config/named.md
+      - API/config/paths.md
+      - API/config/rm_steps.md
+      - API/config/rm_systems.md
+      - API/config/snapshot_filter.md
+    - Core:
+      - API/Core/index.md
+      - API/Core/00-SimulationEngine.md
+      - API/Core/Airline.md
+      - API/Core/BookingCurves.md
+      - API/Core/Bucket.md
+      - API/Core/ChoiceModel.md
+      - API/Core/Demand.md
+      - API/Core/Fare.md
+      - API/Core/Generator.md
+      - API/Core/Leg.md
+      - API/Core/Path.md
+      - API/Core/PathClass.md

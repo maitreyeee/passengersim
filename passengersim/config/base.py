@@ -36,17 +36,31 @@ class Config(BaseModel, extra="forbid"):
     scenario."""
 
     simulation_controls: SimulationSettings = SimulationSettings()
-    db: DatabaseConfig = DatabaseConfig()
-    rm_systems: DictOfNamed[RmSystem] = []
-    """A list of RM systems "created" by the user.
+    """
+    Controls that apply broadly to the overall simulation.
+    
+    See [passengersim.config.SimulationSettings][] for detailed documentation.
+    """
 
-    A RM system is defined by a forecasting method, unconstraining method,
-    optimization method, forecasting and optimization levels of analysis (such as
-    path or leg), etc. You can use the rm_systems variable to (1) run simulations
-    in which multiple airlines are running the same RM system or (2) run simulations
-    in which airlines are running different RM systems."""
+    db: DatabaseConfig = DatabaseConfig()
+    """
+    See [passengersim.config.DatabaseConfig][] for detailed documentation.
+    """
+
+    rm_systems: DictOfNamed[RmSystem] = []
+    """
+    The revenue management systems used by the carriers in this simulation.
+    
+    See [RM Systems][rm-systems] for details.
+    """
 
     choice_models: DictOfNamed[ChoiceModel] = {}
+    """Several choice models are programmed behind the scenes.  The choice_models option allows the user to set the parameters used in the utility model for a particular choice model.
+
+    There are two choice models currently programmed.
+
+    Need to explaining more here"""
+
     airlines: DictOfNamed[Airline] = {}
     """A list of airlines.
 
@@ -57,19 +71,73 @@ class Config(BaseModel, extra="forbid"):
     for more information."""
 
     classes: list[str] = []
-    """A list of fare classes.
+    """A list of fare classes.  
+    
+    One convention is to use Y0, Y1, ... to label fare classes from the highest 
+    fare (Y0) to the lowest fare (Yn).  An example of classes is below.
 
-    One convention is to use Y0, Y1, ... to label fare classes from the highest
-    fare (Y0) to the lowest fare (Yn)."""
+    Example
+    -------
+    ```{yaml}
+    classes:
+      - Y0
+      - Y1
+      - Y2
+      - Y3
+      - Y4
+      - Y5
+    ```
+    """
 
     dcps: list[int] = []
     """A list of DCPs (data collection points).
 
     The DCPs are given as integers, which represent the number of days
-    before departure.
+    before departure.   An example of data collection points is given below.  Note that as you get closer to day of departure (DCP=0) the number of days between two consecutive DCP periods
+    decreases.  The DCP intervals are shorter because as you get closer to departure, customer arrival rates tend to increase, and it is advantageous to forecast changes in demand for shorter intervals.
+    dcps:
+  - 63
+  - 56
+  - 49
+  - 42
+  - 35
+  - 31
+  - 28
+  - 24
+  - 21
+  - 17
+  - 14
+  - 10
+  - 7
+  - 5
+  - 3
+  - 1
+
     """
 
     booking_curves: DictOfNamed[BookingCurve] = {}
+    """Booking curves
+    An example of a booking curve is below.
+    booking_curves:
+  - name: c1
+    curve:
+      63: 0.06
+      56: 0.11
+      49: 0.15
+      42: 0.2
+      35: 0.23
+      31: 0.25
+      28: 0.28
+      24: 0.31
+      21: 0.35
+      17: 0.4
+      14: 0.5
+      10: 0.62
+      7: 0.7
+      5: 0.78
+      3: 0.95
+      1: 1.0
+"""
     legs: list[Leg] = []
     demands: list[Demand] = []
     fares: list[Fare] = []
