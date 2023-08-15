@@ -238,9 +238,8 @@ def save_leg(cnx, sim, leg, dcp) -> string:
     try:
         cursor = cnx.cursor()
         sql = f"""INSERT INTO leg_detail
-                (scenario, iteration, trial, sample, rrd, carrier, orig,
-                 dest, flt_no, dep_date, capacity, sold, revenue)
-                VALUES ({sql_placeholders(cnx, 13)})"""
+                (scenario, iteration, trial, sample, rrd, flt_no, sold, revenue)
+                VALUES ({sql_placeholders(cnx, 8)})"""
         cursor.execute(
             sql,
             (
@@ -249,12 +248,7 @@ def save_leg(cnx, sim, leg, dcp) -> string:
                 sim.trial,
                 sim.sample,
                 dcp,
-                leg.carrier,
-                leg.orig,
-                leg.dest,
                 leg.flt_no,
-                dep_time,
-                leg.capacity,
                 leg.sold,
                 leg.revenue,
             ),

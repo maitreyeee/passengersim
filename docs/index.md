@@ -1,6 +1,6 @@
 # Home
 
-This is the technical documentation for the AirSim simulator.
+This is the technical documentation for the PassengerSim simulator.
 
 ## GT Student Quick-start
 

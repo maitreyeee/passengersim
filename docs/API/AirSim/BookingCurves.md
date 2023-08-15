@@ -1,5 +1,5 @@
 # Booking Curves
 
-::: AirSim.BookingCurve
+::: passengersim.BookingCurve
     options:
       show_source: false

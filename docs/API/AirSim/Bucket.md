@@ -1,3 +1,3 @@
-::: AirSim.Bucket
+::: passengersim.Bucket
     options:
       show_source: false

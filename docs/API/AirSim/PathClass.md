@@ -1,5 +1,5 @@
 # Path Class
 
-::: AirSim.PathClass
+::: passengersim.PathClass
     options:
       show_source: false

@@ -51,6 +51,10 @@ def test_3mkt_db_detail(fast):
     config.db.engine = "sqlite"
     config.db.filename = ":memory:"
     config.db.fast = fast
+    config.db.write_items.add("fare")
+    config.db.write_items.add("leg")
+    config.db.write_items.add("bucket")
+    config.db.write_items.add("demand")
     if "demand" in config.db.write_items:
         # remove demand to test plug in hook
         config.db.write_items.remove("demand")
@@ -62,7 +66,7 @@ def test_3mkt_db_detail(fast):
     fares = sim.cnx.dataframe("SELECT * FROM fare_detail")
     assert fares.shape == (num_samples * n_fares * n_dcps, 13)  # 40800
     legs = sim.cnx.dataframe("SELECT * FROM leg_detail")
-    assert legs.shape == (num_samples * n_dcps * n_legs, 17)  # 3060
+    assert legs.shape == (num_samples * n_dcps * n_legs, 12)  # 3060
     buckets = sim.cnx.dataframe("SELECT * FROM leg_bucket_detail")
     assert buckets.shape == (num_samples * n_classes * n_dcps * n_legs, 18)  # 30600
     dmds = sim.cnx.dataframe("SELECT * FROM demand_detail")

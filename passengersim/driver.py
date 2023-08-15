@@ -73,7 +73,8 @@ class Simulation:
             pragmas=config.db.pragmas,
             commit_count_delay=config.db.commit_count_delay,
         )
-        database.tables.create_table_legs(self.cnx._connection, self.sim.legs)
+        if self.cnx.is_open:
+            database.tables.create_table_legs(self.cnx._connection, self.sim.legs)
 
     @property
     def snapshot_filters(self) -> list[SnapshotFilter] | None:

@@ -1,6 +1,7 @@
 try:
     import passengersim_core
 except ImportError:
+    raise
     import warnings
     warnings.warn("passengersim core is not available")
     passengersim_core = None
