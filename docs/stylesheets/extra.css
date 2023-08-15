@@ -8,3 +8,10 @@
 .md-typeset h2 {
   font-weight: 800;
 }
+
+div.has-actions details {
+  border-bottom-color: rgba(0,0,0,0);
+  border-top-color: rgba(0,0,0,0);
+  border-left-color: rgba(0,0,0,0);
+  border-right-color: rgba(0,0,0,0);
+}

@@ -176,7 +176,7 @@ class SummaryTables:
                 ],
             )
             .properties(
-                width=550,
+                width=500,
                 height=300,
             )
             .configure_axis(
