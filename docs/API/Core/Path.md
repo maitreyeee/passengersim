@@ -1,3 +1,3 @@
-::: passengersim.Demand
+::: passengersim_core.Path
     options:
       show_source: false

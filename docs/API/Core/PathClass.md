@@ -1,5 +1,5 @@
 # Path Class
 
-::: passengersim.PathClass
+::: passengersim_core.PathClass
     options:
       show_source: false

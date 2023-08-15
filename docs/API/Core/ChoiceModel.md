@@ -1,5 +1,5 @@
 # Choice Model
 
-::: passengersim.ChoiceModel
+::: passengersim_core.ChoiceModel
     options:
       show_source: false

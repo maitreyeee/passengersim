@@ -1,6 +1,6 @@
-# Core Simulator
+# Simulation Engine
 
-::: passengersim.AirSim
+::: passengersim_core.SimulationEngine
     options:
       show_source: false
       filters:

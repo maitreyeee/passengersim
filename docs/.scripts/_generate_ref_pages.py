@@ -14,7 +14,7 @@ sw_path = Path(passengersim.__path__[0]).parent
 for path in sorted(sw_path.joinpath("passengersim/config").rglob("*.py")):
     module_path = path.relative_to(sw_path).with_suffix("")
     doc_path = path.relative_to(sw_path.joinpath("passengersim")).with_suffix(".md")
-    full_doc_path = Path("API", public_module_display_name, doc_path)
+    full_doc_path = Path("API", doc_path)
 
     title = None
     classes = []
@@ -34,7 +34,7 @@ for path in sorted(sw_path.joinpath("passengersim/config").rglob("*.py")):
                     .relative_to(sw_path.joinpath("passengersim"))
                     .with_suffix(".md")
                 )
-                full_doc_path = Path("API", public_module_display_name, doc_path)
+                full_doc_path = Path("API", doc_path)
             match = re.match(r"class (.*)\(.*", line)
             if match:
                 classes.append(match.group(1))
@@ -61,3 +61,5 @@ for path in sorted(sw_path.joinpath("passengersim/config").rglob("*.py")):
         print('        - "!^_[^_]"', file=fd)
 
     mkdocs_gen_files.set_edit_path(full_doc_path, path)
+
+    print(">>>>>>", full_doc_path )
