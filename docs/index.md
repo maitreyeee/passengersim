@@ -1,3 +1,19 @@
-# Home
+---
+hide:
+  - navigation
+  - toc
+---
 
-This is the technical documentation for the PassengerSim simulator.
+# PassengerSim
+
+&nbsp;
+
+&nbsp;
+
+&nbsp;
+
+&nbsp;
+
+[Get Started](user-guide/installation.md){ .md-button .md-button--primary }
+[Simulate your own Airline](user-guide/writing-configs.md){ .md-button }
+[Get Your Hands Dirty](API/index.md){ .md-button }

@@ -1,4 +1,3 @@
-(rm-systems)=
 # RM Systems
 
 A revenue management (RM) system is defined by one or more steps. The steps tell 

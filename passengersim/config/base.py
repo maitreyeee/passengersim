@@ -39,7 +39,8 @@ class Config(BaseModel, extra="forbid"):
     """
     Controls that apply broadly to the overall simulation.
     
-    See [passengersim.config.SimulationSettings][] for detailed documentation.
+    See [SimulationSettings][passengersim.config.SimulationSettings] for detailed 
+    documentation.
     """
 
     db: DatabaseConfig = DatabaseConfig()
