@@ -94,51 +94,49 @@ class Config(BaseModel, extra="forbid"):
     """A list of DCPs (data collection points).
 
     The DCPs are given as integers, which represent the number of days
-    before departure.   An example of data collection points is given below.  Note that as you get closer to day of departure (DCP=0) the number of days between two consecutive DCP periods
-    decreases.  The DCP intervals are shorter because as you get closer to departure, customer arrival rates tend to increase, and it is advantageous to forecast changes in demand for shorter intervals.
-    dcps:
-  - 63
-  - 56
-  - 49
-  - 42
-  - 35
-  - 31
-  - 28
-  - 24
-  - 21
-  - 17
-  - 14
-  - 10
-  - 7
-  - 5
-  - 3
-  - 1
-
+    before departure.   An example of data collection points is given below.  
+    Note that typically as you get closer to day of departure (DCP=0) the number 
+    of days between two consecutive DCP periods decreases.  The DCP intervals are 
+    shorter because as you get closer to departure, customer arrival rates tend 
+    to increase, and it is advantageous to forecast changes in demand for shorter 
+    intervals.
+    
+    Example
+    -------
+    ```{yaml}
+    dcps: [63, 56, 49, 42, 35, 31, 28, 24, 21, 17, 14, 10, 7, 5, 3, 1]
+    ```
     """
 
     booking_curves: DictOfNamed[BookingCurve] = {}
     """Booking curves
-    An example of a booking curve is below.
+
+    The booking curve points typically line up with the DCPs. 
+
+    Example
+    -------
+    ```{yaml}
     booking_curves:
-  - name: c1
-    curve:
-      63: 0.06
-      56: 0.11
-      49: 0.15
-      42: 0.2
-      35: 0.23
-      31: 0.25
-      28: 0.28
-      24: 0.31
-      21: 0.35
-      17: 0.4
-      14: 0.5
-      10: 0.62
-      7: 0.7
-      5: 0.78
-      3: 0.95
-      1: 1.0
-"""
+      - name: c1
+        curve:
+          63: 0.06
+          56: 0.11
+          49: 0.15
+          42: 0.2
+          35: 0.23
+          31: 0.25
+          28: 0.28
+          24: 0.31
+          21: 0.35
+          17: 0.4
+          14: 0.5
+          10: 0.62
+          7: 0.7
+          5: 0.78
+          3: 0.95
+          1: 1.0
+    """
+
     legs: list[Leg] = []
     demands: list[Demand] = []
     fares: list[Fare] = []
