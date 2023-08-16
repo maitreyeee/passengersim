@@ -1,0 +1,45 @@
+{#-
+  This file was automatically generated - do not edit
+-#}
+{% extends "main.html" %}
+{% block tabs %}
+  {{ super() }}
+  <style>.md-header{position:initial}.md-main__inner{margin:0}.md-content{display:none}@media screen and (min-width:60em){.md-sidebar--secondary{display:none}}@media screen and (min-width:76.25em){.md-sidebar--primary{display:none}}</style>
+  <style>
+  .parallax {
+    background-image: url("assets/images/airplane2.jpg");
+    height: 100vh;
+    background-attachment: fixed;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    padding-left: 40px;
+  }
+  .parallax h1 {
+    color: white;
+    padding-top: 25vh;
+    padding-bottom: 25vh;
+  }
+  .md-button--white {
+      background-color: white;
+  }
+  </style>
+  <div class="parallax">
+    <section class="mdx-container">
+      <div class="md-grid md-typeset">
+          <h1>Passenger travel simulation for revenue management.</h1>
+          <a href="{{ page.next_page.url | url }}" title="{{ page.next_page.title | e }}" class="md-button md-button--primary">
+            Get Started
+          </a>
+          <a href="{{ 'Tutorials/' | url }}" class="md-button md-button--white">
+            Tutorials
+          </a>
+          <a href="{{ 'API/' | url }}" class="md-button md-button--white">
+            API
+          </a>
+      </div>
+    </section>
+  </div>
+{% endblock %}
+{% block content %}{% endblock %}
+{% block footer %}{% endblock %}

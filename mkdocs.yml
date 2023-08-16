@@ -1,6 +1,7 @@
 site_name: PassengerSim
 theme:
   name: material
+  custom_dir: docs/.overrides
   icon:
     logo: material/seat-recline-extra
   features:
