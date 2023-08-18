@@ -304,3 +304,75 @@ class SummaryTables:
                 labelFontSize=15,
             )
         )
+
+    def fig_carrier_load_factors(self, raw_df=False):
+        df = self.load_factors[["carrier", "avg_lf"]]
+        if raw_df:
+            return df
+        import altair as alt
+
+        chart = alt.Chart(df)
+        bars = chart.mark_bar().encode(
+            x=alt.X("carrier:N", title="Carrier"),
+            y=alt.Y("avg_lf:Q", title="Load Factor").stack("zero"),
+            tooltip=[
+                alt.Tooltip("carrier", title="Carrier"),
+                alt.Tooltip("avg_lf", title="Load Factor", format=".2f"),
+            ],
+        )
+        text = chart.mark_text(dx=0, dy=3, color="white", baseline="top").encode(
+            x=alt.X("carrier:N", title="Carrier"),
+            y=alt.Y("avg_lf:Q", title="Load Factor").stack("zero"),
+            text=alt.Text("avg_lf:Q", format=".2f"),
+        )
+        return (
+            (bars + text)
+            .properties(
+                width=50 + 75 * len(df),
+                height=300,
+            )
+            .configure_axis(
+                labelFontSize=12,
+                titleFontSize=12,
+            )
+            .configure_legend(
+                titleFontSize=12,
+                labelFontSize=15,
+            )
+        )
+
+    def fig_carrier_revenues(self, raw_df=False):
+        df = self.load_factors[["carrier", "avg_rev"]]
+        if raw_df:
+            return df
+        import altair as alt
+
+        chart = alt.Chart(df)
+        bars = chart.mark_bar().encode(
+            x=alt.X("carrier:N", title="Carrier"),
+            y=alt.Y("avg_rev:Q", title="Revenue").stack("zero"),
+            tooltip=[
+                alt.Tooltip("carrier", title="Carrier"),
+                alt.Tooltip("avg_rev", title="Revenue", format="$.4s"),
+            ],
+        )
+        text = chart.mark_text(dx=0, dy=3, color="white", baseline="top").encode(
+            x=alt.X("carrier:N", title="Carrier"),
+            y=alt.Y("avg_rev:Q", title="Revenue").stack("zero"),
+            text=alt.Text("avg_rev:Q", format="$.4s"),
+        )
+        return (
+            (bars + text)
+            .properties(
+                width=50 + 75 * len(df),
+                height=300,
+            )
+            .configure_axis(
+                labelFontSize=12,
+                titleFontSize=12,
+            )
+            .configure_legend(
+                titleFontSize=12,
+                labelFontSize=15,
+            )
+        )
