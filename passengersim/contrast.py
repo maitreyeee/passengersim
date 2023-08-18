@@ -1,24 +1,28 @@
 import altair as alt
 import pandas as pd
 
-from .summary import SummaryTables
+
+def _assemble(summaries, base, **kwargs):
+    summaries_ = {}
+    for k, v in summaries.items():
+        if (fun := getattr(v, f"fig_{base}", None)) is not None:
+            summaries_[k] = fun(raw_df=True, **kwargs)
+        elif (raw := getattr(v, f"raw_{base}", None)) is not None:
+            summaries_[k] = raw
+        elif isinstance(v, pd.DataFrame | pd.Series):
+            summaries_[k] = v
+    return pd.concat(summaries_, names=["source"]).reset_index(level="source")
 
 
 def fig_bookings_by_timeframe(summaries, by_airline: bool | str = True, raw_df=False):
-    summaries_ = {}
-    for k, v in summaries.items():
-        if isinstance(v, SummaryTables):
-            summaries_[k] = v.fig_bookings_by_timeframe(
-                by_airline=by_airline, raw_df=True
-            )
-        elif hasattr(v, "raw_bookings_by_timeframe"):
-            summaries_[k] = v.raw_bookings_by_timeframe
-        elif v is not None:
-            summaries_[k] = v
-    df = pd.concat(summaries_, names=["source"]).reset_index(level="source")
+    df = _assemble(summaries, "bookings_by_timeframe", by_airline=by_airline)
+    if raw_df:
+        return df
 
     return (
-        alt.Chart(df.sort_values("source", ascending=False))
+        alt.Chart(
+            df.sort_values("source", ascending=False), title="Bookings by Timeframe"
+        )
         .mark_line()
         .encode(
             color=alt.Color("source:N").title("Source"),
@@ -45,19 +49,12 @@ def fig_bookings_by_timeframe(summaries, by_airline: bool | str = True, raw_df=F
             titleFontSize=12,
             labelFontSize=15,
         )
+        .configure_title(fontSize=18)
     )
 
 
 def fig_carrier_load_factors(summaries, raw_df=False):
-    summaries_ = {}
-    for k, v in summaries.items():
-        if isinstance(v, SummaryTables):
-            summaries_[k] = v.fig_carrier_load_factors(raw_df=True)
-        elif hasattr(v, "raw_carrier_load_factors"):
-            summaries_[k] = v.raw_carrier_load_factors
-        elif v is not None:
-            summaries_[k] = v
-    df = pd.concat(summaries_, names=["source"]).reset_index(level="source")
+    df = _assemble(summaries, "carrier_load_factors")
     if raw_df:
         return df
 
@@ -87,19 +84,12 @@ def fig_carrier_load_factors(summaries, raw_df=False):
             column=alt.Column("carrier:N", title="Carrier"),
             title="Carrier Load Factors",
         )
+        .configure_title(fontSize=18)
     )
 
 
 def fig_carrier_revenues(summaries, raw_df=False):
-    summaries_ = {}
-    for k, v in summaries.items():
-        if isinstance(v, SummaryTables):
-            summaries_[k] = v.fig_carrier_revenues(raw_df=True)
-        elif hasattr(v, "raw_carrier_revenues"):
-            summaries_[k] = v.raw_carrier_revenues
-        elif v is not None:
-            summaries_[k] = v
-    df = pd.concat(summaries_, names=["source"]).reset_index(level="source")
+    df = _assemble(summaries, "carrier_revenues")
     if raw_df:
         return df
 
@@ -129,4 +119,52 @@ def fig_carrier_revenues(summaries, raw_df=False):
             column=alt.Column("carrier:N", title="Carrier"),
             title="Carrier Revenues",
         )
+        .configure_title(fontSize=18)
+    )
+
+
+def fig_fare_class_mix(summaries, raw_df=False, label_threshold=0.06):
+    df = _assemble(summaries, "fare_class_mix")
+    if raw_df:
+        return df
+    import altair as alt
+
+    label_threshold_value = (
+        df.groupby(["carrier", "source"]).avg_sold.sum().max() * label_threshold
+    )
+    chart = alt.Chart(df).transform_calculate(
+        halfsold="datum.avg_sold / 2.0",
+    )
+    bars = chart.mark_bar().encode(
+        x=alt.X("source:N", title="Airline"),
+        y=alt.Y("avg_sold:Q", title="Seats").stack("zero"),
+        color="booking_class",
+        tooltip=[
+            "source",
+            "booking_class",
+            alt.Tooltip("avg_sold", format=".2f"),
+        ],
+    )
+    text = chart.mark_text(dx=0, dy=3, color="white", baseline="top").encode(
+        x=alt.X("source:N", title="Airline"),
+        y=alt.Y("avg_sold:Q", title="Seats").stack("zero"),
+        text=alt.Text("avg_sold:Q", format=".2f"),
+        opacity=alt.condition(
+            f"datum.avg_sold < {label_threshold_value:.3f}",
+            alt.value(0),
+            alt.value(1),
+        ),
+        order=alt.Order("booking_class:N", sort="descending"),
+    )
+    return (
+        (bars + text)
+        .properties(
+            width=200,
+            height=300,
+        )
+        .facet(
+            column=alt.Column("carrier:N", title="Carrier"),
+            title="Carrier Fare Class Mix",
+        )
+        .configure_title(fontSize=18)
     )
