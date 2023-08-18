@@ -175,6 +175,7 @@ def create_table_bookings_by_timeframe(cnx: Database, primary_key: bool = False)
     CREATE TABLE IF NOT EXISTS bookings_by_timeframe
     (
         scenario		VARCHAR(20) NOT NULL,
+        trial       	INT NOT NULL,
         carrier			VARCHAR(10) NOT NULL,
         booking_class   VARCHAR(10) NOT NULL,
         rrd       		INT NOT NULL,

@@ -4,16 +4,18 @@ import logging
 import os
 import pathlib
 import sqlite3
+import sys
 import time
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from math import sqrt
 from typing import Any
 
-import passengersim_core
 import pandas as pd
+import passengersim_core
 from passengersim_core import PathClass, SimulationEngine
 from passengersim_core.utils import FileWriter, airsim_utils
+from passengersim.utils import iso_to_unix
 
 import passengersim.config.rm_systems
 from passengersim.config import Config
@@ -50,7 +52,6 @@ class Simulation:
             self.file_writer = FileWriter.FileWriter(output_dir)
         else:
             self.file_writer = None
-        self.base_date = datetime.fromisoformat("2020-01-01 00:00:00")
         #        self.dcp_list = [63, 24, 17, 10, 5]
         self.dcp_list = [63, 56, 49, 42, 35, 31, 28, 24, 21, 17, 14, 10, 7, 5, 3, 1, 0]
         self.classes = []
@@ -73,6 +74,7 @@ class Simulation:
             pragmas=config.db.pragmas,
             commit_count_delay=config.db.commit_count_delay,
         )
+        self.base_time = config.simulation_controls.reference_epoch()
         if self.cnx.is_open:
             database.tables.create_table_legs(self.cnx._connection, self.sim.legs)
 
@@ -108,6 +110,8 @@ class Simulation:
                 self.random_generator.seed(pvalue)
             elif pname == "update_frequency":
                 self.update_frequency = pvalue
+            elif pname == "base_date":
+                pass
             else:
                 self.sim.set_parm(pname, float(pvalue))
         for pname, pvalue in config.simulation_controls.model_extra.items():
@@ -175,7 +179,9 @@ class Simulation:
             self.legs[leg.flt_no] = leg
 
         for dmd_config in config.demands:
-            dmd = passengersim_core.Demand(dmd_config.orig, dmd_config.dest, dmd_config.segment)
+            dmd = passengersim_core.Demand(
+                dmd_config.orig, dmd_config.dest, dmd_config.segment
+            )
             dmd.base_demand = dmd_config.base_demand * self.demand_multiplier
             dmd.price = dmd_config.reference_fare
             dmd.reference_fare = dmd_config.reference_fare
@@ -292,6 +298,7 @@ class Simulation:
         self.sim.update_db_write_flags()
         for trial in range(self.sim.num_trials):
             self.sim.trial = trial
+            self.sim.reset_trial_counters()
             for sample in range(self.sim.num_samples):
                 self.sim.sample = sample
                 if self.sim.config.simulation_controls.random_seed is not None:
@@ -339,8 +346,8 @@ class Simulation:
                         self.cnx.commit()
                     except AttributeError:
                         pass
-        if self.cnx.is_open:
-            self.cnx.save_final(self.sim)
+            if self.cnx.is_open:
+                self.cnx.save_final(self.sim)
 
     def run_airline_models(self, info: Any = None, departed: bool = False, debug=False):
         dcp = 0 if info == "Done" else info[1]
@@ -365,7 +372,6 @@ class Simulation:
             # logger.info(f"Running RM for {airline}, dcp={dcp}")
             airline.rm_system.run(self.sim, airline.name, dcp_index, dcp)
 
-        #        # logger.info(f"************************** DCP = {dcp} **************************")
         if self.cnx.is_open:
             self.cnx.save_details(self.sim, dcp)
         if self.file_writer is not None:
@@ -398,7 +404,7 @@ class Simulation:
         The biggest difference is that we can put all the timeframe (DCP) demands
         into the event queue before any processing.
         For large models, I might rewrite this into the C++ core in the future"""
-        airsim_utils.add_dcp(self.sim, self.base_date, 0, self.dcp_list, debug=False)
+        airsim_utils.add_dcp(self.sim, self.base_time, 0, self.dcp_list, debug=False)
         total_events = 0
         system_rn = (
             self.random_generator.get_normal() if system_rn is None else system_rn
@@ -413,7 +419,7 @@ class Simulation:
             "leisure": self.random_generator.get_normal(),
         }
 
-        end_time = (self.base_date - datetime(1970, 1, 1)).total_seconds() - self.sim.controller_time_zone
+        end_time = self.base_time - self.sim.controller_time_zone
 
         for dmd in self.sim.demands:
             base = dmd.base_demand

@@ -86,7 +86,7 @@ def bookings_by_timeframe(
     burn_samples=100,
 ) -> pd.DataFrame:
     qry_fare = """
-    SELECT carrier, booking_class AS class, rrd,
+    SELECT trial, carrier, booking_class AS class, rrd,
            (AVG(sold)) AS avg_sold,
            (AVG(sold_business)) AS avg_business,
            (AVG(sold_leisure)) AS avg_leisure,
@@ -103,8 +103,8 @@ def bookings_by_timeframe(
                 sample >= ?2
                 AND scenario = ?1
           GROUP BY trial, sample, carrier, booking_class, rrd) a
-    GROUP BY carrier, booking_class, rrd
-    ORDER BY carrier, booking_class, rrd;
+    GROUP BY carrier, booking_class, rrd, trial
+    ORDER BY carrier, booking_class, rrd, trial;
     """
 
     if from_fare_detail:
@@ -115,16 +115,22 @@ def bookings_by_timeframe(
         carrier,
         booking_class AS class,
         rrd,
-        avg_sold,
-        avg_business,
-        avg_leisure,
-        avg_revenue,
-        avg_price,
-        tot_sold
+        AVG(avg_sold) AS avg_sold,
+        STDEV(avg_sold) AS std_sold,
+        AVG(avg_business) AS avg_business,
+        STDEV(avg_business) AS std_business,
+        AVG(avg_leisure) AS avg_leisure,
+        STDEV(avg_leisure) AS std_leisure,
+        AVG(avg_revenue) AS avg_revenue,
+        STDEV(avg_revenue) AS std_revenue,
+        AVG(avg_price) AS avg_price,
+        STDEV(avg_price) AS std_price
     FROM
         bookings_by_timeframe
     WHERE
         scenario = ?1
+    GROUP BY
+        carrier, booking_class, rrd
     ORDER BY
         carrier, booking_class, rrd;
     """

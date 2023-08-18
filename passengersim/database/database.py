@@ -11,10 +11,33 @@ from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
 from typing import Literal
+import math
 
 from ..core import SimulationEngine
 
 logger = logging.getLogger(__name__)
+
+
+class _StdevFunc:
+    def __init__(self):
+        self.M = 0.0
+        self.S = 0.0
+        self.k = 1
+
+    def step(self, value):
+        if value is None:
+            return
+        tM = self.M
+        self.M += (value - tM) / self.k
+        self.S += (value - tM) * (value - self.M)
+        self.k += 1
+
+    def finalize(self):
+        if self.k < 3:
+            return None
+        return math.sqrt(self.S / (self.k-2))
+
+
 
 
 class Database:
@@ -56,6 +79,7 @@ class Database:
                 Path(self.filename).parent.mkdir(exist_ok=True, parents=True)
             logger.info(f"connecting to sqlite database: {self.filename}")
             self._connection = sqlite3.Connection(self.filename)
+            self._connection.create_aggregate("STDEV", 1, _StdevFunc)
             for pragma in self.pragmas:
                 self._connection.execute(f"PRAGMA {pragma};")
             self._connection.execute("BEGIN TRANSACTION;")

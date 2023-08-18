@@ -120,9 +120,21 @@ class SummaryTables:
             )
         )
 
-    def fig_bookings_by_timeframe(self, by_airline=True, raw_df=False):
+    @property
+    def raw_fare_class_mix(self) -> pd.DataFrame:
+        """Raw data giving the fare class mix.
+
+        This tidy dataframe contains these columns:
+
+        - carrier (str)
+        - booking_class (str)
+        - avg_sold (float)
+        """
+        return self.fig_fare_class_mix(raw_df=True)
+
+    def fig_bookings_by_timeframe(self, by_airline:bool|str=True, raw_df=False, errorbands=False):
         def differs(x):
-            return x - x.shift(1, fill_value=0)
+            return x.shift(-1, fill_value=0) - x
 
         b = self.bookings_by_timeframe
         df0 = (
@@ -149,9 +161,14 @@ class SummaryTables:
             .stack()
             .rename("sold")
             .reset_index()
+            .query("rrd>0")
         )
         if not by_airline:
             df = df.groupby(["rrd", "paxtype"])[["sold"]].sum().reset_index()
+        if isinstance(by_airline, str):
+            df = df[df["carrier"] == by_airline]
+            df = df.drop(columns=["carrier"])
+            by_airline = False
         if raw_df:
             return df
         import altair as alt

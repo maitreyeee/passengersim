@@ -2,7 +2,8 @@
 # DOC-NAME: 01-simulation-controls
 from __future__ import annotations
 
-from pydantic import BaseModel, confloat, conint
+from pydantic import BaseModel, confloat, conint, field_validator
+from passengersim.utils import iso_to_unix
 
 
 class SimulationSettings(BaseModel, extra="allow"):
@@ -127,3 +128,30 @@ class SimulationSettings(BaseModel, extra="allow"):
     random_seed: int | None = None
 
     update_frequency: int | None = None
+
+    controller_time_zone: int | float = -6
+    """
+    The reference time zone for the controller (seconds relative to UTC).
+    
+    Data collection points will be trigger at approximately midnight in this time zone.
+    
+    This value can be input in hours instead of seconds, any absolute value less
+    than or equal to 12 will be assumed to be hours and scaled to seconds.
+    """
+
+    base_date: str = "2020-03-01"
+    """
+    The default date used to compute relative times for travel.
+    
+    Future enhancements may include multi-day modeling.
+    """
+
+    @field_validator("controller_time_zone", mode="before")
+    def _time_zone_convert_hours_to_seconds(cls, v):
+        if -12 <= v <= 12:
+            v *= 3600
+        return v
+
+    def reference_epoch(self) -> int:
+        """Get the reference travel datetime in unix time."""
+        return iso_to_unix(self.base_date) - self.controller_time_zone

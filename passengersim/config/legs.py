@@ -28,7 +28,8 @@ class Leg(BaseModel, extra="forbid"):
     dest: str
     """Destination location for this leg."""
 
-    date: datetime = datetime.fromisoformat("2022-09-21")
+    date: datetime = datetime.fromisoformat("2020-03-01")
+    """Date for this leg."""
 
     dep_time: int
     """Departure time for this leg in Unix time.
