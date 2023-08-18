@@ -413,7 +413,7 @@ class Simulation:
             "leisure": self.random_generator.get_normal(),
         }
 
-        end_time = (self.base_date - datetime(1970, 1, 1)).total_seconds()
+        end_time = (self.base_date - datetime(1970, 1, 1)).total_seconds() - self.sim.controller_time_zone
 
         for dmd in self.sim.demands:
             base = dmd.base_demand
