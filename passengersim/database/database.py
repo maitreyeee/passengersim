@@ -5,20 +5,20 @@
 from __future__ import annotations
 
 import logging
+import math
 import sqlite3
 import string
 from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
 from typing import Literal
-import math
 
-from ..core import SimulationEngine
+from passengersim.core import SimulationEngine
 
 logger = logging.getLogger(__name__)
 
 
-class _StdevFunc:
+class _VarianceFunc:
     def __init__(self):
         self.M = 0.0
         self.S = 0.0
@@ -35,9 +35,14 @@ class _StdevFunc:
     def finalize(self):
         if self.k < 3:
             return None
-        return math.sqrt(self.S / (self.k-2))
+        return self.S / (self.k - 2)
 
 
+class _StdevFunc(_VarianceFunc):
+    def finalize(self):
+        if self.k < 3:
+            return None
+        return math.sqrt(self.S / (self.k - 2))
 
 
 class Database:
@@ -79,6 +84,7 @@ class Database:
                 Path(self.filename).parent.mkdir(exist_ok=True, parents=True)
             logger.info(f"connecting to sqlite database: {self.filename}")
             self._connection = sqlite3.Connection(self.filename)
+            self._connection.create_aggregate("VARIANCE", 1, _VarianceFunc)
             self._connection.create_aggregate("STDEV", 1, _StdevFunc)
             for pragma in self.pragmas:
                 self._connection.execute(f"PRAGMA {pragma};")
@@ -258,7 +264,7 @@ def sql_placeholders(cnx, n: int):
 
 # TODO - How to model RRD / capture date?
 def save_leg(cnx, sim, leg, dcp) -> string:
-    dep_time = datetime.utcfromtimestamp(leg.dep_time).strftime("%Y-%m-%d %H:%M:%S")
+    _dep_time = datetime.utcfromtimestamp(leg.dep_time).strftime("%Y-%m-%d %H:%M:%S")
     try:
         cursor = cnx.cursor()
         sql = f"""INSERT INTO leg_detail
@@ -286,7 +292,9 @@ def save_leg(cnx, sim, leg, dcp) -> string:
 leg_bucket_sql = {}
 
 
-def save_leg_bucket_multi(cnx: Database, sim: SimulationEngine, leg, dcp, commit=False) -> string:
+def save_leg_bucket_multi(
+    cnx: Database, sim: SimulationEngine, leg, dcp, commit=False
+) -> string:
     dep_time = datetime.utcfromtimestamp(leg.dep_time).strftime("%Y-%m-%d %H:%M:%S")
     # print("dep_time = ", dep_time)
     try:

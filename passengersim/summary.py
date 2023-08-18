@@ -132,45 +132,56 @@ class SummaryTables:
         """
         return self.fig_fare_class_mix(raw_df=True)
 
-    def fig_bookings_by_timeframe(self, by_airline:bool|str=True, raw_df=False, errorbands=False):
+    def fig_bookings_by_timeframe(
+        self, by_airline: bool | str = True, raw_df=False, errorbands=False
+    ):
+        if errorbands:
+            if by_airline is True:
+                raise NotImplementedError("error bands for all airlines is messy")
+            return self._fig_bookings_by_timeframe_errorband(
+                by_airline=by_airline, raw_df=raw_df
+            )
+
         def differs(x):
             return x.shift(-1, fill_value=0) - x
 
-        b = self.bookings_by_timeframe
-        df0 = (
-            b.groupby(["carrier", "rrd"])["avg_business"]
-            .sum()
-            .unstack(0)
-            .sort_index(ascending=False)
-            .apply(differs)
-            .stack()
-            .rename("business")
-        )
-        df1 = (
-            b.groupby(["carrier", "rrd"])["avg_leisure"]
-            .sum()
-            .unstack(0)
-            .sort_index(ascending=False)
-            .apply(differs)
-            .stack()
-            .rename("leisure")
-        )
+        def _summarize(x, c):
+            y = (
+                x.groupby(["trial", "carrier", "rrd"])[f"avg_{c}"]
+                .sum()
+                .unstack(["trial", "carrier"])
+                .sort_index(ascending=False)
+                .apply(differs)
+                .stack("carrier")
+                .aggregate(["mean", "sem"], axis=1)
+                .assign(
+                    ci0=lambda x: x["mean"] - 1.96 * x["sem"],
+                    ci1=lambda x: x["mean"] + 1.96 * x["sem"],
+                )
+            )
+            return pd.concat({c: y}, names=["paxtype"])
+
+        df0 = _summarize(self.bookings_by_timeframe, "business")
+        df1 = _summarize(self.bookings_by_timeframe, "leisure")
         df = (
-            pd.concat([df0, df1], axis=1)
-            .rename_axis(columns="paxtype")
-            .stack()
-            .rename("sold")
+            pd.concat([df0, df1], axis=0)
+            .rename(columns={"mean": "sold"})
             .reset_index()
             .query("rrd>0")
         )
         if not by_airline:
-            df = df.groupby(["rrd", "paxtype"])[["sold"]].sum().reset_index()
+            df = (
+                df.groupby(["rrd", "paxtype"])[["sold", "ci0", "ci1"]]
+                .sum()
+                .reset_index()
+            )
         if isinstance(by_airline, str):
             df = df[df["carrier"] == by_airline]
             df = df.drop(columns=["carrier"])
             by_airline = False
         if raw_df:
             return df
+
         import altair as alt
 
         return (
@@ -192,6 +203,94 @@ class SummaryTables:
                     alt.Tooltip("sold", format=".2f"),
                 ],
             )
+            .properties(
+                width=500,
+                height=300,
+            )
+            .configure_axis(
+                labelFontSize=12,
+                titleFontSize=12,
+            )
+            .configure_legend(
+                titleFontSize=12,
+                labelFontSize=15,
+            )
+        )
+
+    def _fig_bookings_by_timeframe_errorband(
+        self, by_airline: bool | str = True, raw_df=False
+    ):
+        def differs(x):
+            return x.shift(-1, fill_value=0) - x
+
+        b = self.bookings_by_timeframe
+
+        def _summarize(x, c):
+            y = (
+                x.groupby(["trial", "carrier", "rrd"])[f"avg_{c}"]
+                .sum()
+                .unstack(["trial", "carrier"])
+                .sort_index(ascending=False)
+                .apply(differs)
+                .stack("carrier")
+                .aggregate(["mean", "sem"], axis=1)
+                .assign(
+                    ci0=lambda x: x["mean"] - 1.96 * x["sem"],
+                    ci1=lambda x: x["mean"] + 1.96 * x["sem"],
+                )
+            )
+            return pd.concat({c: y}, names=["paxtype"])
+
+        df0 = _summarize(b, "business")
+        df1 = _summarize(b, "leisure")
+        df = (
+            pd.concat([df0, df1], axis=0)
+            .rename(columns={"mean": "sold"})
+            .reset_index()
+            .query("rrd>0")
+        )
+        if not by_airline:
+            df = (
+                df.groupby(["rrd", "paxtype"])[["sold", "ci0", "ci1"]]
+                .sum()
+                .reset_index()
+            )
+        if isinstance(by_airline, str):
+            df = df[df["carrier"] == by_airline]
+            df = df.drop(columns=["carrier"])
+            by_airline = False
+        if raw_df:
+            return df
+        import altair as alt
+
+        chart = alt.Chart(df)
+        lines = chart.mark_line().encode(
+            color=alt.Color("carrier:N" if by_airline else "paxtype").title(
+                "Carrier" if by_airline else "Passenger Type"
+            ),
+            x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+            y="sold",
+            strokeDash=alt.StrokeDash("paxtype").title("Passenger Type"),
+            tooltip=([alt.Tooltip("carrier").title("Carrier")] if by_airline else [])
+            + [
+                alt.Tooltip("paxtype", title="Passenger Type"),
+                alt.Tooltip("rrd", title="DfD"),
+                alt.Tooltip("sold", format=".2f"),
+            ],
+        )
+        bands = chart.mark_errorband().encode(
+            color=alt.Color(
+                "carrier:N" if by_airline else "paxtype",
+                title="Carrier" if by_airline else "Passenger Type",
+            ),
+            x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+            y="ci0",
+            y2="ci1",
+            strokeDash=alt.StrokeDash("paxtype").title("Passenger Type"),
+        )
+
+        return (
+            (lines + bands)
             .properties(
                 width=500,
                 height=300,

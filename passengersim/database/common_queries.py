@@ -112,27 +112,23 @@ def bookings_by_timeframe(
 
     qry_bookings = """
     SELECT
+        trial,
         carrier,
         booking_class AS class,
         rrd,
-        AVG(avg_sold) AS avg_sold,
-        STDEV(avg_sold) AS std_sold,
-        AVG(avg_business) AS avg_business,
-        STDEV(avg_business) AS std_business,
-        AVG(avg_leisure) AS avg_leisure,
-        STDEV(avg_leisure) AS std_leisure,
-        AVG(avg_revenue) AS avg_revenue,
-        STDEV(avg_revenue) AS std_revenue,
-        AVG(avg_price) AS avg_price,
-        STDEV(avg_price) AS std_price
+        avg_sold,
+        avg_business,
+        avg_leisure,
+        avg_revenue,
+        avg_price
     FROM
         bookings_by_timeframe
     WHERE
         scenario = ?1
     GROUP BY
-        carrier, booking_class, rrd
+        carrier, booking_class, rrd, trial
     ORDER BY
-        carrier, booking_class, rrd;
+        carrier, booking_class, rrd, trial;
     """
 
     return cnx.dataframe(qry_bookings, (scenario,))
