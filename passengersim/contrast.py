@@ -14,43 +14,76 @@ def _assemble(summaries, base, **kwargs):
     return pd.concat(summaries_, names=["source"]).reset_index(level="source")
 
 
-def fig_bookings_by_timeframe(summaries, by_airline: bool | str = True, raw_df=False):
-    df = _assemble(summaries, "bookings_by_timeframe", by_airline=by_airline)
+def fig_bookings_by_timeframe(
+    summaries, by_airline: bool | str = True, by_class: bool | str = False, raw_df=False
+):
+    df = _assemble(
+        summaries, "bookings_by_timeframe", by_airline=by_airline, by_class=by_class
+    )
     if raw_df:
         return df
 
-    return (
-        alt.Chart(
-            df.sort_values("source", ascending=False), title="Bookings by Timeframe"
+    if by_class:
+        return (
+            alt.Chart(df.sort_values("source", ascending=False))
+            .mark_bar()
+            .encode(
+                color=alt.Color("class:N").title("Booking Class"),
+                x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+                xOffset=alt.XOffset("source:N", title="Source"),
+                y=alt.Y("sold", stack=True),
+                strokeWidth=alt.StrokeWidth("paxtype").title("Passenger Type"),
+                tooltip=[
+                    alt.Tooltip("source").title("Source"),
+                    alt.Tooltip("paxtype", title="Passenger Type"),
+                    alt.Tooltip("class", title="Booking Class"),
+                    alt.Tooltip("rrd", title="DfD"),
+                    alt.Tooltip("sold", format=".2f"),
+                ],
+            )
+            .properties(
+                width=500,
+                height=200,
+            )
+            .facet(
+                row=alt.Row("paxtype:N", title="Passenger Type"),
+                title="Bookings by Class by Timeframe",
+            )
+            .configure_title(fontSize=18)
         )
-        .mark_line()
-        .encode(
-            color=alt.Color("source:N").title("Source"),
-            x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
-            y="sold",
-            strokeDash=alt.StrokeDash("paxtype").title("Passenger Type"),
-            strokeWidth=alt.StrokeWidth("source:N").title("Source"),
-            tooltip=[
-                alt.Tooltip("source").title("Source"),
-                alt.Tooltip("paxtype", title="Passenger Type"),
-                alt.Tooltip("rrd", title="DfD"),
-                alt.Tooltip("sold", format=".2f"),
-            ],
+    else:
+        return (
+            alt.Chart(
+                df.sort_values("source", ascending=False), title="Bookings by Timeframe"
+            )
+            .mark_line()
+            .encode(
+                color=alt.Color("source:N").title("Source"),
+                x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+                y="sold",
+                strokeDash=alt.StrokeDash("paxtype").title("Passenger Type"),
+                strokeWidth=alt.StrokeWidth("source:N").title("Source"),
+                tooltip=[
+                    alt.Tooltip("source").title("Source"),
+                    alt.Tooltip("paxtype", title="Passenger Type"),
+                    alt.Tooltip("rrd", title="DfD"),
+                    alt.Tooltip("sold", format=".2f"),
+                ],
+            )
+            .properties(
+                width=500,
+                height=300,
+            )
+            .configure_axis(
+                labelFontSize=12,
+                titleFontSize=12,
+            )
+            .configure_legend(
+                titleFontSize=12,
+                labelFontSize=15,
+            )
+            .configure_title(fontSize=18)
         )
-        .properties(
-            width=500,
-            height=300,
-        )
-        .configure_axis(
-            labelFontSize=12,
-            titleFontSize=12,
-        )
-        .configure_legend(
-            titleFontSize=12,
-            labelFontSize=15,
-        )
-        .configure_title(fontSize=18)
-    )
 
 
 def fig_carrier_load_factors(summaries, raw_df=False):

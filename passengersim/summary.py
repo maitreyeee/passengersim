@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 
@@ -133,7 +134,11 @@ class SummaryTables:
         return self.fig_fare_class_mix(raw_df=True)
 
     def fig_bookings_by_timeframe(
-        self, by_airline: bool | str = True, raw_df=False, errorbands=False
+        self,
+        by_airline: bool | str = True,
+        by_class: bool | str = False,
+        raw_df: bool = False,
+        errorbands: bool = False,
     ):
         if errorbands:
             if by_airline is True:
@@ -146,19 +151,34 @@ class SummaryTables:
             return x.shift(-1, fill_value=0) - x
 
         def _summarize(x, c):
-            y = (
-                x.groupby(["trial", "carrier", "rrd"])[f"avg_{c}"]
-                .sum()
-                .unstack(["trial", "carrier"])
-                .sort_index(ascending=False)
-                .apply(differs)
-                .stack("carrier")
-                .aggregate(["mean", "sem"], axis=1)
-                .assign(
-                    ci0=lambda x: x["mean"] - 1.96 * x["sem"],
-                    ci1=lambda x: x["mean"] + 1.96 * x["sem"],
+            if by_class:
+                y = (
+                    x.groupby(["trial", "carrier", "class", "rrd"])[f"avg_{c}"]
+                    .sum()
+                    .unstack(["trial", "carrier", "class"])
+                    .sort_index(ascending=False)
+                    .apply(differs)
+                    .stack(["carrier", "class"])
+                    .aggregate(["mean", "sem"], axis=1)
+                    .assign(
+                        ci0=lambda x: np.maximum(x["mean"] - 1.96 * x["sem"], 0),
+                        ci1=lambda x: x["mean"] + 1.96 * x["sem"],
+                    )
                 )
-            )
+            else:
+                y = (
+                    x.groupby(["trial", "carrier", "rrd"])[f"avg_{c}"]
+                    .sum()
+                    .unstack(["trial", "carrier"])
+                    .sort_index(ascending=False)
+                    .apply(differs)
+                    .stack("carrier")
+                    .aggregate(["mean", "sem"], axis=1)
+                    .assign(
+                        ci0=lambda x: np.maximum(x["mean"] - 1.96 * x["sem"], 0),
+                        ci1=lambda x: x["mean"] + 1.96 * x["sem"],
+                    )
+                )
             return pd.concat({c: y}, names=["paxtype"])
 
         df0 = _summarize(self.bookings_by_timeframe, "business")
@@ -170,52 +190,92 @@ class SummaryTables:
             .query("rrd>0")
         )
         if not by_airline:
-            df = (
-                df.groupby(["rrd", "paxtype"])[["sold", "ci0", "ci1"]]
-                .sum()
-                .reset_index()
-            )
+            g = ["rrd", "paxtype"]
+            if by_class:
+                g += ["class"]
+            df = df.groupby(g)[["sold", "ci0", "ci1"]].sum().reset_index()
         if isinstance(by_airline, str):
             df = df[df["carrier"] == by_airline]
             df = df.drop(columns=["carrier"])
             by_airline = False
+        if isinstance(by_class, str):
+            df = df[df["class"] == by_class]
+            df = df.drop(columns=["class"])
+            by_class = False
         if raw_df:
             return df
 
         import altair as alt
 
-        return (
-            alt.Chart(df)
-            .mark_line()
-            .encode(
-                color=alt.Color("carrier:N" if by_airline else "paxtype").title(
-                    "Carrier" if by_airline else "Passenger Type"
-                ),
-                x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
-                y="sold",
-                strokeDash=alt.StrokeDash("paxtype").title("Passenger Type"),
-                tooltip=(
-                    [alt.Tooltip("carrier").title("Carrier")] if by_airline else []
+        if by_airline:
+            color = "carrier:N"
+            color_title = "Carrier"
+        elif by_class:
+            color = "class:N"
+            color_title = "Booking Class"
+        else:
+            color = "paxtype:N"
+            color_title = "Passenger Type"
+
+        if by_class:
+            chart = (
+                alt.Chart(df)
+                .mark_bar()
+                .encode(
+                    color=alt.Color(color).title(color_title),
+                    x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+                    y=alt.Y("sold"),
+                    tooltip=(
+                        [alt.Tooltip("carrier").title("Carrier")] if by_airline else []
+                    )
+                    + [
+                        alt.Tooltip("paxtype", title="Passenger Type"),
+                        alt.Tooltip("rrd", title="DfD"),
+                        alt.Tooltip("sold", format=".2f"),
+                    ],
                 )
-                + [
-                    alt.Tooltip("paxtype", title="Passenger Type"),
-                    alt.Tooltip("rrd", title="DfD"),
-                    alt.Tooltip("sold", format=".2f"),
-                ],
+                .properties(
+                    width=500,
+                    height=200,
+                )
+                .facet(
+                    row=alt.Row("paxtype:N", title="Passenger Type"),
+                    title="Bookings by Class by Timeframe",
+                )
+                .configure_title(fontSize=18)
             )
-            .properties(
-                width=500,
-                height=300,
+        else:
+            chart = (
+                alt.Chart(df)
+                .mark_line()
+                .encode(
+                    color=alt.Color(color).title(color_title),
+                    x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+                    y=alt.Y("sold") if by_class else "sold",
+                    strokeDash=alt.StrokeDash("paxtype").title("Passenger Type"),
+                    tooltip=(
+                        [alt.Tooltip("carrier").title("Carrier")] if by_airline else []
+                    )
+                    + [
+                        alt.Tooltip("paxtype", title="Passenger Type"),
+                        alt.Tooltip("rrd", title="DfD"),
+                        alt.Tooltip("sold", format=".2f"),
+                    ],
+                )
+                .properties(
+                    width=500,
+                    height=300,
+                )
+                .configure_axis(
+                    labelFontSize=12,
+                    titleFontSize=12,
+                )
+                .configure_legend(
+                    titleFontSize=12,
+                    labelFontSize=15,
+                )
             )
-            .configure_axis(
-                labelFontSize=12,
-                titleFontSize=12,
-            )
-            .configure_legend(
-                titleFontSize=12,
-                labelFontSize=15,
-            )
-        )
+        return chart
 
     def _fig_bookings_by_timeframe_errorband(
         self, by_airline: bool | str = True, raw_df=False
