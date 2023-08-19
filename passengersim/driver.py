@@ -4,10 +4,8 @@ import logging
 import os
 import pathlib
 import sqlite3
-import sys
 import time
 from collections import defaultdict
-from datetime import datetime, timezone
 from math import sqrt
 from typing import Any
 
@@ -15,7 +13,6 @@ import pandas as pd
 import passengersim_core
 from passengersim_core import PathClass, SimulationEngine
 from passengersim_core.utils import FileWriter, airsim_utils
-from passengersim.utils import iso_to_unix
 
 import passengersim.config.rm_systems
 from passengersim.config import Config
@@ -74,9 +71,12 @@ class Simulation:
             pragmas=config.db.pragmas,
             commit_count_delay=config.db.commit_count_delay,
         )
-        self.base_time = config.simulation_controls.reference_epoch()
         if self.cnx.is_open:
             database.tables.create_table_legs(self.cnx._connection, self.sim.legs)
+
+    @property
+    def base_time(self) -> int:
+        return self.sim.base_time
 
     @property
     def snapshot_filters(self) -> list[SnapshotFilter] | None:
@@ -255,6 +255,8 @@ class Simulation:
                 ):
                     leg.set_bucket_decision_fare(fare.booking_class, fare.price)
                     leg.set_bucket_fcst_revenue(fare.booking_class, fare.price)
+
+        self.sim.base_time = config.simulation_controls.reference_epoch()
 
     def set_classes(self, _leg, debug=False):
         cap = float(_leg.capacity)
