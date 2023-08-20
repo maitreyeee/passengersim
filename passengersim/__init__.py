@@ -8,8 +8,16 @@ except ImportError:
 from ._version import __version__, __version_tuple__
 from .config import Config
 from .driver import Simulation
+from .summary import SummaryTables
 
-__all__ = ["Config", "Simulation", "demo_network", "__version__", "__version_tuple__"]
+__all__ = [
+    "Config",
+    "Simulation",
+    "SummaryTables",
+    "demo_network",
+    "__version__",
+    "__version_tuple__",
+]
 
 
 def demo_network(name):

@@ -537,6 +537,7 @@ class Simulation:
         self,
         sim: SimulationEngine,
         to_log=True,
+        to_db: bool | database.Database = True,
         additional=(
             "fare_class_mix",
             "load_factors",
@@ -553,10 +554,12 @@ class Simulation:
                 f"\n- burn_samples = {sim.burn_samples}"
             )
 
-        dmd_df = self.compute_demand_report(sim, to_log)
-        leg_df = self.compute_leg_report(sim, to_log)
-        path_df = self.compute_path_report(sim, to_log)
-        carrier_df = self.compute_carrier_report(sim, to_log)
+        if to_db is True:
+            to_db = self.cnx
+        dmd_df = self.compute_demand_report(sim, to_log, to_db)
+        leg_df = self.compute_leg_report(sim, to_log, to_db)
+        path_df = self.compute_path_report(sim, to_log, to_db)
+        carrier_df = self.compute_carrier_report(sim, to_log, to_db)
 
         summary = SummaryTables(
             demands=dmd_df,
@@ -617,7 +620,7 @@ class Simulation:
                 )
         dmd_df = pd.DataFrame(dmd_df)
         if to_db:
-            to_db.save_dataframe("demand_summary", dmd_df.assign(scenario=sim.name))
+            to_db.save_dataframe("demand_summary", dmd_df)
         return dmd_df
 
     def compute_leg_report(
@@ -647,7 +650,7 @@ class Simulation:
             )
         leg_df = pd.DataFrame(leg_df)
         if to_db:
-            to_db.save_dataframe("leg_summary", leg_df.assign(scenario=sim.name))
+            to_db.save_dataframe("leg_summary", leg_df)
         return leg_df
 
     def compute_path_report(
@@ -706,7 +709,7 @@ class Simulation:
                 raise NotImplementedError("path with other than 1 or 2 legs")
         path_df = pd.DataFrame(path_df)
         if to_db:
-            to_db.save_dataframe("path_summary", path_df.assign(scenario=sim.name))
+            to_db.save_dataframe("path_summary", path_df)
         return path_df
 
     def compute_carrier_report(
@@ -761,9 +764,7 @@ class Simulation:
             # logger.info(f"ASM = {airline_asm[cxr.name]:.2f}, RPM = {airline_rpm[cxr.name]:.2f}, LF = {lf2:.2f}%") #***
         carrier_df = pd.DataFrame(carrier_df)
         if to_db:
-            to_db.save_dataframe(
-                "carrier_summary", carrier_df.assign(scenario=sim.name)
-            )
+            to_db.save_dataframe("carrier_summary", carrier_df)
         return carrier_df
 
     def reseed(self, seed: int | list[int] | None = 42):

@@ -102,7 +102,8 @@ class Database:
     def close(self):
         """Flush pending operations and close the connection."""
         if self._connection:
-            self._connection.execute("COMMIT;")
+            if self._connection.in_transaction:
+                self._connection.execute("COMMIT;")
             self._connection.close()
             self._connection = None
 
@@ -114,7 +115,8 @@ class Database:
 
     def _commit_raw(self):
         if self._connection:
-            self._connection.execute("COMMIT;")
+            if self._connection.in_transaction:
+                self._connection.execute("COMMIT;")
             self._connection.execute("BEGIN TRANSACTION;")
 
     def __enter__(self):
@@ -161,6 +163,22 @@ class Database:
             (cfg.scenario, str(__version__), cfg.model_dump_json()),
         )
 
+    def load_configs(self, scenario=None) -> Config:
+        import json
+
+        if scenario:
+            rawjson = next(
+                self.execute(
+                    "SELECT configs, max(updated_at) FROM runtime_configs WHERE scenario = ?1",
+                    (scenario,),
+                )
+            )[0]
+        else:
+            rawjson = next(
+                self.execute("SELECT configs, max(updated_at) FROM runtime_configs")
+            )[0]
+        return Config.model_validate(json.loads(rawjson))
+
     def save_details(self: Database, sim: SimulationEngine, dcp: int):
         """
         Save details, can be done at each RRD/DCP and at the end of the run
@@ -199,7 +217,7 @@ class Database:
         self,
         name: str,
         df: pd.DataFrame,
-        if_exists: Literal["fail", "replace", "append"] = "append",
+        if_exists: Literal["fail", "replace", "append"] = "replace",
     ):
         """Save a dataframe as a table in this database."""
         df.to_sql(name, self._connection, if_exists=if_exists)
@@ -219,7 +237,8 @@ class Database:
 
         if not isinstance(dst, sqlite3.Connection):
             dst = sqlite3.connect(dst)
-        self._connection.execute("COMMIT;")
+        if self._connection.in_transaction:
+            self._connection.execute("COMMIT;")
         with dst:
             self._connection.backup(
                 dst, pages=10000, progress=_progress if show_progress else None

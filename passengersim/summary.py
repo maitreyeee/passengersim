@@ -1,8 +1,68 @@
+import os.path
+from collections.abc import Container
+
 import numpy as np
 import pandas as pd
 
+from . import database
+
 
 class SummaryTables:
+    @classmethod
+    def from_sqlite(cls, filename: str):
+        if not os.path.isfile(filename):
+            raise FileNotFoundError(filename)
+        db = database.Database(
+            engine="sqlite",
+            filename=filename,
+        )
+        summary = cls(
+            demands=db.dataframe("SELECT * FROM demand_summary"),
+            legs=db.dataframe("SELECT * FROM leg_summary"),
+            paths=db.dataframe("SELECT * FROM path_summary"),
+            carriers=db.dataframe("SELECT * FROM carrier_summary"),
+        )
+        config = db.load_configs()
+        summary.load_additional_tables(
+            db,
+            scenario=config.scenario,
+            burn_samples=config.simulation_controls.burn_samples,
+        )
+        summary.cnx = db
+        return summary
+
+    def load_additional_tables(
+        self,
+        db: database.Database,
+        scenario: str,
+        burn_samples: int,
+        additional: Container[str] = (
+            "fare_class_mix",
+            "load_factors",
+            "bookings_by_timeframe",
+            "total_demand",
+        ),
+    ) -> None:
+        if "fare_class_mix" in additional and db.is_open:
+            self.fare_class_mix = database.common_queries.fare_class_mix(
+                db, scenario, burn_samples=burn_samples
+            )
+
+        if "load_factors" in additional and db.is_open:
+            self.load_factors = database.common_queries.load_factors(
+                db, scenario, burn_samples=burn_samples
+            )
+
+        if "bookings_by_timeframe" in additional and db.is_open:
+            self.bookings_by_timeframe = database.common_queries.bookings_by_timeframe(
+                db, scenario, burn_samples=burn_samples
+            )
+
+        if "total_demand" in additional and db.is_open:
+            self.total_demand = database.common_queries.total_demand(
+                db, scenario, burn_samples
+            )
+
     def __init__(
         self,
         demands: pd.DataFrame | None = None,
@@ -26,8 +86,8 @@ class SummaryTables:
     def to_records(self):
         return {k: v.to_dict(orient="records") for (k, v) in self.__dict__.items()}
 
-    def fig_airline_loads(self, raw_df=False):
-        """Figure showing ASM, RPM by airline."""
+    def fig_carrier_loads(self, raw_df=False):
+        """Figure showing ASM, RPM by carrier."""
         df = (
             self.carriers.set_index("name")[["asm", "rpm"]]
             .rename_axis(columns="measure")
@@ -41,7 +101,7 @@ class SummaryTables:
 
         chart = alt.Chart(df)
         bars = chart.mark_bar().encode(
-            x=alt.X("name:N", title="Airline"),
+            x=alt.X("name:N", title="Carrier"),
             y=alt.Y("value", stack=None, title="miles"),
             color="measure",
             tooltip=["name", "measure", alt.Tooltip("value", format=".4s")],
@@ -85,7 +145,7 @@ class SummaryTables:
             halfsold="datum.avg_sold / 2.0",
         )
         bars = chart.mark_bar().encode(
-            x=alt.X("carrier:N", title="Airline"),
+            x=alt.X("carrier:N", title="Carrier"),
             y=alt.Y("avg_sold:Q", title="Seats").stack("zero"),
             color="booking_class",
             tooltip=[
@@ -95,7 +155,7 @@ class SummaryTables:
             ],
         )
         text = chart.mark_text(dx=0, dy=3, color="white", baseline="top").encode(
-            x=alt.X("carrier:N", title="Airline"),
+            x=alt.X("carrier:N", title="Carrier"),
             y=alt.Y("avg_sold:Q", title="Seats").stack("zero"),
             text=alt.Text("avg_sold:Q", format=".2f"),
             opacity=alt.condition(
@@ -410,15 +470,15 @@ class SummaryTables:
         chart = alt.Chart(df)
         bars = chart.mark_bar().encode(
             x=alt.X("carrier:N", title="Carrier"),
-            y=alt.Y("avg_rev:Q", title="Revenue").stack("zero"),
+            y=alt.Y("avg_rev:Q", title="Average Revenue").stack("zero"),
             tooltip=[
                 alt.Tooltip("carrier", title="Carrier"),
-                alt.Tooltip("avg_rev", title="Revenue", format="$.4s"),
+                alt.Tooltip("avg_rev", title="Average Revenue", format="$.4s"),
             ],
         )
         text = chart.mark_text(dx=0, dy=3, color="white", baseline="top").encode(
             x=alt.X("carrier:N", title="Carrier"),
-            y=alt.Y("avg_rev:Q", title="Revenue").stack("zero"),
+            y=alt.Y("avg_rev:Q", title="Average Revenue").stack("zero"),
             text=alt.Text("avg_rev:Q", format="$.4s"),
         )
         return (
