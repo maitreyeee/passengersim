@@ -6,6 +6,7 @@ import pathlib
 import sqlite3
 import time
 from collections import defaultdict
+from datetime import datetime, timezone
 from math import sqrt
 from typing import Any
 
@@ -113,6 +114,8 @@ class Simulation:
             elif pname == "update_frequency":
                 self.update_frequency = pvalue
             elif pname == "base_date":
+                pass
+            elif pname == "dcp_hour":
                 pass
             else:
                 self.sim.set_parm(pname, float(pvalue))
@@ -403,15 +406,19 @@ class Simulation:
                 self.fare_details_sold_business[key3] += f.sold_business
                 self.fare_details_revenue[key3] += f.price * f.sold
 
-    def generate_dcp_rm_events(self):
+    def generate_dcp_rm_events(self, debug=False):
         """Pushes an event per reading day (DCP) onto the queue."""
         dcp_hour = self.sim.config.simulation_controls.dcp_hour
+        if debug:
+            tmp = datetime.fromtimestamp(self.sim.base_time, tz=timezone.utc)
+            print(f"Base Time is {tmp.strftime('%Y-%m-%d %H:%M:%S %Z')}")
         for dcp_index, dcp in enumerate(self.dcp_list):
             if dcp == 0:
                 continue
-            event_time = self.sim.base_time - dcp * 86400 + 3600 * dcp_hour
-            # tmp = datetime.fromtimestamp(event_time, tz=timezone.utc)
-            # print(f"Added DCP {dcp} at {tmp.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+            event_time = int(self.sim.base_time - dcp * 86400 + 3600 * dcp_hour)
+            if debug:
+                tmp = datetime.fromtimestamp(event_time, tz=timezone.utc)
+                print(f"Added DCP {dcp} at {tmp.strftime('%Y-%m-%d %H:%M:%S %Z')}")
             info = ("DCP", dcp, dcp_index)
             from passengersim_core import Event
 
