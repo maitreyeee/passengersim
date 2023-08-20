@@ -149,6 +149,14 @@ class SimulationSettings(BaseModel, extra="allow"):
     Future enhancements may include multi-day modeling.
     """
 
+    dcp_hour: float = 6.0
+    """
+    The hour of the day that the RM recalculation events are triggered.
+
+    If set to zero, the events happen at midnight.  Other values can
+    delay the recalculation into later in the night (or the next day).
+    """
+
     @field_validator("controller_time_zone", mode="before")
     def _time_zone_convert_hours_to_seconds(cls, v):
         if -12 <= v <= 12:

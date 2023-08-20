@@ -12,7 +12,7 @@ from typing import Any
 import pandas as pd
 import passengersim_core
 from passengersim_core import PathClass, SimulationEngine
-from passengersim_core.utils import FileWriter, airsim_utils
+from passengersim_core.utils import FileWriter
 
 import passengersim.config.rm_systems
 from passengersim.config import Config
@@ -403,12 +403,27 @@ class Simulation:
                 self.fare_details_sold_business[key3] += f.sold_business
                 self.fare_details_revenue[key3] += f.price * f.sold
 
+    def generate_dcp_rm_events(self):
+        """Pushes an event per reading day (DCP) onto the queue."""
+        dcp_hour = self.sim.config.simulation_controls.dcp_hour
+        for dcp_index, dcp in enumerate(self.dcp_list):
+            if dcp == 0:
+                continue
+            event_time = self.sim.base_time - dcp * 86400 + 3600 * dcp_hour
+            # tmp = datetime.fromtimestamp(event_time, tz=timezone.utc)
+            # print(f"Added DCP {dcp} at {tmp.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+            info = ("DCP", dcp, dcp_index)
+            from passengersim_core import Event
+
+            rm_event = Event(info, event_time)
+            self.sim.add_event(rm_event)
+
     def generate_demands(self, system_rn=None, debug=False):
         """Generate demands, following the procedure used in PODS
         The biggest difference is that we can put all the timeframe (DCP) demands
         into the event queue before any processing.
         For large models, I might rewrite this into the C++ core in the future"""
-        airsim_utils.add_dcp(self.sim, self.base_time, 0, self.dcp_list, debug=False)
+        self.generate_dcp_rm_events()
         total_events = 0
         system_rn = (
             self.random_generator.get_normal() if system_rn is None else system_rn
