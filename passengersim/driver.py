@@ -73,6 +73,8 @@ class Simulation:
         )
         if self.cnx.is_open:
             database.tables.create_table_legs(self.cnx._connection, self.sim.legs)
+            if config.db != ":memory:":
+                self.cnx.save_configs(config)
 
     @property
     def base_time(self) -> int:
@@ -554,13 +556,13 @@ class Simulation:
         dmd_df = self.compute_demand_report(sim, to_log)
         leg_df = self.compute_leg_report(sim, to_log)
         path_df = self.compute_path_report(sim, to_log)
-        airline_df = self.compute_airline_report(sim, to_log)
+        carrier_df = self.compute_carrier_report(sim, to_log)
 
         summary = SummaryTables(
             demands=dmd_df,
             legs=leg_df,
             paths=path_df,
-            airlines=airline_df,
+            carriers=carrier_df,
         )
 
         if "fare_class_mix" in additional and self.cnx.is_open:
@@ -587,7 +589,9 @@ class Simulation:
 
         return summary
 
-    def compute_demand_report(self, sim: SimulationEngine, to_log=True):
+    def compute_demand_report(
+        self, sim: SimulationEngine, to_log=True, to_db: database.Database | None = None
+    ):
         dmd_df = []
         for m in sim.demands:
             avg_price = m.revenue / m.sold if m.sold > 0 else 0
@@ -612,9 +616,13 @@ class Simulation:
                     f"AvgFare = {avg_price:.2f}"
                 )
         dmd_df = pd.DataFrame(dmd_df)
+        if to_db:
+            to_db.save_dataframe("demand_summary", dmd_df.assign(scenario=sim.name))
         return dmd_df
 
-    def compute_leg_report(self, sim: SimulationEngine, to_log=True):
+    def compute_leg_report(
+        self, sim: SimulationEngine, to_log=True, to_db: database.Database | None = None
+    ):
         num_samples = sim.num_trials * (sim.num_samples - sim.burn_samples)
         leg_df = []
         for leg in sim.legs:
@@ -638,9 +646,13 @@ class Simulation:
                 )
             )
         leg_df = pd.DataFrame(leg_df)
+        if to_db:
+            to_db.save_dataframe("leg_summary", leg_df.assign(scenario=sim.name))
         return leg_df
 
-    def compute_path_report(self, sim: SimulationEngine, to_log=True):
+    def compute_path_report(
+        self, sim: SimulationEngine, to_log=True, to_db: database.Database | None = None
+    ):
         num_samples = sim.num_trials * (sim.num_samples - sim.burn_samples)
         avg_lf, n = 0.0, 0
         for leg in sim.legs:
@@ -693,13 +705,18 @@ class Simulation:
             else:
                 raise NotImplementedError("path with other than 1 or 2 legs")
         path_df = pd.DataFrame(path_df)
+        if to_db:
+            to_db.save_dataframe("path_summary", path_df.assign(scenario=sim.name))
         return path_df
 
-    def compute_airline_report(
-        self, sim: SimulationEngine, to_log: bool = True
+    def compute_carrier_report(
+        self,
+        sim: SimulationEngine,
+        to_log: bool = True,
+        to_db: database.Database | None = None,
     ) -> pd.DataFrame:
         """
-        Compute an airline summary table.
+        Compute a carrier summary table.
 
         The resulting table has one row per simulated carrier, and the following
         columns:
@@ -712,7 +729,7 @@ class Simulation:
         - rpm (revenue passenger miles)
         """
         num_samples = sim.num_trials * (sim.num_samples - sim.burn_samples)
-        airline_df = []
+        carrier_df = []
 
         airline_asm = defaultdict(float)
         airline_rpm = defaultdict(float)
@@ -731,7 +748,7 @@ class Simulation:
                 logger.info(
                     f"Airline: {cxr.name}, AvgSold: {avg_sold}, LF {lf2:.2f}%,  AvgRev ${avg_rev:10,.2f}"
                 )
-            airline_df.append(
+            carrier_df.append(
                 dict(
                     name=cxr.name,
                     avg_sold=avg_sold,
@@ -742,8 +759,12 @@ class Simulation:
                 )
             )
             # logger.info(f"ASM = {airline_asm[cxr.name]:.2f}, RPM = {airline_rpm[cxr.name]:.2f}, LF = {lf2:.2f}%") #***
-        airline_df = pd.DataFrame(airline_df)
-        return airline_df
+        carrier_df = pd.DataFrame(carrier_df)
+        if to_db:
+            to_db.save_dataframe(
+                "carrier_summary", carrier_df.assign(scenario=sim.name)
+            )
+        return carrier_df
 
     def reseed(self, seed: int | list[int] | None = 42):
         logger.debug("reseeding random_generator: %s", seed)

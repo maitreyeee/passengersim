@@ -5,6 +5,18 @@ from collections.abc import Iterable
 from .database import Database
 
 
+def create_table_configs(cnx: Database):
+    sql = """
+    CREATE TABLE IF NOT EXISTS runtime_configs (
+        scenario		TEXT PRIMARY KEY,
+        pxsim_version   TEXT,
+        configs         TEXT,
+        updated_at	    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    """
+    cnx.execute(sql)
+
+
 def create_table_legs(cnx: Database, legs: Iterable | None = None):
     sql = """
     CREATE TABLE IF NOT EXISTS leg_defs
@@ -248,6 +260,7 @@ def create_tables(cnx: Database, primary_keys: dict[str, bool] | None = None):
     )
     if primary_keys is not None:
         pk.update(primary_keys)
+    create_table_configs(cnx)
     create_table_leg_detail(cnx, pk["leg"])
     create_table_leg_bucket_detail(cnx, pk["leg_bucket"])
     create_table_demand_detail(cnx, pk["demand"])

@@ -8,7 +8,7 @@ class SummaryTables:
         demands: pd.DataFrame | None = None,
         legs: pd.DataFrame | None = None,
         paths: pd.DataFrame | None = None,
-        airlines: pd.DataFrame | None = None,
+        carriers: pd.DataFrame | None = None,
         fare_class_mix: pd.DataFrame | None = None,
         load_factors: pd.DataFrame | None = None,
         bookings_by_timeframe: pd.DataFrame | None = None,
@@ -17,7 +17,7 @@ class SummaryTables:
         self.demands = demands
         self.legs = legs
         self.paths = paths
-        self.airlines = airlines
+        self.carriers = carriers
         self.fare_class_mix = fare_class_mix
         self.load_factors = load_factors
         self.bookings_by_timeframe = bookings_by_timeframe
@@ -29,7 +29,7 @@ class SummaryTables:
     def fig_airline_loads(self, raw_df=False):
         """Figure showing ASM, RPM by airline."""
         df = (
-            self.airlines.set_index("name")[["asm", "rpm"]]
+            self.carriers.set_index("name")[["asm", "rpm"]]
             .rename_axis(columns="measure")
             .unstack()
             .to_frame("value")

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pydantic import BaseModel, confloat, conint, field_validator
+
 from passengersim.utils import iso_to_unix
 
 
@@ -11,26 +12,26 @@ class SimulationSettings(BaseModel, extra="allow"):
     """The overall number of trials to run.
 
     Each trial is a complete simulation, including burn-in training time as well
-    as study time.  It will have a number of sequentially developed samples, each of 
+    as study time.  It will have a number of sequentially developed samples, each of
     which represents one "typical" day of travel.
-    
+
     See [Counting Simulations][counting-simulations] for more details.
     """
 
     num_samples: conint(ge=1, le=1000) = 600
     """The number of samples to run within each trial.
-    
-    Each sample represents one "typical" day of travel.  
+
+    Each sample represents one "typical" day of travel.
     See [Counting Simulations][counting-simulations] for more details.
     """
 
     burn_samples: conint(ge=1, le=1000) = 100
     """The number of samples to burn when starting each trial.
-    
+
     Burned samples are used to populate a stable history of data to support
     forecasting and optimization algorithms, but are not used to evaluate
     performance results.
-    
+
     See [Counting Simulations][counting-simulations] for more details.
     """
 
@@ -39,7 +40,7 @@ class SimulationSettings(BaseModel, extra="allow"):
     System-level randomness factor.
 
     This factor controls the level of correlation in demand levels across the
-    entire system. 
+    entire system.
 
     See [k-factors][demand-generation-k-factors]
     for more details.
@@ -50,9 +51,9 @@ class SimulationSettings(BaseModel, extra="allow"):
     Market-level randomness factor.
 
     This factor controls the level of correlation in demand levels across origin-
-    destination markets. 
-    
-    See [k-factors][demand-generation-k-factors] 
+    destination markets.
+
+    See [k-factors][demand-generation-k-factors]
     for more details.
     """
 
@@ -60,25 +61,25 @@ class SimulationSettings(BaseModel, extra="allow"):
     """
     Passenger-type randomness factor.
 
-    This factor controls the level of correlation in demand levels across passenger 
-    types. 
-    
-    See [k-factors][demand-generation-k-factors] 
+    This factor controls the level of correlation in demand levels across passenger
+    types.
+
+    See [k-factors][demand-generation-k-factors]
     for more details.
     """
 
-    tf_k_factor: confloat(gt=0, lt=5.0) = 0.1
+    tf_k_factor: confloat(gt=0) = 0.1
     """
     Time frame randomness factor.
 
-    This factor controls the dispersion of bookings over time, given a previously 
+    This factor controls the dispersion of bookings over time, given a previously
     identified level of total demand. See [k-factors]() for more details.
     """
 
     z_factor: confloat(gt=0, lt=5.0) = 2.0
     """
     Base level demand variance control.
-    
+
     See [k-factors][demand-generation-k-factors] for more details.
     """
 
@@ -87,14 +88,14 @@ class SimulationSettings(BaseModel, extra="allow"):
     dwm_lite: bool = True
     """
     Use the "lite" decision window model.
-    
+
     The structure of this model is the same as that use by Boeing.
     """
 
     max_connect_time: conint(ge=0) = 240
     """
     Maximum connection time for automatically generated paths.
-    
+
     Any generated path that has a connection time greater than this value (expressed
     in minutes) is invalidated.
     """
@@ -102,24 +103,24 @@ class SimulationSettings(BaseModel, extra="allow"):
     disable_ap: bool = False
     """
     Remove all advance purchase settings used in the simulation.
-    
+
     This applies to all airlines and all fare products.
     """
 
     demand_multiplier: confloat(gt=0) = 1.0
     """
     Scale all demand by this value.
-    
-    Setting to a value other than 1.0 will increase or decrease all demand inputs 
-    uniformly by the same multiplicative amount. This is helpful when exploring how 
-    simulation results vary when you have "low demand" scenarios (e.g, 
+
+    Setting to a value other than 1.0 will increase or decrease all demand inputs
+    uniformly by the same multiplicative amount. This is helpful when exploring how
+    simulation results vary when you have "low demand" scenarios (e.g,
     demand_multiplier = 0.8), or "high demand" scenarios (e.g., demand multiplier = 1.1).
     """
 
     manual_paths: bool = True
     """
     The user has provided explicit paths and connections.
-    
+
     If set to False, the automatic path generation algorithm is applied.
     """
 
@@ -129,20 +130,22 @@ class SimulationSettings(BaseModel, extra="allow"):
 
     update_frequency: int | None = None
 
-    controller_time_zone: int | float = -6
+    controller_time_zone: int | float = -21600
     """
     The reference time zone for the controller (seconds relative to UTC).
-    
+
     Data collection points will be trigger at approximately midnight in this time zone.
-    
+
     This value can be input in hours instead of seconds, any absolute value less
     than or equal to 12 will be assumed to be hours and scaled to seconds.
+
+    The default value is -6 hours, or US Central Standard Time.
     """
 
     base_date: str = "2020-03-01"
     """
     The default date used to compute relative times for travel.
-    
+
     Future enhancements may include multi-day modeling.
     """
 

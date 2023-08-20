@@ -13,6 +13,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
+import pandas as pd
+
+from passengersim.config import Config
 from passengersim.core import SimulationEngine
 
 logger = logging.getLogger(__name__)
@@ -145,6 +148,19 @@ class Database:
         else:
             logger.info(f"database not open, cannot delete {name!r}")
 
+    def save_configs(self, cfg: Config) -> None:
+        """Save configs into the database."""
+        from passengersim import __version__
+
+        self.execute(
+            """
+        INSERT OR REPLACE INTO runtime_configs(
+            scenario, pxsim_version, configs
+        ) VALUES (?1, ?2, ?3)
+        """,
+            (cfg.scenario, str(__version__), cfg.model_dump_json()),
+        )
+
     def save_details(self: Database, sim: SimulationEngine, dcp: int):
         """
         Save details, can be done at each RRD/DCP and at the end of the run
@@ -178,6 +194,15 @@ class Database:
         import pandas as pd
 
         return pd.read_sql_query(query, self._connection, params=params)
+
+    def save_dataframe(
+        self,
+        name: str,
+        df: pd.DataFrame,
+        if_exists: Literal["fail", "replace", "append"] = "append",
+    ):
+        """Save a dataframe as a table in this database."""
+        df.to_sql(name, self._connection, if_exists=if_exists)
 
     def backup(self, dst: Path | str | sqlite3.Connection, show_progress: bool = True):
         """Back up this database to another copy."""
