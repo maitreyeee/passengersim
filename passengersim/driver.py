@@ -641,7 +641,7 @@ class Simulation:
                     f"AvgFare = {avg_price:.2f}"
                 )
         dmd_df = pd.DataFrame(dmd_df)
-        if to_db:
+        if to_db and to_db.is_open:
             to_db.save_dataframe("demand_summary", dmd_df)
         return dmd_df
 
@@ -671,7 +671,7 @@ class Simulation:
                 )
             )
         leg_df = pd.DataFrame(leg_df)
-        if to_db:
+        if to_db and to_db.is_open:
             to_db.save_dataframe("leg_summary", leg_df)
         return leg_df
 
@@ -730,7 +730,7 @@ class Simulation:
             else:
                 raise NotImplementedError("path with other than 1 or 2 legs")
         path_df = pd.DataFrame(path_df)
-        if to_db:
+        if to_db and to_db.is_open:
             to_db.save_dataframe("path_summary", path_df)
         return path_df
 
@@ -785,7 +785,7 @@ class Simulation:
             )
             # logger.info(f"ASM = {airline_asm[cxr.name]:.2f}, RPM = {airline_rpm[cxr.name]:.2f}, LF = {lf2:.2f}%") #***
         carrier_df = pd.DataFrame(carrier_df)
-        if to_db:
+        if to_db and to_db.is_open:
             to_db.save_dataframe("carrier_summary", carrier_df)
         return carrier_df
 

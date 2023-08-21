@@ -160,7 +160,11 @@ class Database:
             scenario, pxsim_version, configs
         ) VALUES (?1, ?2, ?3)
         """,
-            (cfg.scenario, str(__version__), cfg.model_dump_json()),
+            (
+                cfg.scenario,
+                str(__version__),
+                cfg.model_dump_json(exclude={"db": "dcp_write_hooks"}),
+            ),
         )
 
     def load_configs(self, scenario=None) -> Config:

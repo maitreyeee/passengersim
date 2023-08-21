@@ -20,6 +20,7 @@ def fig_bookings_by_timeframe(
     df = _assemble(
         summaries, "bookings_by_timeframe", by_airline=by_airline, by_class=by_class
     )
+    source_order = list(summaries.keys())
     if raw_df:
         return df
 
@@ -30,7 +31,7 @@ def fig_bookings_by_timeframe(
             .encode(
                 color=alt.Color("class:N").title("Booking Class"),
                 x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
-                xOffset=alt.XOffset("source:N", title="Source"),
+                xOffset=alt.XOffset("source:N", title="Source", sort=source_order),
                 y=alt.Y("sold", stack=True),
                 tooltip=[
                     alt.Tooltip("source").title("Source"),
@@ -57,11 +58,13 @@ def fig_bookings_by_timeframe(
             )
             .mark_line()
             .encode(
-                color=alt.Color("source:N").title("Source"),
+                color=alt.Color("source:N", sort=source_order).title("Source"),
                 x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
                 y="sold",
                 strokeDash=alt.StrokeDash("paxtype").title("Passenger Type"),
-                strokeWidth=alt.StrokeWidth("source:N").title("Source"),
+                strokeWidth=alt.StrokeWidth("source:N", sort=source_order).title(
+                    "Source"
+                ),
                 tooltip=[
                     alt.Tooltip("source").title("Source"),
                     alt.Tooltip("paxtype", title="Passenger Type"),
@@ -87,13 +90,14 @@ def fig_bookings_by_timeframe(
 
 def fig_carrier_load_factors(summaries, raw_df=False):
     df = _assemble(summaries, "carrier_load_factors")
+    source_order = list(summaries.keys())
     if raw_df:
         return df
 
     chart = alt.Chart(df)
     bars = chart.mark_bar().encode(
         color=alt.Color("source:N", title="Source"),
-        x=alt.X("source:N", title=None),
+        x=alt.X("source:N", title=None, sort=source_order),
         y=alt.Y("avg_lf:Q", title="Load Factor").stack("zero"),
         tooltip=[
             alt.Tooltip("source", title=None),
@@ -102,7 +106,7 @@ def fig_carrier_load_factors(summaries, raw_df=False):
         ],
     )
     text = chart.mark_text(dx=0, dy=3, color="white", baseline="top").encode(
-        x=alt.X("source:N", title=None),
+        x=alt.X("source:N", title=None, sort=source_order),
         y=alt.Y("avg_lf:Q", title="Load Factor").stack("zero"),
         text=alt.Text("avg_lf:Q", format=".2f"),
     )
@@ -122,13 +126,14 @@ def fig_carrier_load_factors(summaries, raw_df=False):
 
 def fig_carrier_revenues(summaries, raw_df=False):
     df = _assemble(summaries, "carrier_revenues")
+    source_order = list(summaries.keys())
     if raw_df:
         return df
 
     chart = alt.Chart(df)
     bars = chart.mark_bar().encode(
         color=alt.Color("source:N", title="Source"),
-        x=alt.X("source:N", title=None),
+        x=alt.X("source:N", title=None, sort=source_order),
         y=alt.Y("avg_rev:Q", title="Revenue ($)").stack("zero"),
         tooltip=[
             alt.Tooltip("source", title=None),
@@ -137,7 +142,7 @@ def fig_carrier_revenues(summaries, raw_df=False):
         ],
     )
     text = chart.mark_text(dx=0, dy=3, color="white", baseline="top").encode(
-        x=alt.X("source:N", title=None),
+        x=alt.X("source:N", title=None, sort=source_order),
         y=alt.Y("avg_rev:Q", title="Revenue ($)").stack("zero"),
         text=alt.Text("avg_rev:Q", format="$.4s"),
     )
@@ -157,6 +162,7 @@ def fig_carrier_revenues(summaries, raw_df=False):
 
 def fig_fare_class_mix(summaries, raw_df=False, label_threshold=0.06):
     df = _assemble(summaries, "fare_class_mix")
+    source_order = list(summaries.keys())
     if raw_df:
         return df
     import altair as alt
@@ -168,7 +174,7 @@ def fig_fare_class_mix(summaries, raw_df=False, label_threshold=0.06):
         halfsold="datum.avg_sold / 2.0",
     )
     bars = chart.mark_bar().encode(
-        x=alt.X("source:N", title="Airline"),
+        x=alt.X("source:N", title="Source", sort=source_order),
         y=alt.Y("avg_sold:Q", title="Seats").stack("zero"),
         color="booking_class",
         tooltip=[
@@ -178,7 +184,7 @@ def fig_fare_class_mix(summaries, raw_df=False, label_threshold=0.06):
         ],
     )
     text = chart.mark_text(dx=0, dy=3, color="white", baseline="top").encode(
-        x=alt.X("source:N", title="Airline"),
+        x=alt.X("source:N", title="Source", sort=source_order),
         y=alt.Y("avg_sold:Q", title="Seats").stack("zero"),
         text=alt.Text("avg_sold:Q", format=".2f"),
         opacity=alt.condition(
