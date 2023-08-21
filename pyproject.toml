@@ -21,6 +21,7 @@ dependencies = [
     "pandas",
     "pydantic>=2.0",
     "pyyaml",
+    "addicty",
 ]
 
 [project.optional-dependencies]

@@ -8,7 +8,7 @@ import pathlib
 import sys
 import typing
 
-import yaml
+import addicty
 from pydantic import BaseModel, Field, model_validator
 
 from passengersim.pseudonym import random_label
@@ -38,8 +38,8 @@ class Config(BaseModel, extra="forbid"):
     simulation_controls: SimulationSettings = SimulationSettings()
     """
     Controls that apply broadly to the overall simulation.
-    
-    See [SimulationSettings][passengersim.config.SimulationSettings] for detailed 
+
+    See [SimulationSettings][passengersim.config.SimulationSettings] for detailed
     documentation.
     """
 
@@ -51,14 +51,16 @@ class Config(BaseModel, extra="forbid"):
     rm_systems: DictOfNamed[RmSystem] = []
     """
     The revenue management systems used by the carriers in this simulation.
-    
+
     See [RM Systems][rm-systems] for details.
     """
 
     choice_models: DictOfNamed[ChoiceModel] = {}
-    """Several choice models are programmed behind the scenes.  The choice_models option allows the user to set the parameters used in the utility model for a particular choice model.
+    """Several choice models are programmed behind the scenes.
 
-    There are two choice models currently programmed.
+    The choice_models option allows the user to set the parameters used in the
+    utility model for a particular choice model. There are two choice models
+    currently programmed.
 
     Need to explaining more here"""
 
@@ -72,9 +74,9 @@ class Config(BaseModel, extra="forbid"):
     for more information."""
 
     classes: list[str] = []
-    """A list of fare classes.  
-    
-    One convention is to use Y0, Y1, ... to label fare classes from the highest 
+    """A list of fare classes.
+
+    One convention is to use Y0, Y1, ... to label fare classes from the highest
     fare (Y0) to the lowest fare (Yn).  An example of classes is below.
 
     Example
@@ -94,13 +96,13 @@ class Config(BaseModel, extra="forbid"):
     """A list of DCPs (data collection points).
 
     The DCPs are given as integers, which represent the number of days
-    before departure.   An example of data collection points is given below.  
-    Note that typically as you get closer to day of departure (DCP=0) the number 
-    of days between two consecutive DCP periods decreases.  The DCP intervals are 
-    shorter because as you get closer to departure, customer arrival rates tend 
-    to increase, and it is advantageous to forecast changes in demand for shorter 
+    before departure.   An example of data collection points is given below.
+    Note that typically as you get closer to day of departure (DCP=0) the number
+    of days between two consecutive DCP periods decreases.  The DCP intervals are
+    shorter because as you get closer to departure, customer arrival rates tend
+    to increase, and it is advantageous to forecast changes in demand for shorter
     intervals.
-    
+
     Example
     -------
     ```{yaml}
@@ -111,7 +113,7 @@ class Config(BaseModel, extra="forbid"):
     booking_curves: DictOfNamed[BookingCurve] = {}
     """Booking curves
 
-    The booking curve points typically line up with the DCPs. 
+    The booking curve points typically line up with the DCPs.
 
     Example
     -------
@@ -178,14 +180,14 @@ class Config(BaseModel, extra="forbid"):
         """Read from YAML."""
         if isinstance(filenames, str | pathlib.Path):
             filenames = [filenames]
-        raw_config = {}
+        raw_config = addicty.Dict()
         for filename in reversed(filenames):
             filename = pathlib.Path(filename)
             opener = gzip.open if filename.suffix == ".gz" else open
             with opener(filename) as f:
-                content = yaml.safe_load(f)
+                content = addicty.Dict.load(f, freeze=False)
                 raw_config.update(content)
-        return cls.model_validate(raw_config)
+        return cls.model_validate(raw_config.to_dict())
 
     @classmethod
     def model_validate(
