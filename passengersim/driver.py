@@ -566,7 +566,7 @@ class Simulation:
             "bookings_by_timeframe",
             "total_demand",
         ),
-    ):
+    ) -> SummaryTables:
         num_samples = sim.num_trials * (sim.num_samples - sim.burn_samples)
         if num_samples <= 0:
             raise ValueError(
@@ -793,7 +793,7 @@ class Simulation:
         logger.debug("reseeding random_generator: %s", seed)
         self.sim.random_generator.seed(seed)
 
-    def run(self, log_reports=True):
+    def run(self, log_reports: bool = True) -> SummaryTables:
         start_time = time.time()
         self.setup_scenario()
         self._run_sim()

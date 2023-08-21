@@ -32,7 +32,6 @@ def fig_bookings_by_timeframe(
                 x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
                 xOffset=alt.XOffset("source:N", title="Source"),
                 y=alt.Y("sold", stack=True),
-                strokeWidth=alt.StrokeWidth("paxtype").title("Passenger Type"),
                 tooltip=[
                     alt.Tooltip("source").title("Source"),
                     alt.Tooltip("paxtype", title="Passenger Type"),

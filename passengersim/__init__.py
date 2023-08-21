@@ -20,11 +20,9 @@ __all__ = [
 ]
 
 
-def demo_network(name):
+def demo_network(name: str):
     import importlib.resources
 
-    return (
-        importlib.resources.files(__package__)
-        .joinpath("networks")
-        .joinpath(f"{name}.yaml")
-    )
+    if not name.endswith(".yaml"):
+        name = f"{name}.yaml"
+    return importlib.resources.files(__package__).joinpath("networks").joinpath(name)
