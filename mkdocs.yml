@@ -77,8 +77,12 @@ nav:
   - Tutorials:
     - Tutorials/index.md
     - Tutorials/reading-data.ipynb
-    - Tutorials/demo-3mkt.nbconvert.ipynb  
+    - Tutorials/demo-3mkt.nbconvert.ipynb
     - Tutorials/demo-3mkt-db.nbconvert.ipynb
+    - 3MKT:
+        - Tutorials/verification/3mkt-01.nbconvert.ipynb
+        - Tutorials/verification/3mkt-02.nbconvert.ipynb
+        - Tutorials/verification/3mkt-03.nbconvert.ipynb
   - API:
     - API/index.md
     - Config:
