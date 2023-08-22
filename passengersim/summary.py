@@ -210,7 +210,9 @@ class SummaryTables:
         def differs(x):
             return x.shift(-1, fill_value=0) - x
 
-        def _summarize(x, c):
+        def _summarize(x: pd.DataFrame, c: str):
+            if "trial" not in x.columns:
+                x = x.assign(trial=0)
             if by_class:
                 y = (
                     x.groupby(["trial", "carrier", "class", "rrd"])[f"avg_{c}"]
