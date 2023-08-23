@@ -18,7 +18,7 @@ import pandas as pd
 from passengersim.config import Config
 from passengersim.core import SimulationEngine
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("passengersim.database")
 
 
 class _VarianceFunc:

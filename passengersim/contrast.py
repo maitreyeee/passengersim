@@ -34,7 +34,7 @@ def fig_bookings_by_timeframe(
                 xOffset=alt.XOffset("source:N", title="Source", sort=source_order),
                 y=alt.Y("sold", stack=True),
                 tooltip=[
-                    alt.Tooltip("source").title("Source"),
+                    alt.Tooltip("source:N", title="Source"),
                     alt.Tooltip("paxtype", title="Passenger Type"),
                     alt.Tooltip("class", title="Booking Class"),
                     alt.Tooltip("rrd", title="DfD"),
@@ -58,15 +58,15 @@ def fig_bookings_by_timeframe(
             )
             .mark_line()
             .encode(
-                color=alt.Color("source:N", sort=source_order).title("Source"),
+                color=alt.Color("source:N", title="Source", sort=source_order),
                 x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
                 y="sold",
                 strokeDash=alt.StrokeDash("paxtype").title("Passenger Type"),
-                strokeWidth=alt.StrokeWidth("source:N", sort=source_order).title(
-                    "Source"
+                strokeWidth=alt.StrokeWidth(
+                    "source:N", title="Source", sort=source_order
                 ),
                 tooltip=[
-                    alt.Tooltip("source").title("Source"),
+                    alt.Tooltip("source:N", title="Source"),
                     alt.Tooltip("paxtype", title="Passenger Type"),
                     alt.Tooltip("rrd", title="DfD"),
                     alt.Tooltip("sold", format=".2f"),

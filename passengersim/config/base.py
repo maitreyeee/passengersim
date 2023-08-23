@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import gzip
 import importlib
+import logging
 import pathlib
 import sys
 import typing
@@ -25,6 +26,8 @@ from .paths import Path
 from .rm_systems import RmSystem
 from .simulation_controls import SimulationSettings
 from .snapshot_filter import SnapshotFilter
+
+logger = logging.getLogger("passengersim.config")
 
 
 class Config(BaseModel, extra="forbid"):
@@ -173,20 +176,64 @@ class Config(BaseModel, extra="forbid"):
         return m
 
     @classmethod
-    def from_yaml(
+    def _load_unformatted_yaml(
         cls,
-        filenames: pathlib.Path | list[pathlib.Path],
-    ):
-        """Read from YAML."""
+        filenames: str | pathlib.Path | list[str] | list[pathlib.Path],
+    ) -> addicty.Dict:
+        """
+        Read from YAML to an unvalidated addicty.Dict.
+
+        Parameters
+        ----------
+        filenames : path-like or list[path-like]
+            If multiple filenames are provided, they are loaded in order
+            and values with matching keys defined in later files will overwrite
+            the ones found in earlier files.
+
+        Returns
+        -------
+        addicty.Dict
+        """
         if isinstance(filenames, str | pathlib.Path):
             filenames = [filenames]
         raw_config = addicty.Dict()
-        for filename in reversed(filenames):
+        for filename in filenames:
             filename = pathlib.Path(filename)
             opener = gzip.open if filename.suffix == ".gz" else open
             with opener(filename) as f:
                 content = addicty.Dict.load(f, freeze=False)
+                include = content.pop("include", None)
+                if include is not None:
+                    if isinstance(include, str):
+                        filename.parent.joinpath(include)
+                        inclusions = [filename.parent.joinpath(include)]
+                    else:
+                        inclusions = [filename.parent.joinpath(i) for i in include]
+                    raw_config.update(cls._load_unformatted_yaml(inclusions))
                 raw_config.update(content)
+            logger.info("loaded config from %s", filename)
+        return raw_config
+
+    @classmethod
+    def from_yaml(
+        cls,
+        filenames: pathlib.Path | list[pathlib.Path],
+    ) -> typing.Self:
+        """
+        Read from YAML to an unvalidated addicty.Dict.
+
+        Parameters
+        ----------
+        filenames : path-like or list[path-like]
+            If multiple filenames are provided, they are loaded in order
+            and values with matching keys defined in later files will overwrite
+            the ones found in earlier files.
+
+        Returns
+        -------
+        Config
+        """
+        raw_config = cls._load_unformatted_yaml(filenames)
         return cls.model_validate(raw_config.to_dict())
 
     @classmethod
@@ -200,16 +247,25 @@ class Config(BaseModel, extra="forbid"):
         This method reloads the Config class to ensure all imported
         RmSteps are properly registered before validation.
 
-        Args:
-            obj: The object to validate.
-            strict: Whether to raise an exception on invalid fields.
-            from_attributes: Whether to extract data from object attributes.
-            context: Additional context to pass to the validator.
+        Parameters
+        ----------
+        obj
+            The object to validate.
+        strict : bool
+            Whether to raise an exception on invalid fields.
+        from_attributes
+            Whether to extract data from object attributes.
+        context
+            Additional context to pass to the validator.
 
-        Raises:
-            ValidationError: If the object could not be validated.
+        Raises
+        ------
+        ValidationError
+            If the object could not be validated.
 
-        Returns:
+        Returns
+        -------
+        Config
             The validated model instance.
         """
         # reload these to refresh for any newly defined RmSteps
