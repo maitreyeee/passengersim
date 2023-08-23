@@ -278,9 +278,9 @@ class Simulation:
 
     def setup_scenario(self):
         self.cnx.delete_experiment(self.sim.name)
-        logger.info("building connections")
+        logger.debug("building connections")
         num_paths = self.sim.build_connections()
-        logger.info(f"Connections done, num_paths = {num_paths}")
+        logger.debug(f"Connections done, num_paths = {num_paths}")
         self.vn_initial_mapping()
 
     def vn_initial_mapping(self):

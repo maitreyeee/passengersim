@@ -141,14 +141,14 @@ class Database:
 
     def delete_experiment(self, name: str):
         if self.is_open:
-            logger.info(f"deleting existing scenario {name!r} from database")
+            logger.debug(f"deleting existing scenario {name!r} from database")
             self.execute("DELETE FROM leg_detail WHERE scenario = ?", (name,))
             self.execute("DELETE FROM leg_bucket_detail WHERE scenario = ?", (name,))
             self.execute("DELETE FROM demand_detail WHERE scenario = ?", (name,))
             self.execute("DELETE FROM fare_detail WHERE scenario = ?", (name,))
             self._commit_raw()
         else:
-            logger.info(f"database not open, cannot delete {name!r}")
+            logger.debug(f"database not open, cannot delete {name!r}")
 
     def save_configs(self, cfg: Config) -> None:
         """Save configs into the database."""
