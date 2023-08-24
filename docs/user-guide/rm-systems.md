@@ -21,7 +21,7 @@ step_type.
 rm_systems:
   fcfs:
     steps: []
-  rm_nd:
+  rm_no_detruncation:
     steps:
       - step_type: untruncation
         name: untruncation
@@ -77,7 +77,7 @@ No steps are defined for `fcfs` as there is no demand detruncation, demand
 forecasting, or optimization done with FCFS.  If step_types are defined when 
 `fcfs` is explicitly specified as the optimization algorithm, they will be ignored.
 
-The second RM system, named `rm_nd`, is leg-based and uses an `additive_pickup` 
+The second RM system, named `rm_no_detruncation`, is leg-based and uses an `additive_pickup` 
 forecasting model with EMSRb and no demand detrunction. The alpha parameter that 
 is specified in the forecast `step_type` will be ignored as it is not used for 
 the additive pick-up model.

@@ -34,7 +34,7 @@ simulation_controls:
 rm_systems:
   fcfs:
     steps: []
-  rm_nd:
+  rm_no_detruncation:
     steps:
       - step_type: untruncation
         name: untruncation
