@@ -32,19 +32,20 @@ After the docker image is loaded, you should see a `sky` image in the docker des
 dashboard.  If you can see it, you should then be able to start a container with
 this image using the following command:
 
-=== Mac/Linux
+=== "Mac/Linux"
 
-   ```
-   docker run -p 8899:8899 --rm --volume "$(pwd)":/tmp/workplace/work sky:latest
-   ```
+    ``` bash
+    docker run -p 8899:8899 --rm --volume "$(pwd)":/tmp/workplace/work sky:latest
+    ```
 
 === "Windows"
 
-   ```
-   docker run -p 8899:8899 --rm --volume "%cd%":/tmp/workplace/work sky:latest
-   ```
+    ``` bash
+    docker run -p 8899:8899 --rm --volume "%cd%":/tmp/workplace/work sky:latest
+    ```
 
 Within this command, we have:
+
 - `-p 8899:8899` tells docker to expose the container's port 8899 (which has been 
   configured to be the port served by Jupyter Lab) to localhost.
 - `--rm` means to remove the container when it exits, so there isn't an 
