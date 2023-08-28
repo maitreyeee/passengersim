@@ -4,7 +4,7 @@
 
 scenario: AW_test
 simulation_controls:
-  num_trials: 5
+  num_trials: 15
   num_samples: 600
   sys_k_factor: 0.1
   mkt_k_factor: 0.15
@@ -31,7 +31,7 @@ rm_systems:
       - step_type: forecast
         name: forecast
         algorithm: exp_smoothing
-        alpha: 0.1
+        alpha: 0.15
         kind: leg
       - step_type: emsr
         name: optimization
