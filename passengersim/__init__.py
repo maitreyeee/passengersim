@@ -26,3 +26,10 @@ def demo_network(name: str):
     if not name.endswith(".yaml"):
         name = f"{name}.yaml"
     return importlib.resources.files(__package__).joinpath("networks").joinpath(name)
+
+
+def versions():
+    """Print the versions"""
+    print(f"passengersim {__version__}")
+    import passengersim_core
+    print(f"passengersim.core {passengersim_core.__version__}")
