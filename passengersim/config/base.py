@@ -218,7 +218,7 @@ class Config(BaseModel, extra="forbid"):
     def from_yaml(
         cls,
         filenames: pathlib.Path | list[pathlib.Path],
-    ) -> typing.Self:
+    ):
         """
         Read from YAML to an unvalidated addicty.Dict.
 
@@ -241,7 +241,7 @@ class Config(BaseModel, extra="forbid"):
         cls,
         *args,
         **kwargs,
-    ) -> typing.Self:
+    ):
         """Validate the passengersim Config inputs.
 
         This method reloads the Config class to ensure all imported
