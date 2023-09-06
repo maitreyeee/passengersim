@@ -793,6 +793,13 @@ class Simulation:
         logger.debug("reseeding random_generator: %s", seed)
         self.sim.random_generator.seed(seed)
 
+    def validate_license(self, certificate_filename):
+        from cryptography.x509 import load_pem_x509_certificate
+        certificate_filename = pathlib.Path(certificate_filename)
+        with certificate_filename.open("rb") as f:
+            user_cert = load_pem_x509_certificate(f.read())
+        self.sim.validate_license(user_cert)
+
     def run(self, log_reports: bool = True) -> SummaryTables:
         start_time = time.time()
         self.setup_scenario()

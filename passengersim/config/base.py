@@ -10,7 +10,7 @@ import sys
 import typing
 
 import addicty
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, field_validator
 
 from passengersim.pseudonym import random_label
 
@@ -149,6 +149,20 @@ class Config(BaseModel, extra="forbid"):
 
     snapshot_filters: list[SnapshotFilter] = []
 
+    raw_license_certificate: bytes | None = None
+
+    @field_validator("raw_license_certificate", mode="before")
+    def _handle_license_certificate(cls, v):
+        if isinstance(v, str) and v.startswith("-----BEGIN CERTIFICATE-----"):
+            v = v.encode("utf8")
+        return v
+
+    @property
+    def license_certificate(self):
+        from cryptography.x509 import load_pem_x509_certificate
+        if isinstance(self.raw_license_certificate, bytes):
+            return load_pem_x509_certificate(self.raw_license_certificate)
+
     @model_validator(mode="after")
     def _airlines_have_rm_systems(cls, m: Config):
         """Check that all airlines have RM systems that have been defined."""
@@ -199,18 +213,23 @@ class Config(BaseModel, extra="forbid"):
         raw_config = addicty.Dict()
         for filename in filenames:
             filename = pathlib.Path(filename)
-            opener = gzip.open if filename.suffix == ".gz" else open
-            with opener(filename) as f:
-                content = addicty.Dict.load(f, freeze=False)
-                include = content.pop("include", None)
-                if include is not None:
-                    if isinstance(include, str):
-                        filename.parent.joinpath(include)
-                        inclusions = [filename.parent.joinpath(include)]
-                    else:
-                        inclusions = [filename.parent.joinpath(i) for i in include]
-                    raw_config.update(cls._load_unformatted_yaml(inclusions))
-                raw_config.update(content)
+            if filename.suffix == ".pem":
+                # license certificate
+                with open(filename, 'rb') as f:
+                    raw_config.raw_license_certificate = f.read()
+            else:
+                opener = gzip.open if filename.suffix == ".gz" else open
+                with opener(filename) as f:
+                    content = addicty.Dict.load(f, freeze=False)
+                    include = content.pop("include", None)
+                    if include is not None:
+                        if isinstance(include, str):
+                            filename.parent.joinpath(include)
+                            inclusions = [filename.parent.joinpath(include)]
+                        else:
+                            inclusions = [filename.parent.joinpath(i) for i in include]
+                        raw_config.update(cls._load_unformatted_yaml(inclusions))
+                    raw_config.update(content)
             logger.info("loaded config from %s", filename)
         return raw_config
 
