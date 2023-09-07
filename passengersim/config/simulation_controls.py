@@ -2,7 +2,7 @@
 # DOC-NAME: 01-simulation-controls
 from __future__ import annotations
 
-from pydantic import BaseModel, confloat, conint, field_validator, FieldValidationInfo
+from pydantic import BaseModel, FieldValidationInfo, confloat, conint, field_validator
 
 from passengersim.utils import iso_to_unix
 
@@ -38,19 +38,19 @@ class SimulationSettings(BaseModel, extra="allow", validate_assignment=True):
     double_capacity_until: int | None = None
     """
     Double the capacity on all legs until this sample.
-    
+
     The extra capacity may reduce the statistical noise of untruncation
     within the burn period and allow the simulation to achieve a stable
-    steady state faster.  If used, this should be set to a value at least 
+    steady state faster.  If used, this should be set to a value at least
     26 below the `burn_samples` value to avoid polluting the results.
     """
 
     @field_validator("double_capacity_until")
     @classmethod
-    def _avoid_capacity_pollution(cls, v: int|None, info: FieldValidationInfo):
+    def _avoid_capacity_pollution(cls, v: int | None, info: FieldValidationInfo):
         print("_avoid_capacity_pollution", v)
-        if v and v >= info.data['burn_samples'] - 25:
-            raise ValueError('doubled capacity will pollute results')
+        if v and v >= info.data["burn_samples"] - 25:
+            raise ValueError("doubled capacity will pollute results")
         return v
 
     sys_k_factor: confloat(gt=0, lt=5.0) = 0.10
@@ -177,8 +177,8 @@ class SimulationSettings(BaseModel, extra="allow", validate_assignment=True):
 
     show_progress_bar: bool = True
     """
-    Show a progress bar while running.  
-    
+    Show a progress bar while running.
+
     The progress display requires `rich` is installed.
     """
 
