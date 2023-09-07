@@ -157,6 +157,13 @@ class SimulationSettings(BaseModel, extra="allow"):
     delay the recalculation into later in the night (or the next day).
     """
 
+    show_progress_bar: bool = True
+    """
+    Show a progress bar while running.  
+    
+    The progress display requires `rich` is installed.
+    """
+
     @field_validator("controller_time_zone", mode="before")
     def _time_zone_convert_hours_to_seconds(cls, v):
         if -12 <= v <= 12:

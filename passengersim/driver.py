@@ -21,6 +21,7 @@ from passengersim.config.snapshot_filter import SnapshotFilter
 from passengersim.summary import SummaryTables
 
 from . import database
+from .progressbar import ProgressBar
 
 logger = logging.getLogger("passengersim")
 
@@ -116,6 +117,8 @@ class Simulation:
             elif pname == "base_date":
                 pass
             elif pname == "dcp_hour":
+                pass
+            elif pname == "show_progress_bar":
                 pass
             else:
                 self.sim.set_parm(pname, float(pvalue))
@@ -303,10 +306,12 @@ class Simulation:
             f"run_sim, num_trials = {self.sim.num_trials}, num_samples = {self.sim.num_samples}"
         )
         self.sim.update_db_write_flags()
+        progress = ProgressBar(total=self.sim.num_trials * self.sim.num_samples).start()
         for trial in range(self.sim.num_trials):
             self.sim.trial = trial
             self.sim.reset_trial_counters()
             for sample in range(self.sim.num_samples):
+                progress.tick(refresh=(sample == 0))
                 self.sim.sample = sample
                 if self.sim.config.simulation_controls.random_seed is not None:
                     self.reseed(
@@ -355,6 +360,7 @@ class Simulation:
                         pass
             if self.cnx.is_open:
                 self.cnx.save_final(self.sim)
+        progress.stop()
 
     def run_airline_models(self, info: Any = None, departed: bool = False, debug=False):
         dcp = 0 if info == "Done" else info[1]
@@ -796,6 +802,7 @@ class Simulation:
     def _user_certificate(self, certificate_filename=None):
         if certificate_filename:
             from cryptography.x509 import load_pem_x509_certificate
+
             certificate_filename = pathlib.Path(certificate_filename)
             with certificate_filename.open("rb") as f:
                 user_cert = load_pem_x509_certificate(f.read())
