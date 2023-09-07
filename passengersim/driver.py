@@ -120,6 +120,8 @@ class Simulation:
                 pass
             elif pname == "show_progress_bar":
                 pass
+            elif pname == "double_capacity_until":
+                pass
             else:
                 self.sim.set_parm(pname, float(pvalue))
         for pname, pvalue in config.simulation_controls.model_extra.items():
@@ -311,6 +313,17 @@ class Simulation:
             self.sim.trial = trial
             self.sim.reset_trial_counters()
             for sample in range(self.sim.num_samples):
+                if self.sim.config.simulation_controls.double_capacity_until:
+                    # Just trying this, PODS has something similar during the burn phase
+                    if sample == 0:
+                        print("cap up, sample", sample)
+                        for leg in self.sim.legs:
+                            leg.capacity = leg.capacity * 2.0
+                    elif sample == self.sim.config.simulation_controls.double_capacity_until:
+                        print("cap down, sample", sample)
+                        for leg in self.sim.legs:
+                            leg.capacity = leg.capacity / 2.0
+
                 progress.tick(refresh=(sample == 0))
                 self.sim.sample = sample
                 if self.sim.config.simulation_controls.random_seed is not None:
@@ -367,12 +380,6 @@ class Simulation:
         dcp_index = len(self.dcp_list) - 1 if info == "Done" else info[2]
         self.sim.last_dcp = dcp
         for leg in self.sim.legs:
-            # Just trying this, PODS has something similar during the burn phase
-            # if sample == 1:
-            #    leg.capacity = leg.capacity * 2.0
-            # elif sample == 80:
-            #    leg.capacity = leg.capacity / 2.0
-
             leg.capture_dcp(dcp_index)
             if self.sim.sample == 2000 and leg.flt_no == 101:
                 logger.info(f"---------- DCP = {dcp} ----------")
