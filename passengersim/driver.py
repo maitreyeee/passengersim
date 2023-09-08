@@ -21,7 +21,7 @@ from passengersim.config.snapshot_filter import SnapshotFilter
 from passengersim.summary import SummaryTables
 
 from . import database
-from .progressbar import ProgressBar
+from .progressbar import DummyProgressBar, ProgressBar
 
 logger = logging.getLogger("passengersim")
 
@@ -308,7 +308,12 @@ class Simulation:
             f"run_sim, num_trials = {self.sim.num_trials}, num_samples = {self.sim.num_samples}"
         )
         self.sim.update_db_write_flags()
-        progress = ProgressBar(total=self.sim.num_trials * self.sim.num_samples).start()
+        if self.sim.config.simulation_controls.show_progress_bar:
+            progress = ProgressBar(
+                total=self.sim.num_trials * self.sim.num_samples
+            ).start()
+        else:
+            progress = DummyProgressBar()
         for trial in range(self.sim.num_trials):
             self.sim.trial = trial
             self.sim.reset_trial_counters()
@@ -319,7 +324,10 @@ class Simulation:
                         print("cap up, sample", sample)
                         for leg in self.sim.legs:
                             leg.capacity = leg.capacity * 2.0
-                    elif sample == self.sim.config.simulation_controls.double_capacity_until:
+                    elif (
+                        sample
+                        == self.sim.config.simulation_controls.double_capacity_until
+                    ):
                         print("cap down, sample", sample)
                         for leg in self.sim.legs:
                             leg.capacity = leg.capacity / 2.0
