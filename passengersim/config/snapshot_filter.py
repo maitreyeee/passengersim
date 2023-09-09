@@ -24,27 +24,43 @@ class SnapshotFilter(BaseModel):
             v = [v]
         return v
 
-    def run(self, sim, leg=None, path=None):
+    def run(self, sim, leg=None, path=None, why=False):
         # Check the filter conditions
         info = ""
         if len(self.sample) > 0 and sim.sample not in self.sample:
+            if why:
+                print(f" cause {sim.sample}")
             return False
         info += f"  sample={sim.sample}"
 
         if len(self.dcp) > 0 and sim.last_dcp not in self.dcp:
+            if why:
+                print(f" cause {sim.last_dcp=}")
             return False
         info += f"  dcp={sim.last_dcp}"
 
         if leg is not None:
+            if self.airline and leg.carrier != self.airline:
+                if why:
+                    print(f" cause {leg.carrier=}")
+                return False
+            info += f"  carrier={leg.carrier}"
+
             if len(self.orig) > 0 and leg.orig not in self.orig:
+                if why:
+                    print(f" cause {leg.orig=}")
                 return False
             info += f"  orig={leg.orig}"
 
             if len(self.dest) > 0 and leg.dest not in self.dest:
+                if why:
+                    print(f" cause {leg.dest=}")
                 return False
             info += f"  dest={leg.dest}"
 
             if len(self.flt_no) > 0 and leg.flt_no not in self.flt_no:
+                if why:
+                    print(f" cause {leg.flt_no=}")
                 return False
             info += f"  flt_no={leg.flt_no}"
 
@@ -72,8 +88,10 @@ class SnapshotFilter(BaseModel):
                 True  # We have a match but, for now, the caller will print the output
             )
         elif self.type == "forecast":
-            pass  # Haven't decided on the approach to this yet
+            return True  # Haven't decided on the approach to this yet
         elif self.type == "rm":
             leg.print_bucket_detail()
         elif self.type == "pro_bp":
             return True
+        if why:
+            print(" cause EOF")
