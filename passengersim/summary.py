@@ -1,4 +1,5 @@
 import os.path
+import pathlib
 from collections.abc import Container
 
 import numpy as np
@@ -85,6 +86,22 @@ class SummaryTables:
 
     def to_records(self):
         return {k: v.to_dict(orient="records") for (k, v) in self.__dict__.items()}
+
+    def to_xlsx(self, filename: str | pathlib.Path) -> None:
+        """Write summary tables to excel.
+
+        Parameters
+        ----------
+        filename : Pathlike
+            The excel file to write.
+        """
+        if isinstance(filename, str):
+            filename = pathlib.Path(filename)
+        filename.parent.mkdir(exist_ok=True, parents=True)
+        with pd.ExcelWriter(filename) as writer:
+            for k, v in self.__dict__.items():
+                if isinstance(v, pd.DataFrame):
+                    v.to_excel(writer, sheet_name=k)
 
     def fig_carrier_loads(self, raw_df=False):
         """Figure showing ASM, RPM by carrier."""

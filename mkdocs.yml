@@ -76,7 +76,7 @@ nav:
     - Writing Configs: user-guide/writing-configs.md
   - Tutorials:
     - Tutorials/index.md
-    - Tutorials/reading-data.ipynb
+    - Tutorials/reading-data.nbconvert.ipynb
     - Tutorials/demo-3mkt.nbconvert.ipynb
     - Tutorials/demo-3mkt-db.nbconvert.ipynb
     - 3MKT:
