@@ -1,6 +1,7 @@
 """Execute notebooks."""
 
 import re
+import shutil
 from pathlib import Path
 
 import nbformat
@@ -23,6 +24,8 @@ for path in sorted(doc_path.rglob("*.ipynb")):
     for e in exclusions:
         if re.search(e, str(path)):
             exclude = True
+            # simple copy instead of execution
+            shutil.copyfile(path, path.with_suffix(".nbconvert.ipynb"))
             continue
     if exclude:
         continue
