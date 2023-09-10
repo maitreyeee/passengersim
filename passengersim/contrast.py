@@ -1,3 +1,5 @@
+from typing import Literal
+
 import altair as alt
 import pandas as pd
 
@@ -88,8 +90,13 @@ def fig_bookings_by_timeframe(
         )
 
 
-def fig_carrier_load_factors(summaries, raw_df=False):
-    df = _assemble(summaries, "carrier_load_factors")
+def fig_carrier_load_factors(
+    summaries, raw_df=False, load_measure: Literal["sys_lf", "avg_lf"] = "sys_lf"
+):
+    measure_name = {"sys_lf": "System Load Factor", "avg_lf": "Leg Load factor"}.get(
+        load_measure, "Load Factor"
+    )
+    df = _assemble(summaries, "carrier_load_factors", load_measure=load_measure)
     source_order = list(summaries.keys())
     if raw_df:
         return df
@@ -98,17 +105,17 @@ def fig_carrier_load_factors(summaries, raw_df=False):
     bars = chart.mark_bar().encode(
         color=alt.Color("source:N", title="Source"),
         x=alt.X("source:N", title=None, sort=source_order),
-        y=alt.Y("avg_lf:Q", title="Load Factor").stack("zero"),
+        y=alt.Y(f"{load_measure}:Q", title=measure_name).stack("zero"),
         tooltip=[
             alt.Tooltip("source", title=None),
             alt.Tooltip("carrier", title="Carrier"),
-            alt.Tooltip("avg_lf", title="Load Factor", format=".2f"),
+            alt.Tooltip(f"{load_measure}:Q", title=measure_name, format=".2f"),
         ],
     )
     text = chart.mark_text(dx=0, dy=3, color="white", baseline="top").encode(
         x=alt.X("source:N", title=None, sort=source_order),
-        y=alt.Y("avg_lf:Q", title="Load Factor").stack("zero"),
-        text=alt.Text("avg_lf:Q", format=".2f"),
+        y=alt.Y(f"{load_measure}:Q", title=measure_name).stack("zero"),
+        text=alt.Text(f"{load_measure}:Q", format=".2f"),
     )
     return (
         (bars + text)
@@ -118,7 +125,7 @@ def fig_carrier_load_factors(summaries, raw_df=False):
         )
         .facet(
             column=alt.Column("carrier:N", title="Carrier"),
-            title="Carrier Load Factors",
+            title=f"Carrier {measure_name}s",
         )
         .configure_title(fontSize=18)
     )
