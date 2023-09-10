@@ -1,6 +1,7 @@
 import os.path
 import pathlib
 from collections.abc import Container
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -444,31 +445,59 @@ class SummaryTables:
             )
         )
 
-    def fig_carrier_load_factors(self, raw_df=False):
-        df = self.load_factors[["carrier", "avg_lf"]]
+    def _fig_carrier_load_factors(
+        self,
+        raw_df: bool,
+        load_measure: str,
+        measure_name: str,
+        measure_format: str = ".2f",
+        orient: Literal["h", "v"] = "h",
+    ):
+        df = self.load_factors[["carrier", load_measure]]
         if raw_df:
             return df
         import altair as alt
 
         chart = alt.Chart(df)
-        bars = chart.mark_bar().encode(
-            x=alt.X("carrier:N", title="Carrier"),
-            y=alt.Y("avg_lf:Q", title="Load Factor").stack("zero"),
-            tooltip=[
-                alt.Tooltip("carrier", title="Carrier"),
-                alt.Tooltip("avg_lf", title="Load Factor", format=".2f"),
-            ],
-        )
-        text = chart.mark_text(dx=0, dy=3, color="white", baseline="top").encode(
-            x=alt.X("carrier:N", title="Carrier"),
-            y=alt.Y("avg_lf:Q", title="Load Factor").stack("zero"),
-            text=alt.Text("avg_lf:Q", format=".2f"),
-        )
+        if orient == "v":
+            bars = chart.mark_bar().encode(
+                x=alt.X("carrier:N", title="Carrier"),
+                y=alt.Y(f"{load_measure}:Q", title=measure_name).stack("zero"),
+                tooltip=[
+                    alt.Tooltip("carrier", title="Carrier"),
+                    alt.Tooltip(
+                        f"{load_measure}:Q", title=measure_name, format=measure_format
+                    ),
+                ],
+            )
+            text = chart.mark_text(dx=0, dy=3, color="white", baseline="top").encode(
+                x=alt.X("carrier:N", title="Carrier"),
+                y=alt.Y(f"{load_measure}:Q", title=measure_name).stack("zero"),
+                text=alt.Text(f"{load_measure}:Q", format=measure_format),
+            )
+        else:
+            bars = chart.mark_bar().encode(
+                y=alt.Y("carrier:N", title="Carrier"),
+                x=alt.X(f"{load_measure}:Q", title=measure_name).stack("zero"),
+                tooltip=[
+                    alt.Tooltip("carrier", title="Carrier"),
+                    alt.Tooltip(
+                        f"{load_measure}:Q", title=measure_name, format=measure_format
+                    ),
+                ],
+            )
+            text = chart.mark_text(
+                dx=-5, dy=0, color="white", baseline="middle", align="right"
+            ).encode(
+                y=alt.Y("carrier:N", title="Carrier"),
+                x=alt.X(f"{load_measure}:Q", title=measure_name).stack("zero"),
+                text=alt.Text(f"{load_measure}:Q", format=measure_format),
+            )
         return (
             (bars + text)
             .properties(
-                width=50 + 75 * len(df),
-                height=300,
+                width=500,
+                height=10 + 20 * len(df),
             )
             .configure_axis(
                 labelFontSize=12,
@@ -478,40 +507,18 @@ class SummaryTables:
                 titleFontSize=12,
                 labelFontSize=15,
             )
+        )
+
+    def fig_carrier_load_factors(
+        self, raw_df=False, load_measure: Literal["sys_lf", "avg_lf"] = "sys_lf"
+    ):
+        return self._fig_carrier_load_factors(
+            raw_df,
+            load_measure,
+            "System Load Factor" if load_measure == "sys_lf" else "Leg Load Factor",
         )
 
     def fig_carrier_revenues(self, raw_df=False):
-        df = self.load_factors[["carrier", "avg_rev"]]
-        if raw_df:
-            return df
-        import altair as alt
-
-        chart = alt.Chart(df)
-        bars = chart.mark_bar().encode(
-            x=alt.X("carrier:N", title="Carrier"),
-            y=alt.Y("avg_rev:Q", title="Average Revenue").stack("zero"),
-            tooltip=[
-                alt.Tooltip("carrier", title="Carrier"),
-                alt.Tooltip("avg_rev", title="Average Revenue", format="$.4s"),
-            ],
-        )
-        text = chart.mark_text(dx=0, dy=3, color="white", baseline="top").encode(
-            x=alt.X("carrier:N", title="Carrier"),
-            y=alt.Y("avg_rev:Q", title="Average Revenue").stack("zero"),
-            text=alt.Text("avg_rev:Q", format="$.4s"),
-        )
-        return (
-            (bars + text)
-            .properties(
-                width=50 + 75 * len(df),
-                height=300,
-            )
-            .configure_axis(
-                labelFontSize=12,
-                titleFontSize=12,
-            )
-            .configure_legend(
-                titleFontSize=12,
-                labelFontSize=15,
-            )
+        return self._fig_carrier_load_factors(
+            raw_df, "avg_rev", "Average Revenue", "$.4s"
         )
