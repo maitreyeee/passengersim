@@ -10,7 +10,7 @@ import sys
 import typing
 
 import addicty
-from pydantic import BaseModel, Field, model_validator, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from passengersim.pseudonym import random_label
 
@@ -160,6 +160,7 @@ class Config(BaseModel, extra="forbid"):
     @property
     def license_certificate(self):
         from cryptography.x509 import load_pem_x509_certificate
+
         if isinstance(self.raw_license_certificate, bytes):
             return load_pem_x509_certificate(self.raw_license_certificate)
 
@@ -215,7 +216,7 @@ class Config(BaseModel, extra="forbid"):
             filename = pathlib.Path(filename)
             if filename.suffix == ".pem":
                 # license certificate
-                with open(filename, 'rb') as f:
+                with open(filename, "rb") as f:
                     raw_config.raw_license_certificate = f.read()
             else:
                 opener = gzip.open if filename.suffix == ".gz" else open
@@ -237,7 +238,7 @@ class Config(BaseModel, extra="forbid"):
     def from_yaml(
         cls,
         filenames: pathlib.Path | list[pathlib.Path],
-    ):
+    ) -> typing.Any:
         """
         Read from YAML to an unvalidated addicty.Dict.
 
@@ -260,7 +261,7 @@ class Config(BaseModel, extra="forbid"):
         cls,
         *args,
         **kwargs,
-    ):
+    ) -> typing.Any:
         """Validate the passengersim Config inputs.
 
         This method reloads the Config class to ensure all imported

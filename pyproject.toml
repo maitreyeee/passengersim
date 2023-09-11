@@ -16,12 +16,13 @@ name = "passengersim"
 dynamic = ["version"]
 requires-python = ">=3.10"
 dependencies = [
+    "addicty",
     "numpy",
-    "scipy",
     "pandas",
     "pydantic>=2.0",
     "pyyaml",
-    "addicty",
+    "scipy",
+    "typer",
 ]
 
 [project.optional-dependencies]

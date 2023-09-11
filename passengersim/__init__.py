@@ -6,6 +6,7 @@ except ImportError:
     pass
 
 from ._version import __version__, __version_tuple__
+from .cli.info import info  # noqa: F401
 from .config import Config
 from .driver import Simulation
 from .summary import SummaryTables
@@ -28,8 +29,14 @@ def demo_network(name: str):
     return importlib.resources.files(__package__).joinpath("networks").joinpath(name)
 
 
-def versions():
+def versions(verbose=False):
     """Print the versions"""
     print(f"passengersim {__version__}")
     import passengersim_core
-    print(f"passengersim.core {passengersim_core.__version__}")
+
+    if verbose:
+        print(
+            f"passengersim.core {passengersim_core.__version__} (expires {passengersim_core.build_expiration()})"
+        )
+    else:
+        print(f"passengersim.core {passengersim_core.__version__}")

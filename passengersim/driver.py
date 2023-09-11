@@ -11,13 +11,12 @@ from math import sqrt
 from typing import Any
 
 import pandas as pd
-import passengersim_core
-from passengersim_core import PathClass, SimulationEngine
-from passengersim_core.utils import FileWriter
 
 import passengersim.config.rm_systems
+import passengersim.core
 from passengersim.config import Config
 from passengersim.config.snapshot_filter import SnapshotFilter
+from passengersim.core import PathClass, SimulationEngine
 from passengersim.summary import SummaryTables
 
 from . import database
@@ -48,7 +47,12 @@ class Simulation:
             output_dir = os.path.join(self._tempdir.name, "test1")
         self.cnx = None
         if config.simulation_controls.write_raw_files:
-            self.file_writer = FileWriter.FileWriter(output_dir)
+            try:
+                from passengersim_core.utils import FileWriter
+            except ImportError:
+                self.file_writer = None
+            else:
+                self.file_writer = FileWriter.FileWriter(output_dir)
         else:
             self.file_writer = None
         #        self.dcp_list = [63, 24, 17, 10, 5]
@@ -65,7 +69,7 @@ class Simulation:
         self.choice_models = {}
         self.debug = False
         self.update_frequency = None
-        self.random_generator = passengersim_core.Generator(42)
+        self.random_generator = passengersim.core.Generator(42)
         self._initialize(config)
         self.cnx = database.Database(
             engine=config.db.engine,
@@ -101,7 +105,7 @@ class Simulation:
         sim.snapshot_filters = x
 
     def _initialize(self, config: Config):
-        self.sim = passengersim_core.SimulationEngine(name=config.scenario)
+        self.sim = passengersim.core.SimulationEngine(name=config.scenario)
         self.sim.config = config
         self.sim.random_generator = self.random_generator
         self.sim.snapshot_filters = config.snapshot_filters
@@ -137,7 +141,7 @@ class Simulation:
                 x.add_step(step._factory())
 
         for cm_name, cm in config.choice_models.items():
-            x = passengersim_core.ChoiceModel(cm_name, cm.kind)
+            x = passengersim.core.ChoiceModel(cm_name, cm.kind)
             for pname, pvalue in cm:
                 if pname in ("kind", "name"):
                     continue
@@ -151,7 +155,7 @@ class Simulation:
             self.choice_models[cm_name] = x
 
         for airline_name, airline_config in config.airlines.items():
-            airline = passengersim_core.Airline(airline_name, airline_config.control)
+            airline = passengersim.core.Airline(airline_name, airline_config.control)
             airline.rm_system = self.rm_systems[airline_config.rm_system]
             self.sim.add_airline(airline)
         self.classes = config.classes
@@ -160,7 +164,7 @@ class Simulation:
 
         self.curves = {}
         for curve_name, curve_config in config.booking_curves.items():
-            bc = passengersim_core.BookingCurve(curve_name)
+            bc = passengersim.core.BookingCurve(curve_name)
             bc.random_generator = self.random_generator
             for dcp, pct in curve_config.curve.items():
                 bc.add_dcp(dcp, pct)
@@ -168,7 +172,7 @@ class Simulation:
 
         self.legs = {}
         for leg_config in config.legs:
-            leg = passengersim_core.Leg(
+            leg = passengersim.core.Leg(
                 leg_config.carrier,
                 leg_config.fltno,
                 leg_config.orig,
@@ -189,7 +193,7 @@ class Simulation:
             self.legs[leg.flt_no] = leg
 
         for dmd_config in config.demands:
-            dmd = passengersim_core.Demand(
+            dmd = passengersim.core.Demand(
                 dmd_config.orig, dmd_config.dest, dmd_config.segment
             )
             dmd.base_demand = dmd_config.base_demand * self.demand_multiplier
@@ -214,7 +218,7 @@ class Simulation:
 
         # self.fares = []
         for fare_config in config.fares:
-            fare = passengersim_core.Fare(
+            fare = passengersim.core.Fare(
                 fare_config.carrier,
                 fare_config.orig,
                 fare_config.dest,
@@ -230,7 +234,7 @@ class Simulation:
             # self.fares.append(fare)
 
         for path_config in config.paths:
-            p = passengersim_core.Path(path_config.orig, path_config.dest, 0.0)
+            p = passengersim.core.Path(path_config.orig, path_config.dest, 0.0)
             p.path_quality_index = path_config.path_quality_index
             leg_index1 = path_config.legs[0]
             tmp_leg = self.legs[leg_index1]
@@ -275,7 +279,7 @@ class Simulation:
         for bkg_class in self.classes:
             # Input as a percentage
             auth = int(cap * self.init_rm.get(bkg_class, 100.0) / 100.0)
-            b = passengersim_core.Bucket(bkg_class, alloc=auth)
+            b = passengersim.core.Bucket(bkg_class, alloc=auth)
             # print("adding bucket", b)
             _leg.add_bucket(b)
             if debug:
@@ -404,7 +408,6 @@ class Simulation:
             self.cnx.save_details(self.sim, dcp)
         if self.file_writer is not None:
             self.file_writer.save_details(self.sim, dcp)
-        # self._accum_by_tf(dcp_index)
 
     def _accum_by_tf(self, dcp_index):
         # This is now replaced by C++ native counters ...
@@ -441,7 +444,7 @@ class Simulation:
                 tmp = datetime.fromtimestamp(event_time, tz=timezone.utc)
                 print(f"Added DCP {dcp} at {tmp.strftime('%Y-%m-%d %H:%M:%S %Z')}")
             info = ("DCP", dcp, dcp_index)
-            from passengersim_core import Event
+            from passengersim.core import Event
 
             rm_event = Event(info, event_time)
             self.sim.add_event(rm_event)
