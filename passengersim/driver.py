@@ -828,9 +828,9 @@ class Simulation:
             user_cert = self.sim.config.license_certificate
         return user_cert
 
-    def validate_license(self, certificate_filename=None):
+    def validate_license(self, certificate_filename=None, future: int = 0):
         user_cert = self._user_certificate(certificate_filename)
-        return self.sim.validate_license(user_cert)
+        return self.sim.validate_license(user_cert, future=future)
 
     def license_info(self, certificate_filename=None):
         user_cert = self._user_certificate(certificate_filename)

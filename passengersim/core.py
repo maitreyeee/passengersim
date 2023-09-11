@@ -1,7 +1,7 @@
 import warnings
 
 try:
-    import passengersim_core
+    import passengersim_core  # noqa: F401
 except ImportError:
     warnings.warn("passengersim.core is not available", stacklevel=2)
     Airline = None
@@ -14,6 +14,7 @@ except ImportError:
     Forecast = None
     Generator = None
     Leg = None
+    LicenseError = None
     Market = None
     Path = None
     PathClass = None
@@ -31,6 +32,7 @@ else:
         Forecast,
         Generator,
         Leg,
+        LicenseError,
         Market,
         Path,
         PathClass,
@@ -49,6 +51,7 @@ __all__ = [
     "Forecast",
     "Generator",
     "Leg",
+    "LicenseError",
     "Market",
     "Path",
     "PathClass",
