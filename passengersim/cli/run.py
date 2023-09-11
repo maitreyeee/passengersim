@@ -20,6 +20,6 @@ def run(
 ):
     info()
     start_time = time.time()
-    sim = pax.Simualtion.from_yaml(config_files)
+    sim = pax.Simulation.from_yaml(config_files)
     sim.run(log_reports=False)
     print(time.time() - start_time)
