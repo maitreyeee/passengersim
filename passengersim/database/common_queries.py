@@ -33,6 +33,39 @@ def fare_class_mix(
     return cnx.dataframe(qry, (scenario, burn_samples))
 
 
+def od_fare_class_mix(
+    cnx: Database, orig: str, dest: str, scenario: str, burn_samples: int = 100
+) -> pd.DataFrame:
+    """Get the fare class mix for a particular market."""
+    qry = """
+    SELECT carrier, booking_class,
+           (AVG(sold)) AS avg_sold,
+           (AVG(revenue)) AS avg_revenue,
+           (AVG(revenue) / AVG(sold)) AS avg_price,
+           SUM(nobs) AS nobs
+    FROM (
+            SELECT
+                trial, scenario, carrier, booking_class,
+                SUM(sold) AS sold,
+                SUM(sold * price) AS revenue,
+                COUNT(*) AS nobs
+            FROM
+                fare_detail
+            WHERE
+                rrd = 0
+                AND sample >= ?2
+                AND scenario = ?1
+                AND orig = ?3
+                AND dest = ?4
+            GROUP BY
+                trial, sample, carrier, booking_class
+    ) tmp
+    GROUP BY carrier, booking_class
+    ORDER BY carrier, booking_class;
+    """
+    return cnx.dataframe(qry, (scenario, burn_samples, orig, dest))
+
+
 def load_factors(cnx: Database, scenario: str, burn_samples: int = 100) -> pd.DataFrame:
     qry = """
     SELECT carrier,

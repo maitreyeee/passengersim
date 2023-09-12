@@ -49,6 +49,13 @@ class SummaryTables:
             self.fare_class_mix = database.common_queries.fare_class_mix(
                 db, scenario, burn_samples=burn_samples
             )
+            if self.od_fare_class_mix:
+                for orig, dest in list(self.od_fare_class_mix):
+                    self.od_fare_class_mix[
+                        (orig, dest)
+                    ] = database.common_queries.od_fare_class_mix(
+                        db, orig, dest, scenario, burn_samples=burn_samples
+                    )
 
         if "load_factors" in additional and db.is_open:
             self.load_factors = database.common_queries.load_factors(
@@ -75,12 +82,14 @@ class SummaryTables:
         load_factors: pd.DataFrame | None = None,
         bookings_by_timeframe: pd.DataFrame | None = None,
         total_demand: float | None = None,
+        od_fare_class_mix: dict[tuple[str, str], pd.DataFrame] | None = None,
     ):
         self.demands = demands
         self.legs = legs
         self.paths = paths
         self.carriers = carriers
         self.fare_class_mix = fare_class_mix
+        self.od_fare_class_mix = od_fare_class_mix
         self.load_factors = load_factors
         self.bookings_by_timeframe = bookings_by_timeframe
         self.total_demand = total_demand
@@ -150,10 +159,7 @@ class SummaryTables:
             )
         )
 
-    def fig_fare_class_mix(self, raw_df=False, label_threshold=0.06):
-        df = self.fare_class_mix[["carrier", "booking_class", "avg_sold"]]
-        if raw_df:
-            return df
+    def _fig_fare_class_mix(self, df: pd.DataFrame, label_threshold: float = 0.06):
         import altair as alt
 
         label_threshold_value = (
@@ -198,6 +204,22 @@ class SummaryTables:
                 labelFontSize=15,
             )
         )
+
+    def fig_fare_class_mix(self, raw_df=False, label_threshold=0.06):
+        df = self.fare_class_mix[["carrier", "booking_class", "avg_sold"]]
+        if raw_df:
+            return df
+        return self._fig_fare_class_mix(df, label_threshold=label_threshold)
+
+    def fig_od_fare_class_mix(
+        self, orig: str, dest: str, raw_df=False, label_threshold=0.06
+    ):
+        df = self.od_fare_class_mix[orig, dest][
+            ["carrier", "booking_class", "avg_sold"]
+        ]
+        if raw_df:
+            return df
+        return self._fig_fare_class_mix(df, label_threshold=label_threshold)
 
     @property
     def raw_fare_class_mix(self) -> pd.DataFrame:

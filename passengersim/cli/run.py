@@ -1,4 +1,3 @@
-import time
 from pathlib import Path
 
 import typer
@@ -19,7 +18,5 @@ def run(
     ),
 ):
     info()
-    start_time = time.time()
     sim = pax.Simulation.from_yaml(config_files)
     sim.run(log_reports=False)
-    print(time.time() - start_time)

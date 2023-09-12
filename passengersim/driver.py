@@ -619,6 +619,21 @@ class Simulation:
                 self.cnx, sim.name, burn_samples=sim.burn_samples
             )
 
+        for i in additional:
+            if (
+                isinstance(i, tuple)
+                and i[0] == "od_fare_class_mix"
+                and self.cnx.is_open
+            ):
+                orig, dest = i[1], i[2]
+                if summary.od_fare_class_mix is None:
+                    summary.od_fare_class_mix = {}
+                summary.od_fare_class_mix[
+                    (orig, dest)
+                ] = database.common_queries.od_fare_class_mix(
+                    self.cnx, orig, dest, sim.name, burn_samples=sim.burn_samples
+                )
+
         if "load_factors" in additional and self.cnx.is_open:
             summary.load_factors = database.common_queries.load_factors(
                 self.cnx, sim.name, burn_samples=sim.burn_samples
@@ -836,11 +851,17 @@ class Simulation:
         user_cert = self._user_certificate(certificate_filename)
         return self.sim.license_info(user_cert)
 
-    def run(self, log_reports: bool = True) -> SummaryTables:
+    def run(self, log_reports: bool = False) -> SummaryTables:
         start_time = time.time()
         self.setup_scenario()
         self._run_sim()
-        summary = self.compute_reports(self.sim, to_log=log_reports)
+        summary = self.compute_reports(
+            self.sim,
+            to_log=log_reports or self.sim.config.outputs.log_reports,
+            additional=self.sim.config.outputs.reports,
+        )
+        if self.sim.config.outputs.excel:
+            summary.to_xlsx(self.sim.config.outputs.excel)
         logger.info(
             f"Th' th' that's all folks !!!    (Elapsed time = {round(time.time() - start_time, 2)})"
         )

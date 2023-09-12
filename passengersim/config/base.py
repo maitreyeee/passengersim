@@ -22,6 +22,7 @@ from .demands import Demand
 from .fares import Fare
 from .legs import Leg
 from .named import DictOfNamed
+from .outputs import OutputConfig
 from .paths import Path
 from .rm_systems import RmSystem
 from .simulation_controls import SimulationSettings
@@ -49,6 +50,11 @@ class Config(BaseModel, extra="forbid"):
     db: DatabaseConfig = DatabaseConfig()
     """
     See [passengersim.config.DatabaseConfig][] for detailed documentation.
+    """
+
+    outputs: OutputConfig = OutputConfig()
+    """
+    See [passengersim.config.OutputConfig][] for detailed documentation.
     """
 
     rm_systems: DictOfNamed[RmSystem] = {}
