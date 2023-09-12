@@ -51,7 +51,7 @@ class Config(BaseModel, extra="forbid"):
     See [passengersim.config.DatabaseConfig][] for detailed documentation.
     """
 
-    rm_systems: DictOfNamed[RmSystem] = []
+    rm_systems: DictOfNamed[RmSystem] = {}
     """
     The revenue management systems used by the carriers in this simulation.
 
@@ -214,7 +214,7 @@ class Config(BaseModel, extra="forbid"):
         raw_config = addicty.Dict()
         for filename in filenames:
             filename = pathlib.Path(filename)
-            if filename.suffix == ".pem":
+            if filename.suffix in (".pem", ".crt", ".cert"):
                 # license certificate
                 with open(filename, "rb") as f:
                     raw_config.raw_license_certificate = f.read()
