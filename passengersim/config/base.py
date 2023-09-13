@@ -31,7 +31,78 @@ from .snapshot_filter import SnapshotFilter
 logger = logging.getLogger("passengersim.config")
 
 
-class Config(BaseModel, extra="forbid"):
+TConfig = typing.TypeVar("TConfig", bound="YamlConfig")
+
+
+class YamlConfig(BaseModel):
+    @classmethod
+    def _load_unformatted_yaml(
+        cls: type[TConfig],
+        filenames: str | pathlib.Path | list[str] | list[pathlib.Path],
+    ) -> addicty.Dict:
+        """
+        Read from YAML to an unvalidated addicty.Dict.
+
+        Parameters
+        ----------
+        filenames : path-like or list[path-like]
+            If multiple filenames are provided, they are loaded in order
+            and values with matching keys defined in later files will overwrite
+            the ones found in earlier files.
+
+        Returns
+        -------
+        addicty.Dict
+        """
+        if isinstance(filenames, str | pathlib.Path):
+            filenames = [filenames]
+        raw_config = addicty.Dict()
+        for filename in filenames:
+            filename = pathlib.Path(filename)
+            if filename.suffix in (".pem", ".crt", ".cert"):
+                # license certificate
+                with open(filename, "rb") as f:
+                    raw_config.raw_license_certificate = f.read()
+            else:
+                opener = gzip.open if filename.suffix == ".gz" else open
+                with opener(filename) as f:
+                    content = addicty.Dict.load(f, freeze=False)
+                    include = content.pop("include", None)
+                    if include is not None:
+                        if isinstance(include, str):
+                            filename.parent.joinpath(include)
+                            inclusions = [filename.parent.joinpath(include)]
+                        else:
+                            inclusions = [filename.parent.joinpath(i) for i in include]
+                        raw_config.update(cls._load_unformatted_yaml(inclusions))
+                    raw_config.update(content)
+            logger.info("loaded config from %s", filename)
+        return raw_config
+
+    @classmethod
+    def from_yaml(
+        cls: type[TConfig],
+        filenames: pathlib.Path | list[pathlib.Path],
+    ) -> TConfig:
+        """
+        Read from YAML to an unvalidated addicty.Dict.
+
+        Parameters
+        ----------
+        filenames : path-like or list[path-like]
+            If multiple filenames are provided, they are loaded in order
+            and values with matching keys defined in later files will overwrite
+            the ones found in earlier files.
+
+        Returns
+        -------
+        Config
+        """
+        raw_config = cls._load_unformatted_yaml(filenames)
+        return cls.model_validate(raw_config.to_dict())
+
+
+class Config(YamlConfig, extra="forbid"):
     scenario: str = Field(default_factory=random_label)
     """Name for this scenario.
 
@@ -195,72 +266,6 @@ class Config(BaseModel, extra="forbid"):
                 ), f"booking curve {curve.name} moves backwards at dcp {dcp}"
                 i = curve.curve[dcp]
         return m
-
-    @classmethod
-    def _load_unformatted_yaml(
-        cls,
-        filenames: str | pathlib.Path | list[str] | list[pathlib.Path],
-    ) -> addicty.Dict:
-        """
-        Read from YAML to an unvalidated addicty.Dict.
-
-        Parameters
-        ----------
-        filenames : path-like or list[path-like]
-            If multiple filenames are provided, they are loaded in order
-            and values with matching keys defined in later files will overwrite
-            the ones found in earlier files.
-
-        Returns
-        -------
-        addicty.Dict
-        """
-        if isinstance(filenames, str | pathlib.Path):
-            filenames = [filenames]
-        raw_config = addicty.Dict()
-        for filename in filenames:
-            filename = pathlib.Path(filename)
-            if filename.suffix in (".pem", ".crt", ".cert"):
-                # license certificate
-                with open(filename, "rb") as f:
-                    raw_config.raw_license_certificate = f.read()
-            else:
-                opener = gzip.open if filename.suffix == ".gz" else open
-                with opener(filename) as f:
-                    content = addicty.Dict.load(f, freeze=False)
-                    include = content.pop("include", None)
-                    if include is not None:
-                        if isinstance(include, str):
-                            filename.parent.joinpath(include)
-                            inclusions = [filename.parent.joinpath(include)]
-                        else:
-                            inclusions = [filename.parent.joinpath(i) for i in include]
-                        raw_config.update(cls._load_unformatted_yaml(inclusions))
-                    raw_config.update(content)
-            logger.info("loaded config from %s", filename)
-        return raw_config
-
-    @classmethod
-    def from_yaml(
-        cls,
-        filenames: pathlib.Path | list[pathlib.Path],
-    ) -> typing.Any:
-        """
-        Read from YAML to an unvalidated addicty.Dict.
-
-        Parameters
-        ----------
-        filenames : path-like or list[path-like]
-            If multiple filenames are provided, they are loaded in order
-            and values with matching keys defined in later files will overwrite
-            the ones found in earlier files.
-
-        Returns
-        -------
-        Config
-        """
-        raw_config = cls._load_unformatted_yaml(filenames)
-        return cls.model_validate(raw_config.to_dict())
 
     @classmethod
     def model_validate(
