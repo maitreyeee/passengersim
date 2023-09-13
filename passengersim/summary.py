@@ -1,6 +1,7 @@
+import logging
 import os.path
 import pathlib
-from collections.abc import Container
+from collections.abc import Collection
 from typing import Literal
 
 import numpy as np
@@ -8,37 +9,68 @@ import pandas as pd
 
 from . import database
 
+logger = logging.getLogger("passengersim.summary")
+
 
 class SummaryTables:
     @classmethod
-    def from_sqlite(cls, filename: str):
+    def from_sqlite(
+        cls,
+        filename: str,
+        make_indexes: bool = False,
+        additional: Collection[str | tuple] = (
+            "fare_class_mix",
+            "load_factors",
+            "bookings_by_timeframe",
+            "total_demand",
+        ),
+    ):
         if not os.path.isfile(filename):
             raise FileNotFoundError(filename)
         db = database.Database(
             engine="sqlite",
             filename=filename,
         )
+
+        demands = cls.load_basic_table(db, "demand_summary")
+        legs = cls.load_basic_table(db, "leg_summary")
+        paths = cls.load_basic_table(db, "path_summary")
+        carriers = cls.load_basic_table(db, "carrier_summary")
+
         summary = cls(
-            demands=db.dataframe("SELECT * FROM demand_summary"),
-            legs=db.dataframe("SELECT * FROM leg_summary"),
-            paths=db.dataframe("SELECT * FROM path_summary"),
-            carriers=db.dataframe("SELECT * FROM carrier_summary"),
+            demands=demands,
+            legs=legs,
+            paths=paths,
+            carriers=carriers,
         )
+
+        if make_indexes:
+            db.add_indexes()
+
+        logger.info("loading configs")
         config = db.load_configs()
+
         summary.load_additional_tables(
             db,
             scenario=config.scenario,
             burn_samples=config.simulation_controls.burn_samples,
+            additional=additional,
         )
         summary.cnx = db
         return summary
+
+    @classmethod
+    def load_basic_table(self, db: database.Database, tablename: str):
+        """Load a basic table"""
+        logger.info("loading %s", tablename)
+        return db.dataframe(f"SELECT * FROM {tablename}")
 
     def load_additional_tables(
         self,
         db: database.Database,
         scenario: str,
         burn_samples: int,
-        additional: Container[str] = (
+        additional: Collection[str | tuple] = (
             "fare_class_mix",
             "load_factors",
             "bookings_by_timeframe",
@@ -46,6 +78,7 @@ class SummaryTables:
         ),
     ) -> None:
         if "fare_class_mix" in additional and db.is_open:
+            logger.info("loading fare_class_mix")
             self.fare_class_mix = database.common_queries.fare_class_mix(
                 db, scenario, burn_samples=burn_samples
             )
@@ -57,17 +90,32 @@ class SummaryTables:
                         db, orig, dest, scenario, burn_samples=burn_samples
                     )
 
+        for i in additional:
+            if isinstance(i, tuple) and i[0] == "od_fare_class_mix" and db.is_open:
+                orig, dest = i[1], i[2]
+                if self.od_fare_class_mix is None:
+                    self.od_fare_class_mix = {}
+                logger.info(f"loading od_fare_class_mix({orig},{dest})")
+                self.od_fare_class_mix[
+                    (orig, dest)
+                ] = database.common_queries.od_fare_class_mix(
+                    db, orig, dest, scenario, burn_samples=burn_samples
+                )
+
         if "load_factors" in additional and db.is_open:
+            logger.info("loading load_factors")
             self.load_factors = database.common_queries.load_factors(
                 db, scenario, burn_samples=burn_samples
             )
 
         if "bookings_by_timeframe" in additional and db.is_open:
+            logger.info("loading bookings_by_timeframe")
             self.bookings_by_timeframe = database.common_queries.bookings_by_timeframe(
                 db, scenario, burn_samples=burn_samples
             )
 
         if "total_demand" in additional and db.is_open:
+            logger.info("loading total_demand")
             self.total_demand = database.common_queries.total_demand(
                 db, scenario, burn_samples
             )

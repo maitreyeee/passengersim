@@ -90,8 +90,103 @@ def fig_bookings_by_timeframe(
         )
 
 
+def _fig_carrier_measure(
+    df,
+    source_order,
+    load_measure: str,
+    measure_name: str,
+    measure_format: str = ".2f",
+    orient: Literal["h", "v"] = "h",
+):
+    chart = alt.Chart(df)
+    if orient == "v":
+        bars = chart.mark_bar().encode(
+            color=alt.Color("source:N", title="Source"),
+            x=alt.X("source:N", title=None, sort=source_order),
+            y=alt.Y(f"{load_measure}:Q", title=measure_name).stack("zero"),
+            tooltip=[
+                alt.Tooltip("source", title=None),
+                alt.Tooltip("carrier", title="Carrier"),
+                alt.Tooltip(
+                    f"{load_measure}:Q", title=measure_name, format=measure_format
+                ),
+            ],
+        )
+        text = chart.mark_text(dx=0, dy=3, color="white", baseline="top").encode(
+            x=alt.X("source:N", title=None, sort=source_order),
+            y=alt.Y(f"{load_measure}:Q", title=measure_name).stack("zero"),
+            text=alt.Text(f"{load_measure}:Q", format=measure_format),
+        )
+        return (
+            (bars + text)
+            .properties(
+                width=55 * len(source_order),
+                height=300,
+            )
+            .facet(
+                column=alt.Column("carrier:N", title="Carrier"),
+                title="Carrier Revenues",
+            )
+            .configure_title(fontSize=18)
+        )
+    else:
+        bars = chart.mark_bar().encode(
+            color=alt.Color("source:N", title="Source"),
+            y=alt.Y("source:N", title=None, sort=source_order),
+            x=alt.X(f"{load_measure}:Q", title=measure_name).stack("zero"),
+            tooltip=[
+                alt.Tooltip("source", title=None),
+                alt.Tooltip("carrier", title="Carrier"),
+                alt.Tooltip(
+                    f"{load_measure}:Q", title=measure_name, format=measure_format
+                ),
+            ],
+        )
+        text = chart.mark_text(
+            dx=-5, dy=0, color="white", baseline="middle", align="right"
+        ).encode(
+            y=alt.Y("source:N", title=None, sort=source_order),
+            x=alt.X(f"{load_measure}:Q", title=measure_name).stack("zero"),
+            text=alt.Text(f"{load_measure}:Q", format=measure_format),
+        )
+        return (
+            (bars + text)
+            .properties(
+                width=500,
+                height=10 + 20 * len(source_order),
+            )
+            .facet(
+                row=alt.Row("carrier:N", title="Carrier"),
+                title="Carrier Revenues",
+            )
+            .configure_title(fontSize=18)
+        )
+
+
+def fig_carrier_revenues(
+    summaries,
+    raw_df=False,
+    orient: Literal["h", "v"] = "h",
+):
+    df = _assemble(summaries, "carrier_revenues")
+    source_order = list(summaries.keys())
+    if raw_df:
+        return df
+    return _fig_carrier_measure(
+        df,
+        source_order,
+        load_measure="avg_rev",
+        measure_name="Revenue ($)",
+        measure_format="$.4s",
+        orient=orient,
+    )
+
+
 def fig_carrier_load_factors(
-    summaries, raw_df=False, load_measure: Literal["sys_lf", "avg_lf"] = "sys_lf"
+    summaries,
+    raw_df=False,
+    load_measure: Literal["sys_lf", "avg_lf"] = "sys_lf",
+    orient: Literal["h", "v"] = "h",
 ):
     measure_name = {"sys_lf": "System Load Factor", "avg_lf": "Leg Load factor"}.get(
         load_measure, "Load Factor"
@@ -100,70 +195,13 @@ def fig_carrier_load_factors(
     source_order = list(summaries.keys())
     if raw_df:
         return df
-
-    chart = alt.Chart(df)
-    bars = chart.mark_bar().encode(
-        color=alt.Color("source:N", title="Source"),
-        x=alt.X("source:N", title=None, sort=source_order),
-        y=alt.Y(f"{load_measure}:Q", title=measure_name).stack("zero"),
-        tooltip=[
-            alt.Tooltip("source", title=None),
-            alt.Tooltip("carrier", title="Carrier"),
-            alt.Tooltip(f"{load_measure}:Q", title=measure_name, format=".2f"),
-        ],
-    )
-    text = chart.mark_text(dx=0, dy=3, color="white", baseline="top").encode(
-        x=alt.X("source:N", title=None, sort=source_order),
-        y=alt.Y(f"{load_measure}:Q", title=measure_name).stack("zero"),
-        text=alt.Text(f"{load_measure}:Q", format=".2f"),
-    )
-    return (
-        (bars + text)
-        .properties(
-            width=25 + 25 * len(df),
-            height=300,
-        )
-        .facet(
-            column=alt.Column("carrier:N", title="Carrier"),
-            title=f"Carrier {measure_name}s",
-        )
-        .configure_title(fontSize=18)
-    )
-
-
-def fig_carrier_revenues(summaries, raw_df=False):
-    df = _assemble(summaries, "carrier_revenues")
-    source_order = list(summaries.keys())
-    if raw_df:
-        return df
-
-    chart = alt.Chart(df)
-    bars = chart.mark_bar().encode(
-        color=alt.Color("source:N", title="Source"),
-        x=alt.X("source:N", title=None, sort=source_order),
-        y=alt.Y("avg_rev:Q", title="Revenue ($)").stack("zero"),
-        tooltip=[
-            alt.Tooltip("source", title=None),
-            alt.Tooltip("carrier", title="Carrier"),
-            alt.Tooltip("avg_rev", title="Revenue ($)", format="$.4s"),
-        ],
-    )
-    text = chart.mark_text(dx=0, dy=3, color="white", baseline="top").encode(
-        x=alt.X("source:N", title=None, sort=source_order),
-        y=alt.Y("avg_rev:Q", title="Revenue ($)").stack("zero"),
-        text=alt.Text("avg_rev:Q", format="$.4s"),
-    )
-    return (
-        (bars + text)
-        .properties(
-            width=25 + 25 * len(df),
-            height=300,
-        )
-        .facet(
-            column=alt.Column("carrier:N", title="Carrier"),
-            title="Carrier Revenues",
-        )
-        .configure_title(fontSize=18)
+    return _fig_carrier_measure(
+        df,
+        source_order,
+        load_measure=load_measure,
+        measure_name=measure_name,
+        measure_format=".2f",
+        orient=orient,
     )
 
 

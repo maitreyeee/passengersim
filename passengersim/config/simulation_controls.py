@@ -48,7 +48,6 @@ class SimulationSettings(BaseModel, extra="allow", validate_assignment=True):
     @field_validator("double_capacity_until")
     @classmethod
     def _avoid_capacity_pollution(cls, v: int | None, info: FieldValidationInfo):
-        print("_avoid_capacity_pollution", v)
         if v and v >= info.data["burn_samples"] - 25:
             raise ValueError("doubled capacity will pollute results")
         return v

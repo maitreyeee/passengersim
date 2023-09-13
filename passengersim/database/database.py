@@ -92,7 +92,7 @@ class Database:
             for pragma in self.pragmas:
                 self._connection.execute(f"PRAGMA {pragma};")
             self._connection.execute("BEGIN TRANSACTION;")
-            logger.info("initializing sqlite tables")
+            logger.debug("initializing sqlite tables")
             from .tables import create_tables
 
             create_tables(self)
@@ -225,6 +225,37 @@ class Database:
     ):
         """Save a dataframe as a table in this database."""
         df.to_sql(name, self._connection, if_exists=if_exists)
+
+    def table_names(self) -> list[str]:
+        """List of all tables in the database."""
+        qry = "SELECT name FROM sqlite_master WHERE type=='table'"
+        return [i[0] for i in self._connection.execute(qry)]
+
+    def table_info(self, table_name: str) -> pd.DataFrame:
+        """Get info about a table"""
+        df = self.dataframe(f"PRAGMA table_info({table_name})")
+        return df.set_index("cid")
+
+    def index_names(self, table_name) -> list[str]:
+        """List of all named indexes on a given table."""
+        qry = "SELECT name FROM sqlite_master WHERE type=='index' AND tbl_name==?1"
+        return [i[0] for i in self._connection.execute(qry, (table_name,))]
+
+    def add_indexes(self, fare_detail=True):
+        any_work = False
+        if fare_detail and "fare_detail_idx_2" not in self.index_names("fare_detail"):
+            logger.info("adding index on fare_detail")
+            idx = """
+            CREATE INDEX fare_detail_idx_2
+            ON fare_detail (scenario, trial, sample, rrd, carrier, booking_class);
+            """
+            self._connection.execute(idx)
+            self._connection.commit()
+            self._connection.execute("BEGIN TRANSACTION;")
+            any_work = True
+
+        if any_work:
+            logger.info("completed adding indexes")
 
     def backup(self, dst: Path | str | sqlite3.Connection, show_progress: bool = True):
         """Back up this database to another copy."""

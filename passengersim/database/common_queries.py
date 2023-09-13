@@ -1,6 +1,10 @@
+import logging
+
 import pandas as pd
 
 from .database import Database
+
+logger = logging.getLogger("passengersim.database")
 
 
 def fare_class_mix(

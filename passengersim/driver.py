@@ -70,6 +70,7 @@ class Simulation:
         self.debug = False
         self.update_frequency = None
         self.random_generator = passengersim.core.Generator(42)
+        self.sample_done_callback = lambda n, n_total: None
         self._initialize(config)
         self.cnx = database.Database(
             engine=config.db.engine,
@@ -312,10 +313,11 @@ class Simulation:
             f"run_sim, num_trials = {self.sim.num_trials}, num_samples = {self.sim.num_samples}"
         )
         self.sim.update_db_write_flags()
+        n_samples_total = self.sim.num_trials * self.sim.num_samples
+        n_samples_done = 0
+        self.sample_done_callback(n_samples_done, n_samples_total)
         if self.sim.config.simulation_controls.show_progress_bar:
-            progress = ProgressBar(
-                total=self.sim.num_trials * self.sim.num_samples
-            ).start()
+            progress = ProgressBar(total=n_samples_total).start()
         else:
             progress = DummyProgressBar()
         for trial in range(self.sim.num_trials):
@@ -383,6 +385,9 @@ class Simulation:
                         self.cnx.commit()
                     except AttributeError:
                         pass
+
+                n_samples_done += 1
+                self.sample_done_callback(n_samples_done, n_samples_total)
             if self.cnx.is_open:
                 self.cnx.save_final(self.sim)
         progress.stop()
@@ -613,44 +618,7 @@ class Simulation:
             paths=path_df,
             carriers=carrier_df,
         )
-
-        if "fare_class_mix" in additional and self.cnx.is_open:
-            summary.fare_class_mix = database.common_queries.fare_class_mix(
-                self.cnx, sim.name, burn_samples=sim.burn_samples
-            )
-
-        for i in additional:
-            if (
-                isinstance(i, tuple)
-                and i[0] == "od_fare_class_mix"
-                and self.cnx.is_open
-            ):
-                orig, dest = i[1], i[2]
-                if summary.od_fare_class_mix is None:
-                    summary.od_fare_class_mix = {}
-                summary.od_fare_class_mix[
-                    (orig, dest)
-                ] = database.common_queries.od_fare_class_mix(
-                    self.cnx, orig, dest, sim.name, burn_samples=sim.burn_samples
-                )
-
-        if "load_factors" in additional and self.cnx.is_open:
-            summary.load_factors = database.common_queries.load_factors(
-                self.cnx, sim.name, burn_samples=sim.burn_samples
-            )
-
-        if "bookings_by_timeframe" in additional and self.cnx.is_open:
-            summary.bookings_by_timeframe = (
-                database.common_queries.bookings_by_timeframe(
-                    self.cnx, sim.name, burn_samples=sim.burn_samples
-                )
-            )
-
-        if "total_demand" in additional and self.cnx.is_open:
-            summary.total_demand = database.common_queries.total_demand(
-                self.cnx, sim.name, sim.burn_samples
-            )
-
+        summary.load_additional_tables(self.cnx, sim.name, sim.burn_samples, additional)
         return summary
 
     def compute_demand_report(
