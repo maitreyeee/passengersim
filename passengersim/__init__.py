@@ -40,3 +40,9 @@ def versions(verbose=False):
         )
     else:
         print(f"passengersim.core {passengersim_core.__version__}")
+
+
+def logging(level=None):
+    from ._logging import log_to_console
+
+    log_to_console(level)

@@ -2,11 +2,15 @@ import logging
 import sys
 import time
 from contextlib import contextmanager
+from typing import Literal
 
 LOGGER_NAME = "passengersim"
 FILE_LOG_FORMAT = "%(name)s.%(levelname)s: %(message)s"
 # CONSOLE_LOG_FORMAT = "[%(asctime)s] %(name)s.%(levelname)s: %(message)s"
-CONSOLE_LOG_FORMAT = "%(name)s.%(levelname)s: %(message)s"
+CONSOLE_LOG_FORMAT = {
+    "elapsed": "[{elapsedTime}] {levelname:s}: {message:s}",
+    "std": "{name}.{levelname}: {message}",
+}
 DEFAULT_LOG_LEVEL = logging.INFO
 
 
@@ -21,7 +25,7 @@ def timesize_stack(t):
         return f"{t // 86400:.0f}d {timesize_stack(t % 86400)}"
 
 
-def log_to_console(level=None):
+def log_to_console(level=None, style: Literal["elapsed", "std"] = "elapsed"):
     if level is None:
         level = DEFAULT_LOG_LEVEL
 
@@ -33,15 +37,17 @@ def log_to_console(level=None):
     # avoid creation of multiple stream handlers for logging to console
     for entry in logger.handlers:
         if (isinstance(entry, logging.StreamHandler)) and (
-            entry.formatter._fmt == CONSOLE_LOG_FORMAT
+            entry.formatter._fmt == CONSOLE_LOG_FORMAT[style]
         ):
             if level < entry.level:
                 entry.setLevel(level)
             return logger
 
-    console_handler = logging.StreamHandler(stream=sys.stderr)
+    console_handler = logging.StreamHandler(stream=sys.stdout)
     console_handler.setLevel(level)
-    console_handler.setFormatter(logging.Formatter(CONSOLE_LOG_FORMAT))
+    console_handler.setFormatter(
+        ElapsedTimeFormatter(CONSOLE_LOG_FORMAT[style], style="{")
+    )
     logger.addHandler(console_handler)
 
     return logger
@@ -134,3 +140,15 @@ class TimingLog:
             f"<SPLIT> {self.label}{note} <{timesize_stack(now - self.split_time)}>",
         )
         self.split_time = now
+
+
+class ElapsedTimeFormatter(logging.Formatter):
+    def format(self, record):
+        duration_milliseconds = record.relativeCreated
+        hours, rem = divmod(duration_milliseconds / 1000, 3600)
+        minutes, seconds = divmod(rem, 60)
+        if hours:
+            record.elapsedTime = f"{int(hours):0>2}:{int(minutes):0>2}:{seconds:05.2f}"
+        else:
+            record.elapsedTime = f"{int(minutes):0>2}:{seconds:05.2f}"
+        return super().format(record)
