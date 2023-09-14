@@ -29,6 +29,7 @@ simulation_controls:
   disable_ap: true
   demand_multiplier: 1.0
   manual_paths: false
+  timeframe_demand_allocation: pods
 
 rm_systems:
   fcfs:

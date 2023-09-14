@@ -19,6 +19,8 @@ def _assemble(summaries, base, **kwargs):
 def fig_bookings_by_timeframe(
     summaries, by_carrier: bool | str = True, by_class: bool | str = False, raw_df=False
 ):
+    if by_carrier is True and by_class is True:
+        raise NotImplementedError("comparing by both class and carrier is messy")
     df = _assemble(
         summaries, "bookings_by_timeframe", by_carrier=by_carrier, by_class=by_class
     )
@@ -50,6 +52,33 @@ def fig_bookings_by_timeframe(
             .facet(
                 row=alt.Row("paxtype:N", title="Passenger Type"),
                 title="Bookings by Class by Timeframe",
+            )
+            .configure_title(fontSize=18)
+        )
+    elif by_carrier is True:
+        return (
+            alt.Chart(df.sort_values("source", ascending=False))
+            .mark_bar()
+            .encode(
+                color=alt.Color("carrier:N").title("Carrier"),
+                x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+                xOffset=alt.XOffset("source:N", title="Source", sort=source_order),
+                y=alt.Y("sold", stack=True),
+                tooltip=[
+                    alt.Tooltip("source:N", title="Source"),
+                    alt.Tooltip("paxtype", title="Passenger Type"),
+                    alt.Tooltip("carrier", title="Carrier"),
+                    alt.Tooltip("rrd", title="DfD"),
+                    alt.Tooltip("sold", format=".2f"),
+                ],
+            )
+            .properties(
+                width=500,
+                height=200,
+            )
+            .facet(
+                row=alt.Row("paxtype:N", title="Passenger Type"),
+                title="Bookings by Carrier by Timeframe",
             )
             .configure_title(fontSize=18)
         )

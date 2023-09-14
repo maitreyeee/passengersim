@@ -2,6 +2,8 @@
 # DOC-NAME: 01-simulation-controls
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, FieldValidationInfo, confloat, conint, field_validator
 
 from passengersim.utils import iso_to_unix
@@ -190,3 +192,8 @@ class SimulationSettings(BaseModel, extra="allow", validate_assignment=True):
     def reference_epoch(self) -> int:
         """Get the reference travel datetime in unix time."""
         return iso_to_unix(self.base_date) - self.controller_time_zone
+
+    timeframe_demand_allocation: Literal["v2", "pods"] = "v2"
+    """
+    Which algorithm to use for time frame demand allocation.
+    """

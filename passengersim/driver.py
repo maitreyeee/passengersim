@@ -127,6 +127,8 @@ class Simulation:
                 pass
             elif pname == "double_capacity_until":
                 pass
+            elif pname == "timeframe_demand_allocation":
+                pass
             else:
                 self.sim.set_parm(pname, float(pvalue))
         for pname, pvalue in config.simulation_controls.model_extra.items():
@@ -506,10 +508,18 @@ class Simulation:
                 )
 
             # Now we split it up over timeframes and add it to the simulation
-            num_pax = int(dmd.scenario_demand)
-            num_events = self.sim.allocate_demand_to_tf(
-                dmd, num_pax, self.sim.tf_k_factor, int(end_time)
-            )
+            num_pax = int(dmd.scenario_demand + 0.5)  # rounding
+            if (
+                self.sim.config.simulation_controls.timeframe_demand_allocation
+                == "pods"
+            ):
+                num_events = self.sim.allocate_demand_to_tf_pods(
+                    dmd, num_pax, self.sim.tf_k_factor, int(end_time)
+                )
+            else:
+                num_events = self.sim.allocate_demand_to_tf(
+                    dmd, num_pax, self.sim.tf_k_factor, int(end_time)
+                )
             total_events += num_events
             if num_events != round(num_pax):
                 # print(f"Generate demand function, num_pax={num_pax}, num_events={num_events}")
