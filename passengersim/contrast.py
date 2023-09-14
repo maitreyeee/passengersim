@@ -17,10 +17,10 @@ def _assemble(summaries, base, **kwargs):
 
 
 def fig_bookings_by_timeframe(
-    summaries, by_airline: bool | str = True, by_class: bool | str = False, raw_df=False
+    summaries, by_carrier: bool | str = True, by_class: bool | str = False, raw_df=False
 ):
     df = _assemble(
-        summaries, "bookings_by_timeframe", by_airline=by_airline, by_class=by_class
+        summaries, "bookings_by_timeframe", by_carrier=by_carrier, by_class=by_class
     )
     source_order = list(summaries.keys())
     if raw_df:

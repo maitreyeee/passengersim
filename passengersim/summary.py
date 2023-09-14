@@ -283,16 +283,16 @@ class SummaryTables:
 
     def fig_bookings_by_timeframe(
         self,
-        by_airline: bool | str = True,
+        by_carrier: bool | str = True,
         by_class: bool | str = False,
         raw_df: bool = False,
         errorbands: bool = False,
     ):
         if errorbands:
-            if by_airline is True:
+            if by_carrier is True:
                 raise NotImplementedError("error bands for all airlines is messy")
             return self._fig_bookings_by_timeframe_errorband(
-                by_airline=by_airline, raw_df=raw_df
+                by_carrier=by_carrier, raw_df=raw_df
             )
 
         def differs(x):
@@ -337,17 +337,17 @@ class SummaryTables:
             pd.concat([df0, df1], axis=0)
             .rename(columns={"mean": "sold"})
             .reset_index()
-            .query("rrd>0")
+            .query("(rrd>0) & (sold>0)")
         )
-        if not by_airline:
+        if not by_carrier:
             g = ["rrd", "paxtype"]
             if by_class:
                 g += ["class"]
             df = df.groupby(g)[["sold", "ci0", "ci1"]].sum().reset_index()
-        if isinstance(by_airline, str):
-            df = df[df["carrier"] == by_airline]
+        if isinstance(by_carrier, str):
+            df = df[df["carrier"] == by_carrier]
             df = df.drop(columns=["carrier"])
-            by_airline = False
+            by_carrier = False
         if isinstance(by_class, str):
             df = df[df["class"] == by_class]
             df = df.drop(columns=["class"])
@@ -357,7 +357,7 @@ class SummaryTables:
 
         import altair as alt
 
-        if by_airline:
+        if by_carrier:
             color = "carrier:N"
             color_title = "Carrier"
         elif by_class:
@@ -376,7 +376,7 @@ class SummaryTables:
                     x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
                     y=alt.Y("sold"),
                     tooltip=(
-                        [alt.Tooltip("carrier").title("Carrier")] if by_airline else []
+                        [alt.Tooltip("carrier").title("Carrier")] if by_carrier else []
                     )
                     + [
                         alt.Tooltip("paxtype", title="Passenger Type"),
@@ -404,7 +404,7 @@ class SummaryTables:
                     y=alt.Y("sold") if by_class else "sold",
                     strokeDash=alt.StrokeDash("paxtype").title("Passenger Type"),
                     tooltip=(
-                        [alt.Tooltip("carrier").title("Carrier")] if by_airline else []
+                        [alt.Tooltip("carrier").title("Carrier")] if by_carrier else []
                     )
                     + [
                         alt.Tooltip("paxtype", title="Passenger Type"),
@@ -428,7 +428,7 @@ class SummaryTables:
         return chart
 
     def _fig_bookings_by_timeframe_errorband(
-        self, by_airline: bool | str = True, raw_df=False
+        self, by_carrier: bool | str = True, raw_df=False
     ):
         def differs(x):
             return x.shift(-1, fill_value=0) - x
@@ -459,29 +459,29 @@ class SummaryTables:
             .reset_index()
             .query("rrd>0")
         )
-        if not by_airline:
+        if not by_carrier:
             df = (
                 df.groupby(["rrd", "paxtype"])[["sold", "ci0", "ci1"]]
                 .sum()
                 .reset_index()
             )
-        if isinstance(by_airline, str):
-            df = df[df["carrier"] == by_airline]
+        if isinstance(by_carrier, str):
+            df = df[df["carrier"] == by_carrier]
             df = df.drop(columns=["carrier"])
-            by_airline = False
+            by_carrier = False
         if raw_df:
             return df
         import altair as alt
 
         chart = alt.Chart(df)
         lines = chart.mark_line().encode(
-            color=alt.Color("carrier:N" if by_airline else "paxtype").title(
-                "Carrier" if by_airline else "Passenger Type"
+            color=alt.Color("carrier:N" if by_carrier else "paxtype").title(
+                "Carrier" if by_carrier else "Passenger Type"
             ),
             x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
             y="sold",
             strokeDash=alt.StrokeDash("paxtype").title("Passenger Type"),
-            tooltip=([alt.Tooltip("carrier").title("Carrier")] if by_airline else [])
+            tooltip=([alt.Tooltip("carrier").title("Carrier")] if by_carrier else [])
             + [
                 alt.Tooltip("paxtype", title="Passenger Type"),
                 alt.Tooltip("rrd", title="DfD"),
@@ -490,8 +490,8 @@ class SummaryTables:
         )
         bands = chart.mark_errorband().encode(
             color=alt.Color(
-                "carrier:N" if by_airline else "paxtype",
-                title="Carrier" if by_airline else "Passenger Type",
+                "carrier:N" if by_carrier else "paxtype",
+                title="Carrier" if by_carrier else "Passenger Type",
             ),
             x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
             y="ci0",
