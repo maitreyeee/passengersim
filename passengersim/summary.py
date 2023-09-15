@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 from . import database
+from .reporting import report_figure
 
 logger = logging.getLogger("passengersim.summary")
 
@@ -161,7 +162,7 @@ class SummaryTables:
                 if isinstance(v, pd.DataFrame):
                     v.to_excel(writer, sheet_name=k)
 
-    def fig_carrier_loads(self, raw_df=False):
+    def fig_carrier_loads(self, raw_df=False, report=None):
         """Figure showing ASM, RPM by carrier."""
         df = (
             self.carriers.set_index("name")[["asm", "rpm"]]
@@ -174,7 +175,7 @@ class SummaryTables:
             return df
         import altair as alt
 
-        chart = alt.Chart(df)
+        chart = alt.Chart(df, title="Carrier Loads")
         bars = chart.mark_bar().encode(
             x=alt.X("name:N", title="Carrier"),
             y=alt.Y("value", stack=None, title="miles"),
@@ -191,7 +192,7 @@ class SummaryTables:
             y=alt.Y("value").stack(None),
             text=alt.Text("value:Q", format=".4s"),
         )
-        return (
+        fig = (
             (bars + text)
             .properties(
                 width=400,
@@ -206,14 +207,21 @@ class SummaryTables:
                 labelFontSize=15,
             )
         )
+        if report:
+            report.add_figure(fig)
+        return fig
 
-    def _fig_fare_class_mix(self, df: pd.DataFrame, label_threshold: float = 0.06):
+    def _fig_fare_class_mix(
+        self, df: pd.DataFrame, label_threshold: float = 0.06, title=None
+    ):
         import altair as alt
 
         label_threshold_value = (
             df.groupby("carrier").avg_sold.sum().max() * label_threshold
         )
-        chart = alt.Chart(df).transform_calculate(
+        chart = alt.Chart(
+            df, **({"title": title} if title else {})
+        ).transform_calculate(
             halfsold="datum.avg_sold / 2.0",
         )
         bars = chart.mark_bar().encode(
@@ -253,12 +261,18 @@ class SummaryTables:
             )
         )
 
+    @report_figure
     def fig_fare_class_mix(self, raw_df=False, label_threshold=0.06):
         df = self.fare_class_mix[["carrier", "booking_class", "avg_sold"]]
         if raw_df:
             return df
-        return self._fig_fare_class_mix(df, label_threshold=label_threshold)
+        return self._fig_fare_class_mix(
+            df,
+            label_threshold=label_threshold,
+            title="Fare Class Mix",
+        )
 
+    @report_figure
     def fig_od_fare_class_mix(
         self, orig: str, dest: str, raw_df=False, label_threshold=0.06
     ):
@@ -267,7 +281,9 @@ class SummaryTables:
         ]
         if raw_df:
             return df
-        return self._fig_fare_class_mix(df, label_threshold=label_threshold)
+        return self._fig_fare_class_mix(
+            df, label_threshold=label_threshold, title=f"Fare Class Mix ({orig}-{dest})"
+        )
 
     @property
     def raw_fare_class_mix(self) -> pd.DataFrame:
@@ -281,12 +297,14 @@ class SummaryTables:
         """
         return self.fig_fare_class_mix(raw_df=True)
 
+    @report_figure
     def fig_bookings_by_timeframe(
         self,
         by_carrier: bool | str = True,
         by_class: bool | str = False,
         raw_df: bool = False,
         errorbands: bool = False,
+        report=None,
     ):
         if errorbands:
             if by_carrier is True:
@@ -339,18 +357,22 @@ class SummaryTables:
             .reset_index()
             .query("(rrd>0) & (sold>0)")
         )
+        title = "Bookings by Timeframe"
         if not by_carrier:
             g = ["rrd", "paxtype"]
             if by_class:
                 g += ["class"]
+                title = "Bookings by Timeframe and Booking Class"
             df = df.groupby(g)[["sold", "ci0", "ci1"]].sum().reset_index()
         if isinstance(by_carrier, str):
             df = df[df["carrier"] == by_carrier]
             df = df.drop(columns=["carrier"])
+            title = f"Bookings by Timeframe ({by_carrier})"
             by_carrier = False
         if isinstance(by_class, str):
             df = df[df["class"] == by_class]
             df = df.drop(columns=["class"])
+            title += f" (Class {by_class})"
             by_class = False
         if raw_df:
             return df
@@ -361,15 +383,17 @@ class SummaryTables:
             color = "carrier:N"
             color_title = "Carrier"
         elif by_class:
+            title = "Bookings by Timeframe"
             color = "class:N"
             color_title = "Booking Class"
         else:
+            title = "Bookings by Timeframe"
             color = "paxtype:N"
             color_title = "Passenger Type"
 
         if by_class:
             chart = (
-                alt.Chart(df)
+                alt.Chart(df, title=title)
                 .mark_bar()
                 .encode(
                     color=alt.Color(color).title(color_title),
@@ -396,7 +420,7 @@ class SummaryTables:
             )
         else:
             chart = (
-                alt.Chart(df)
+                alt.Chart(df, title=title)
                 .mark_line()
                 .encode(
                     color=alt.Color(color).title(color_title),
@@ -425,6 +449,8 @@ class SummaryTables:
                     labelFontSize=15,
                 )
             )
+        if report:
+            report.add_figure(chart)
         return chart
 
     def _fig_bookings_by_timeframe_errorband(
@@ -522,6 +548,7 @@ class SummaryTables:
         measure_name: str,
         measure_format: str = ".2f",
         orient: Literal["h", "v"] = "h",
+        title: str | None = None,
     ):
         df = self.load_factors[["carrier", load_measure]]
         if raw_df:
@@ -563,7 +590,7 @@ class SummaryTables:
                 x=alt.X(f"{load_measure}:Q", title=measure_name).stack("zero"),
                 text=alt.Text(f"{load_measure}:Q", format=measure_format),
             )
-        return (
+        fig = (
             (bars + text)
             .properties(
                 width=500,
@@ -578,17 +605,26 @@ class SummaryTables:
                 labelFontSize=15,
             )
         )
+        if title:
+            fig.title = title
+        return fig
 
+    @report_figure
     def fig_carrier_load_factors(
         self, raw_df=False, load_measure: Literal["sys_lf", "avg_lf"] = "sys_lf"
     ):
+        measure_name = (
+            "System Load Factor" if load_measure == "sys_lf" else "Leg Load Factor"
+        )
         return self._fig_carrier_load_factors(
             raw_df,
             load_measure,
-            "System Load Factor" if load_measure == "sys_lf" else "Leg Load Factor",
+            measure_name,
+            title=f"Carrier {measure_name}s",
         )
 
+    @report_figure
     def fig_carrier_revenues(self, raw_df=False):
         return self._fig_carrier_load_factors(
-            raw_df, "avg_rev", "Average Revenue", "$.4s"
+            raw_df, "avg_rev", "Average Revenue", "$.4s", title="Carrier Revenues"
         )

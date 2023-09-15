@@ -3,6 +3,8 @@ from typing import Literal
 import altair as alt
 import pandas as pd
 
+from .reporting import report_figure
+
 
 def _assemble(summaries, base, **kwargs):
     summaries_ = {}
@@ -16,6 +18,7 @@ def _assemble(summaries, base, **kwargs):
     return pd.concat(summaries_, names=["source"]).reset_index(level="source")
 
 
+@report_figure
 def fig_bookings_by_timeframe(
     summaries, by_carrier: bool | str = True, by_class: bool | str = False, raw_df=False
 ):
@@ -126,7 +129,11 @@ def _fig_carrier_measure(
     measure_name: str,
     measure_format: str = ".2f",
     orient: Literal["h", "v"] = "h",
+    title: str | None = None,
 ):
+    facet_kwargs = {}
+    if title is not None:
+        facet_kwargs["title"] = title
     chart = alt.Chart(df)
     if orient == "v":
         bars = chart.mark_bar().encode(
@@ -152,10 +159,7 @@ def _fig_carrier_measure(
                 width=55 * len(source_order),
                 height=300,
             )
-            .facet(
-                column=alt.Column("carrier:N", title="Carrier"),
-                title="Carrier Revenues",
-            )
+            .facet(column=alt.Column("carrier:N", title="Carrier"), **facet_kwargs)
             .configure_title(fontSize=18)
         )
     else:
@@ -184,14 +188,12 @@ def _fig_carrier_measure(
                 width=500,
                 height=10 + 20 * len(source_order),
             )
-            .facet(
-                row=alt.Row("carrier:N", title="Carrier"),
-                title="Carrier Revenues",
-            )
+            .facet(row=alt.Row("carrier:N", title="Carrier"), **facet_kwargs)
             .configure_title(fontSize=18)
         )
 
 
+@report_figure
 def fig_carrier_revenues(
     summaries,
     raw_df=False,
@@ -208,9 +210,11 @@ def fig_carrier_revenues(
         measure_name="Revenue ($)",
         measure_format="$.4s",
         orient=orient,
+        title="Carrier Revenues",
     )
 
 
+@report_figure
 def fig_carrier_load_factors(
     summaries,
     raw_df=False,
@@ -231,9 +235,11 @@ def fig_carrier_load_factors(
         measure_name=measure_name,
         measure_format=".2f",
         orient=orient,
+        title=f"Carrier {measure_name}s",
     )
 
 
+@report_figure
 def fig_fare_class_mix(summaries, raw_df=False, label_threshold=0.06):
     df = _assemble(summaries, "fare_class_mix")
     source_order = list(summaries.keys())
