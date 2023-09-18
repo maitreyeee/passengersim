@@ -320,10 +320,10 @@ n_commit = 0
 def save_details(cnx: Database, sim: SimulationEngine, dcp: int):
     if not sim.save_timeframe_details and dcp > 0:
         return
-    save_demand_multi(cnx, sim, dcp)
     if sim.config.db.fast and isinstance(cnx._connection, sqlite3.Connection):
         sim.write_to_sqlite(cnx._connection, dcp)
     else:
+        save_demand_multi(cnx, sim, dcp)
         for leg in sim.legs:
             save_leg(cnx, sim, leg, dcp)
             save_leg_bucket_multi(cnx, sim, leg, dcp)

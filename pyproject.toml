@@ -29,6 +29,10 @@ dependencies = [
 test = [
     "pytest-regressions ~=2.4",
 ]
+reporting = [
+    "altair>=5.0",
+    "xmle",
+]
 
 [tool.setuptools.packages.find]
 where = ["."]  # list of folders that contain the packages (["."] by default)

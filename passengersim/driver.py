@@ -329,14 +329,12 @@ class Simulation:
                 if self.sim.config.simulation_controls.double_capacity_until:
                     # Just trying this, PODS has something similar during the burn phase
                     if sample == 0:
-                        print("cap up, sample", sample)
                         for leg in self.sim.legs:
                             leg.capacity = leg.capacity * 2.0
                     elif (
                         sample
                         == self.sim.config.simulation_controls.double_capacity_until
                     ):
-                        print("cap down, sample", sample)
                         for leg in self.sim.legs:
                             leg.capacity = leg.capacity / 2.0
 

@@ -58,6 +58,9 @@ def test_3mkt_db_detail(fast):
     if "demand" in config.db.write_items:
         # remove demand to test plug in hook
         config.db.write_items.remove("demand")
+    if "demand_final" in config.db.write_items:
+        # remove demand to test plug in hook
+        config.db.write_items.remove("demand_final")
     config.db.dcp_write_hooks.append(save_demand_to_database)
     config.simulation_controls.write_raw_files = False
     sim = Simulation(config, output_dir=None)

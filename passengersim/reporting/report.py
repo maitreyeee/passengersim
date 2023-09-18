@@ -35,13 +35,3 @@ class Report(xmle.Reporter):
         self << self._numbered_table(title)
         self.__ilshift__(tbl)
         return tbl
-
-
-def report_figure(func):
-    def report_figure_wrapper(*args, report=None, **kwargs):
-        fig = func(*args, **kwargs)
-        if report is not None:
-            report.add_figure(fig)
-        return fig
-
-    return report_figure_wrapper
