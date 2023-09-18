@@ -304,7 +304,6 @@ class SummaryTables:
         by_class: bool | str = False,
         raw_df: bool = False,
         errorbands: bool = False,
-        report=None,
     ):
         if errorbands:
             if by_carrier is True:
@@ -358,22 +357,26 @@ class SummaryTables:
             .query("(rrd>0) & (sold>0)")
         )
         title = "Bookings by Timeframe"
+        if by_class is True:
+            title = "Bookings by Timeframe and Booking Class"
+        title_annot = []
         if not by_carrier:
             g = ["rrd", "paxtype"]
             if by_class:
                 g += ["class"]
-                title = "Bookings by Timeframe and Booking Class"
             df = df.groupby(g)[["sold", "ci0", "ci1"]].sum().reset_index()
         if isinstance(by_carrier, str):
             df = df[df["carrier"] == by_carrier]
             df = df.drop(columns=["carrier"])
-            title = f"Bookings by Timeframe ({by_carrier})"
+            title_annot.append(by_carrier)
             by_carrier = False
         if isinstance(by_class, str):
             df = df[df["class"] == by_class]
             df = df.drop(columns=["class"])
-            title += f" (Class {by_class})"
+            title_annot.append(f"Class {by_class}")
             by_class = False
+        if title_annot:
+            title = f"{title} ({', '.join(title_annot)})"
         if raw_df:
             return df
 
@@ -383,17 +386,15 @@ class SummaryTables:
             color = "carrier:N"
             color_title = "Carrier"
         elif by_class:
-            title = "Bookings by Timeframe"
             color = "class:N"
             color_title = "Booking Class"
         else:
-            title = "Bookings by Timeframe"
             color = "paxtype:N"
             color_title = "Passenger Type"
 
         if by_class:
             chart = (
-                alt.Chart(df, title=title)
+                alt.Chart(df)
                 .mark_bar()
                 .encode(
                     color=alt.Color(color).title(color_title),
@@ -414,7 +415,7 @@ class SummaryTables:
                 )
                 .facet(
                     row=alt.Row("paxtype:N", title="Passenger Type"),
-                    title="Bookings by Class by Timeframe",
+                    title=title,
                 )
                 .configure_title(fontSize=18)
             )
@@ -449,8 +450,6 @@ class SummaryTables:
                     labelFontSize=15,
                 )
             )
-        if report:
-            report.add_figure(chart)
         return chart
 
     def _fig_bookings_by_timeframe_errorband(

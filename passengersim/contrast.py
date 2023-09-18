@@ -31,7 +31,22 @@ def fig_bookings_by_timeframe(
     if raw_df:
         return df
 
+    title = "Bookings by Timeframe"
+    if by_class is True:
+        title = "Bookings by Timeframe and Booking Class"
+    title_annot = []
+    if isinstance(by_carrier, str):
+        title_annot.append(by_carrier)
+    if isinstance(by_class, str):
+        title_annot.append(f"Class {by_class}")
+    if title_annot:
+        title = f"{title} ({', '.join(title_annot)})"
+
     if by_class:
+        if by_class is True:
+            title = "Bookings by Timeframe and Booking Class"
+        if isinstance(by_carrier, str):
+            title += f" ({by_carrier})"
         return (
             alt.Chart(df.sort_values("source", ascending=False))
             .mark_bar()
@@ -54,7 +69,7 @@ def fig_bookings_by_timeframe(
             )
             .facet(
                 row=alt.Row("paxtype:N", title="Passenger Type"),
-                title="Bookings by Class by Timeframe",
+                title=title,
             )
             .configure_title(fontSize=18)
         )
@@ -81,15 +96,13 @@ def fig_bookings_by_timeframe(
             )
             .facet(
                 row=alt.Row("paxtype:N", title="Passenger Type"),
-                title="Bookings by Carrier by Timeframe",
+                title=title,
             )
             .configure_title(fontSize=18)
         )
     else:
         return (
-            alt.Chart(
-                df.sort_values("source", ascending=False), title="Bookings by Timeframe"
-            )
+            alt.Chart(df.sort_values("source", ascending=False), title=title)
             .mark_line()
             .encode(
                 color=alt.Color("source:N", title="Source", sort=source_order),
