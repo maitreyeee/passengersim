@@ -190,7 +190,11 @@ class Database:
         if not sim.save_timeframe_details and dcp > 0:
             return
         if sim.config.db.fast and isinstance(self._connection, sqlite3.Connection):
-            sim.write_to_sqlite(self._connection, dcp, sim.config.db.write_items)
+            sim.write_to_sqlite(
+                self._connection,
+                dcp,
+                store_bid_prices=sim.config.db.store_leg_bid_prices,
+            )
         else:
             for leg in sim.legs:
                 if "leg" in sim.config.db.write_items:
@@ -207,7 +211,7 @@ class Database:
         self.commit()
 
     def save_final(self: Database, sim: SimulationEngine):
-        sim.final_write_to_sqlite(self._connection, sim.config.db.write_items)
+        sim.final_write_to_sqlite(self._connection)
 
     def dataframe(self, query: str, params: list | tuple | dict | None = None):
         """Run a SQL query and return the results as a pandas DataFrame."""

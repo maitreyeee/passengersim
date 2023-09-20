@@ -70,3 +70,6 @@ class DatabaseConfig(BaseModel, extra="forbid", validate_assignment=True):
         if isinstance(v, str) and v.lower() == "none":
             v = None
         return v
+
+    store_leg_bid_prices: bool = True
+    """Should leg bid prices be stored in the database."""
