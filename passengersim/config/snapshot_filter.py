@@ -1,10 +1,10 @@
-import logging
+import pathlib
 from typing import Literal
 
 from pydantic import BaseModel, field_validator
 
 
-class SnapshotFilter(BaseModel):
+class SnapshotFilter(BaseModel, validate_assignment=True):
     type: Literal[
         "forecast", "leg_untruncation", "path_untruncation", "rm", "pro_bp", None
     ] = None
@@ -16,6 +16,7 @@ class SnapshotFilter(BaseModel):
     dest: list[str] = []
     flt_no: list[int] = []
     logger: str | None = None
+    directory: pathlib.Path | None = None
 
     @field_validator("sample", "dcp", "orig", "dest", "flt_no", mode="before")
     def _allow_singletons(cls, v):
@@ -23,6 +24,29 @@ class SnapshotFilter(BaseModel):
         if not isinstance(v, list | tuple):
             v = [v]
         return v
+
+    def filepath(self, sim, leg=None, path=None) -> pathlib.Path | None:
+        if self.directory is None:
+            return None
+        pth = self.directory
+        if leg is not None:
+            pth = pth.joinpath(f"carrier-{leg.carrier}")
+        pth = pth.joinpath(f"dpc-{sim.last_dcp}")
+        if leg is not None:
+            pth = pth.joinpath(f"orig-{leg.orig}")
+        elif path is not None:
+            pth = pth.joinpath(f"orig-{path.orig}")
+        if leg is not None:
+            pth = pth.joinpath(f"dest-{leg.dest}")
+        elif path is not None:
+            pth = pth.joinpath(f"dest-{path.dest}")
+        if leg is not None:
+            pth = pth.joinpath(f"fltno-{leg.flt_no}")
+        elif path is not None:
+            pth = pth.joinpath(f"fltno-{path.get_leg_fltno(0)}")
+        pth = pth.joinpath(f"sample-{sim.sample}")
+        pth.parent.mkdir(parents=True, exist_ok=True)
+        return pth.with_suffix(".log")
 
     def run(self, sim, leg=None, path=None, why=False):
         # Check the filter conditions
@@ -79,9 +103,9 @@ class SnapshotFilter(BaseModel):
 
         # Now do something
         if len(self.title) > 0:
-            if self.logger:
-                logging.getLogger(self.logger)
-            print(f"{self.title}:{info}")
+            print(f"{self.title}:{info}", flush=True)
+
+        self._last_run_info = info
 
         if self.type in ["leg_untruncation", "path_untruncation"]:
             return (
@@ -92,6 +116,6 @@ class SnapshotFilter(BaseModel):
         elif self.type == "rm":
             leg.print_bucket_detail()
         elif self.type == "pro_bp":
-            return True
+            return self.filepath(sim, leg, path) or True
         if why:
             print(" cause EOF")
