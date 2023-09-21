@@ -43,22 +43,26 @@ def fig_bookings_by_timeframe(
         title = f"{title} ({', '.join(title_annot)})"
 
     if by_class:
-        if by_class is True:
-            title = "Bookings by Timeframe and Booking Class"
-        if isinstance(by_carrier, str):
-            title += f" ({by_carrier})"
+        if isinstance(by_class, str):
+            color = alt.Color("source:N", title="Source", sort=source_order).title(
+                "Source"
+            )
+            tooltips = ()
+        else:
+            color = alt.Color("class:N").title("Booking Class")
+            tooltips = (alt.Tooltip("class", title="Booking Class"),)
         return (
             alt.Chart(df.sort_values("source", ascending=False))
             .mark_bar()
             .encode(
-                color=alt.Color("class:N").title("Booking Class"),
+                color=color,
                 x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
                 xOffset=alt.XOffset("source:N", title="Source", sort=source_order),
                 y=alt.Y("sold", stack=True),
                 tooltip=[
                     alt.Tooltip("source:N", title="Source"),
                     alt.Tooltip("paxtype", title="Passenger Type"),
-                    alt.Tooltip("class", title="Booking Class"),
+                    *tooltips,
                     alt.Tooltip("rrd", title="DfD"),
                     alt.Tooltip("sold", format=".2f"),
                 ],
