@@ -114,7 +114,12 @@ class SnapshotFilter(BaseModel, validate_assignment=True):
         elif self.type == "forecast":
             return True  # Haven't decided on the approach to this yet
         elif self.type == "rm":
-            leg.print_bucket_detail()
+            bucket_detail = leg.print_bucket_detail()
+            snapshot_file = self.filepath(sim, leg, path)
+            if snapshot_file:
+                snapshot_file.write_text(bucket_detail)
+            else:
+                print(bucket_detail)
         elif self.type == "pro_bp":
             return self.filepath(sim, leg, path) or True
         if why:
