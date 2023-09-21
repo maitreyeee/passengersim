@@ -214,7 +214,6 @@ class Simulation:
                 curve_name = str(dmd_config.curve).strip()
                 curve = self.curves[curve_name]
                 dmd.add_curve(curve)
-                dmd.curve_number = int(dmd_config.curve)
             self.sim.add_demand(dmd)
             if self.debug:
                 print(f"Added demand: {dmd}, base_demand = {dmd.base_demand}")
@@ -474,7 +473,7 @@ class Simulation:
             "leisure": self.random_generator.get_normal(),
         }
 
-        end_time = self.base_time - self.sim.controller_time_zone
+        end_time = self.base_time
 
         for dmd in self.sim.demands:
             base = dmd.base_demand
@@ -527,70 +526,70 @@ class Simulation:
 
         return total_events
 
-    def data_by_timeframe(self):
-        logger.info("----- Demand By DCP -----")
-        dmd_by_tf = defaultdict(float)
-        for dmd in self.sim.demands:
-            for dcp in self.dcp_list:
-                if dcp == 0:
-                    continue
-                dmd_by_tf[(dmd.curve_number, dcp)] += dmd.get_demand_dcp(dcp)
-        for k, v in dmd_by_tf.items():
-            logger.info(f"    {k[0]}, {k[1]}, {v}")
-
-        total_samples = self.sim.num_trials * self.sim.num_samples
-        logger.info(
-            f"Fare Sales by DCP (dcp, business, tf_business, leisure, tf_leisure), samples = {total_samples}"
-        )
-        prev_b, prev_l = 0, 0
-        for dcp in self.dcp_list:
-            if dcp == 0:
-                continue
-            business = self.fare_sales_by_dcp[("business", dcp)]
-            leisure = self.fare_sales_by_dcp[("leisure", dcp)]
-            logger.info(
-                f"    {dcp}, {business}, {business - prev_b}, {leisure}, {leisure - prev_l}"
-            )
-            prev_b, prev_l = business, leisure
-
-        logger.info("Fare Sales by DCP & airline (dcp, Al1, AL2, ...etc)")
-        prev = defaultdict(int)
-        for dcp in self.dcp_list:
-            if dcp == 0:
-                continue
-            tmp = ""
-            for a in self.sim.airlines:
-                sold = self.fare_sales_by_airline_dcp[(a.name, dcp)]
-                inc_sold = sold - prev[a.name]
-                tmp += str(inc_sold) if tmp == "" else (", " + str(inc_sold))
-                prev[a.name] = sold
-            logger.info(f"    {dcp}, {tmp}")
-
-        logger.info(
-            "Fare Details:  Airline, Class, RRD, Sold, Business, Leisure, AvgPrice"
-        )
-        my_keys = self.fare_details_sold.keys()
-        my_keys = sorted(my_keys, key=lambda x: (x[0], x[1], 100 - x[2]))
-        prev_dcp, prev_sold, prev_business, prev_leisure = 0, 0, 0, 0
-        for k in my_keys:
-            dcp = k[2]
-            if int(dcp) > int(prev_dcp):
-                prev_sold, prev_business, prev_leisure = 0, 0, 0
-            sold = self.fare_details_sold[k]
-            sold_business = self.fare_details_sold_business[k]
-            sold_leisure = sold - sold_business
-            avg_price = self.fare_details_revenue[k] / sold if sold > 0 else 0.0
-            logger.info(
-                f"    {k[0]:4} {k[1]:4} {k[2]:4} "
-                f"{sold - prev_sold:8} {sold_business - prev_business:8} "
-                f"{sold_leisure - prev_leisure:8} {avg_price:10.2f}"
-            )
-            prev_dcp, prev_sold, prev_business, prev_leisure = (
-                dcp,
-                sold,
-                sold_business,
-                sold_leisure,
-            )
+    # def data_by_timeframe(self):
+    #     logger.info("----- Demand By DCP -----")
+    #     dmd_by_tf = defaultdict(float)
+    #     for dmd in self.sim.demands:
+    #         for dcp in self.dcp_list:
+    #             if dcp == 0:
+    #                 continue
+    #             dmd_by_tf[(dmd.curve_number, dcp)] += dmd.get_demand_dcp(dcp)
+    #     for k, v in dmd_by_tf.items():
+    #         logger.info(f"    {k[0]}, {k[1]}, {v}")
+    #
+    #     total_samples = self.sim.num_trials * self.sim.num_samples
+    #     logger.info(
+    #         f"Fare Sales by DCP (dcp, business, tf_business, leisure, tf_leisure), samples = {total_samples}"
+    #     )
+    #     prev_b, prev_l = 0, 0
+    #     for dcp in self.dcp_list:
+    #         if dcp == 0:
+    #             continue
+    #         business = self.fare_sales_by_dcp[("business", dcp)]
+    #         leisure = self.fare_sales_by_dcp[("leisure", dcp)]
+    #         logger.info(
+    #             f"    {dcp}, {business}, {business - prev_b}, {leisure}, {leisure - prev_l}"
+    #         )
+    #         prev_b, prev_l = business, leisure
+    #
+    #     logger.info("Fare Sales by DCP & airline (dcp, Al1, AL2, ...etc)")
+    #     prev = defaultdict(int)
+    #     for dcp in self.dcp_list:
+    #         if dcp == 0:
+    #             continue
+    #         tmp = ""
+    #         for a in self.sim.airlines:
+    #             sold = self.fare_sales_by_airline_dcp[(a.name, dcp)]
+    #             inc_sold = sold - prev[a.name]
+    #             tmp += str(inc_sold) if tmp == "" else (", " + str(inc_sold))
+    #             prev[a.name] = sold
+    #         logger.info(f"    {dcp}, {tmp}")
+    #
+    #     logger.info(
+    #         "Fare Details:  Airline, Class, RRD, Sold, Business, Leisure, AvgPrice"
+    #     )
+    #     my_keys = self.fare_details_sold.keys()
+    #     my_keys = sorted(my_keys, key=lambda x: (x[0], x[1], 100 - x[2]))
+    #     prev_dcp, prev_sold, prev_business, prev_leisure = 0, 0, 0, 0
+    #     for k in my_keys:
+    #         dcp = k[2]
+    #         if int(dcp) > int(prev_dcp):
+    #             prev_sold, prev_business, prev_leisure = 0, 0, 0
+    #         sold = self.fare_details_sold[k]
+    #         sold_business = self.fare_details_sold_business[k]
+    #         sold_leisure = sold - sold_business
+    #         avg_price = self.fare_details_revenue[k] / sold if sold > 0 else 0.0
+    #         logger.info(
+    #             f"    {k[0]:4} {k[1]:4} {k[2]:4} "
+    #             f"{sold - prev_sold:8} {sold_business - prev_business:8} "
+    #             f"{sold_leisure - prev_leisure:8} {avg_price:10.2f}"
+    #         )
+    #         prev_dcp, prev_sold, prev_business, prev_leisure = (
+    #             dcp,
+    #             sold,
+    #             sold_business,
+    #             sold_leisure,
+    #         )
 
     def compute_reports(
         self,
