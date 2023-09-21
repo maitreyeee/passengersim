@@ -7,6 +7,7 @@ import importlib
 import logging
 import pathlib
 import sys
+import time
 import typing
 
 import addicty
@@ -308,3 +309,29 @@ class Config(YamlConfig, extra="forbid"):
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
         return reloaded_class.__pydantic_validator__.validate_python(*args, **kwargs)
+
+    def add_output_prefix(
+        self, prefix: pathlib.Path, spool_format: str = "%Y%m%d-%H%M"
+    ):
+        """
+        Add a prefix directory to all simulation output files.
+        """
+        if not isinstance(prefix, pathlib.Path):
+            prefix = pathlib.Path(prefix)
+        if spool_format:
+            proposal = prefix.joinpath(time.strftime(spool_format))
+            n = 0
+            while proposal.exists():
+                n += 1
+                proposal = prefix.joinpath(time.strftime(spool_format) + f".{n}")
+            prefix = proposal
+        prefix.mkdir(parents=True)
+
+        if self.db.filename:
+            self.db.filename = prefix.joinpath(self.db.filename)
+        if self.outputs.excel:
+            self.outputs.excel = prefix.joinpath(self.outputs.excel)
+        for sf in self.snapshot_filters:
+            if sf.directory:
+                sf.directory = prefix.joinpath(sf.directory)
+        return prefix
