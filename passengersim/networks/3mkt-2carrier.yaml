@@ -15,8 +15,10 @@ simulation_controls:
   manual_paths: false
 rm_systems:
   fcfs:
+    availability_control: none
     steps: []
   rm_no_detruncation:
+    availability_control: leg
     steps:
     - step_type: untruncation
       name: untruncation
@@ -32,6 +34,7 @@ rm_systems:
       algorithm: emsrb
       kind: leg
   rm_test1:
+    availability_control: leg
     steps:
     - step_type: untruncation
       name: untruncation
@@ -47,6 +50,7 @@ rm_systems:
       algorithm: emsrb
       kind: leg
   rm_test2:
+    availability_control: bp
     steps:
     - step_type: untruncation
       name: untruncation
