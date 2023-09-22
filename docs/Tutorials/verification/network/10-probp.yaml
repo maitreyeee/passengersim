@@ -36,7 +36,7 @@ airlines:
     rm_system: rm_probp
     control: vn
 
-#snapshot_filters:
+snapshot_filters:
 #  - type: path_untruncation
 #    title: Snapshot of path untruncation
 #    sample: 499
@@ -47,11 +47,12 @@ airlines:
 #    sample: [499]
 #    dcp: [63]
 #    flt_no: 101
-#  - type: pro_bp
-#    title: ProBP Snapshot
-#    sample: [499]
-#    dcp: 63
-#    flt_no: 101
+  - type: pro_bp
+    title: ProBP Snapshot
+    sample: [497, 498, 499, 997, 998, 999]
+    dcp: 63
+    flt_no: 111
+    airline: AL1
 
 outputs:
   reports:
