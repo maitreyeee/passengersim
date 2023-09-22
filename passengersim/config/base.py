@@ -227,6 +227,12 @@ class Config(YamlConfig, extra="forbid"):
 
     snapshot_filters: list[SnapshotFilter] = []
 
+    @field_validator("snapshot_filters", mode="before")
+    def _handle_no_snapshot_filters(cls, v):
+        if v is None:
+            v = []
+        return v
+
     raw_license_certificate: bytes | None = None
 
     @field_validator("raw_license_certificate", mode="before")

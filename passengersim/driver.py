@@ -142,6 +142,25 @@ class Simulation:
             x = self.rm_systems[rm_name] = Rm_System(rm_name)
             for step in rm_system.steps:
                 x.add_step(step._factory())
+            availability_control = rm_system.availability_control
+            steps = rm_system.steps
+            if len(steps) == 0:
+                _inferred_availability_control = "none"
+            elif steps[-1].step_type in ("probp", "udp"):
+                _inferred_availability_control = "bp"
+            else:
+                _inferred_availability_control = "vn"
+            if availability_control == "infer":
+                raise NotImplementedError("")
+            #   availability_control = _inferred_availability_control
+            # else:
+            #   if availability_control != _inferred_availability_control:
+            #     warnings.warn(
+            #         f"availability_control for this RmSystem should be "
+            #         f"{_inferred_availability_control} but it is set to "
+            #         f"{availability_control}"
+            #     )
+            x.availability_control = availability_control
 
         for cm_name, cm in config.choice_models.items():
             x = passengersim.core.ChoiceModel(cm_name, cm.kind)
@@ -158,7 +177,10 @@ class Simulation:
             self.choice_models[cm_name] = x
 
         for airline_name, airline_config in config.airlines.items():
-            airline = passengersim.core.Airline(airline_name, airline_config.control)
+            availability_control = self.rm_systems[
+                airline_config.rm_system
+            ].availability_control
+            airline = passengersim.core.Airline(airline_name, availability_control)
             airline.rm_system = self.rm_systems[airline_config.rm_system]
             self.sim.add_airline(airline)
         self.classes = config.classes
