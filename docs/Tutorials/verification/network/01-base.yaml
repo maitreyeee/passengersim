@@ -127,7 +127,7 @@ dcps:
   - 3
   - 1
 booking_curves:
-  - name: c1
+  - name: c1  # business
     curve:
       63: 0.06
       56: 0.11
@@ -145,7 +145,7 @@ booking_curves:
       5: 0.78
       3: 0.95
       1: 1.0
-  - name: c2
+  - name: c2  # leisure
     curve:
       63: 0.17
       56: 0.25
@@ -237,36 +237,42 @@ demands:
     base_demand: 70.0
     reference_fare: 250.0
     choice_model: business
+    curve: c1
   - orig: BOS
     dest: ORD
     segment: leisure
     base_demand: 90.0
     reference_fare: 100.0
     choice_model: leisure
+    curve: c2
   - orig: ORD
     dest: LAX
     segment: business
     base_demand: 120.0
     reference_fare: 375.0
     choice_model: business
+    curve: c1
   - orig: ORD
     dest: LAX
     segment: leisure
     base_demand: 150.0
     reference_fare: 150.0
     choice_model: leisure
+    curve: c2
   - orig: BOS
     dest: LAX
     segment: business
     base_demand: 100.0
     reference_fare: 500.0
     choice_model: business
+    curve: c1
   - orig: BOS
     dest: LAX
     segment: leisure
     base_demand: 140.0
     reference_fare: 200.0
     choice_model: leisure
+    curve: c2
 
 fares:
   - carrier: AL1
