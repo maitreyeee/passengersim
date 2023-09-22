@@ -304,6 +304,7 @@ class SummaryTables:
         by_class: bool | str = False,
         raw_df: bool = False,
         errorbands: bool = False,
+        exclude_nogo: bool = True,
     ):
         if errorbands:
             if by_carrier is True:
@@ -377,6 +378,8 @@ class SummaryTables:
             by_class = False
         if title_annot:
             title = f"{title} ({', '.join(title_annot)})"
+        if exclude_nogo and "carrier" in df.columns:
+            df = df[df["carrier"] != "NONE"]
         if raw_df:
             return df
 
