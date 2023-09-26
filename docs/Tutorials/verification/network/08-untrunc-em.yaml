@@ -8,6 +8,7 @@ simulation_controls:
 
 rm_systems:
   rm_test1:
+    availability_control: leg
     steps:
       - step_type: untruncation
         name: untruncation
@@ -26,7 +27,5 @@ rm_systems:
 airlines:
   - name: AL1
     rm_system: rm_test1
-    control: leg
   - name: AL2
     rm_system: rm_test1
-    control: leg

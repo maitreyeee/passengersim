@@ -8,3 +8,6 @@ class Airline(Named, extra="forbid"):
 
     rm_system: str
     """Name of the revenue management system used by this airline."""
+
+    control: str = ""
+    """Deprecated.  No effect"""
