@@ -28,8 +28,6 @@ def fig_bookings_by_timeframe(
         summaries, "bookings_by_timeframe", by_carrier=by_carrier, by_class=by_class
     )
     source_order = list(summaries.keys())
-    if raw_df:
-        return df
 
     title = "Bookings by Timeframe"
     if by_class is True:
@@ -41,6 +39,10 @@ def fig_bookings_by_timeframe(
         title_annot.append(f"Class {by_class}")
     if title_annot:
         title = f"{title} ({', '.join(title_annot)})"
+
+    if raw_df:
+        df.attrs["title"] = title
+        return df
 
     if by_class:
         if isinstance(by_class, str):
@@ -219,6 +221,7 @@ def fig_carrier_revenues(
     df = _assemble(summaries, "carrier_revenues")
     source_order = list(summaries.keys())
     if raw_df:
+        df.attrs["title"] = "Carrier Revenues"
         return df
     return _fig_carrier_measure(
         df,
@@ -244,6 +247,7 @@ def fig_carrier_load_factors(
     df = _assemble(summaries, "carrier_load_factors", load_measure=load_measure)
     source_order = list(summaries.keys())
     if raw_df:
+        df.attrs["title"] = f"Carrier {measure_name}s"
         return df
     return _fig_carrier_measure(
         df,
@@ -261,6 +265,7 @@ def fig_fare_class_mix(summaries, raw_df=False, label_threshold=0.06):
     df = _assemble(summaries, "fare_class_mix")
     source_order = list(summaries.keys())
     if raw_df:
+        df.attrs["title"] = "Carrier Fare Class Mix"
         return df
     import altair as alt
 
