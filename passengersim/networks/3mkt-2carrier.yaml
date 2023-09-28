@@ -15,7 +15,7 @@ simulation_controls:
   manual_paths: false
 rm_systems:
   fcfs:
-    availability_control: none
+    availability_control: leg
     steps: []
   rm_no_detruncation:
     availability_control: leg
