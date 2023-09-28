@@ -149,23 +149,36 @@ def _fig_carrier_measure(
     measure_format: str = ".2f",
     orient: Literal["h", "v"] = "h",
     title: str | None = None,
+    ratio: str | bool = False,
 ):
+    against = source_order[0]
+    if ratio:
+        if isinstance(ratio, str):
+            against = ratio
+        df_ = df.set_index(["source", "carrier"])
+        ratios = df_.div(df_.query(f"source == '{against}'").droplevel("source")) - 1.0
+        ratios.columns = ["ratio"]
+        df = df.join(ratios, on=["source", "carrier"])
+
     facet_kwargs = {}
     if title is not None:
         facet_kwargs["title"] = title
     chart = alt.Chart(df)
+    tooltips = [
+        alt.Tooltip("source", title=None),
+        alt.Tooltip("carrier", title="Carrier"),
+        alt.Tooltip(f"{load_measure}:Q", title=measure_name, format=measure_format),
+    ]
+    if ratio:
+        tooltips.append(
+            alt.Tooltip("ratio:Q", title=f"vs {against}", format=".3%"),
+        )
     if orient == "v":
         bars = chart.mark_bar().encode(
             color=alt.Color("source:N", title="Source"),
             x=alt.X("source:N", title=None, sort=source_order),
             y=alt.Y(f"{load_measure}:Q", title=measure_name).stack("zero"),
-            tooltip=[
-                alt.Tooltip("source", title=None),
-                alt.Tooltip("carrier", title="Carrier"),
-                alt.Tooltip(
-                    f"{load_measure}:Q", title=measure_name, format=measure_format
-                ),
-            ],
+            tooltip=tooltips,
         )
         text = chart.mark_text(dx=0, dy=3, color="white", baseline="top").encode(
             x=alt.X("source:N", title=None, sort=source_order),
@@ -186,13 +199,7 @@ def _fig_carrier_measure(
             color=alt.Color("source:N", title="Source"),
             y=alt.Y("source:N", title=None, sort=source_order),
             x=alt.X(f"{load_measure}:Q", title=measure_name).stack("zero"),
-            tooltip=[
-                alt.Tooltip("source", title=None),
-                alt.Tooltip("carrier", title="Carrier"),
-                alt.Tooltip(
-                    f"{load_measure}:Q", title=measure_name, format=measure_format
-                ),
-            ],
+            tooltip=tooltips,
         )
         text = chart.mark_text(
             dx=-5, dy=0, color="white", baseline="middle", align="right"
@@ -217,6 +224,7 @@ def fig_carrier_revenues(
     summaries,
     raw_df=False,
     orient: Literal["h", "v"] = "h",
+    ratio: str | bool = True,
 ):
     df = _assemble(summaries, "carrier_revenues")
     source_order = list(summaries.keys())
@@ -231,6 +239,7 @@ def fig_carrier_revenues(
         measure_format="$.4s",
         orient=orient,
         title="Carrier Revenues",
+        ratio=ratio,
     )
 
 
@@ -240,6 +249,7 @@ def fig_carrier_load_factors(
     raw_df=False,
     load_measure: Literal["sys_lf", "avg_lf"] = "sys_lf",
     orient: Literal["h", "v"] = "h",
+    ratio: str | bool = True,
 ):
     measure_name = {"sys_lf": "System Load Factor", "avg_lf": "Leg Load factor"}.get(
         load_measure, "Load Factor"
@@ -257,6 +267,7 @@ def fig_carrier_load_factors(
         measure_format=".2f",
         orient=orient,
         title=f"Carrier {measure_name}s",
+        ratio=ratio,
     )
 
 
