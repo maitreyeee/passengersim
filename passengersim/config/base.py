@@ -4,13 +4,16 @@ from __future__ import annotations
 
 import gzip
 import importlib
+import io
 import logging
+import os
 import pathlib
 import sys
 import time
 import typing
 
 import addicty
+import yaml
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from passengersim.pseudonym import random_label
@@ -101,6 +104,48 @@ class YamlConfig(BaseModel):
         """
         raw_config = cls._load_unformatted_yaml(filenames)
         return cls.model_validate(raw_config.to_dict())
+
+    def to_yaml(self, stream: os.PathLike | io.FileIO | None = None) -> None | bytes:
+        """
+        Write a config to YAML format.
+
+        Parameters
+        ----------
+        stream : Path-like or File-like, optional
+            Write the results here.  If given as a path, a new file is written
+            at this location, or give a File-like object open for writing.
+
+        Returns
+        -------
+        bytes or None
+            When no stream is given, the YAML content is returned as bytes,
+            otherwise this method returns nothing.
+        """
+
+        def path_to_str(x):
+            if isinstance(x, dict):
+                return {k: path_to_str(v) for k, v in x.items()}
+            if isinstance(x, list):
+                return list(path_to_str(i) for i in x)
+            if isinstance(x, tuple):
+                return list(path_to_str(i) for i in x)
+            if isinstance(x, pathlib.Path):
+                return str(x)
+            else:
+                return x
+
+        y = path_to_str(self.model_dump())
+        b = yaml.dump(y, encoding="utf8", Dumper=yaml.SafeDumper)
+        if isinstance(stream, str):
+            stream = pathlib.Path(stream)
+        if isinstance(stream, pathlib.Path):
+            stream.write_bytes(b)
+        elif isinstance(stream, io.RawIOBase):
+            stream.write(b)
+        elif isinstance(stream, io.TextIOBase):
+            stream.write(b.decode())
+        else:
+            return b
 
 
 class Config(YamlConfig, extra="forbid"):
