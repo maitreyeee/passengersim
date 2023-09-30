@@ -319,3 +319,42 @@ def fig_fare_class_mix(summaries, raw_df=False, label_threshold=0.06):
         )
         .configure_title(fontSize=18)
     )
+
+
+@report_figure
+def fig_leg_forecasts(summaries, raw_df=False, by_flt_no=None):
+    df = _assemble(summaries, "leg_forecasts", by_flt_no=by_flt_no)
+    list(summaries.keys())
+    if raw_df:
+        df.attrs["title"] = "Average Leg Forecasts"
+        return df
+    import altair as alt
+
+    if isinstance(by_flt_no, int):
+        return (
+            alt.Chart(df)
+            .mark_line()
+            .encode(
+                x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+                y=alt.Y("demand_fcst:Q", title="Avg Demand Forecast"),
+                color="booking_class:N",
+                strokeDash=alt.StrokeDash("source:N", title="Source"),
+                strokeWidth=alt.StrokeWidth("source:N", title="Source"),
+            )
+        )
+    else:
+        return (
+            alt.Chart(df)
+            .mark_line()
+            .encode(
+                x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+                y=alt.Y("demand_fcst:Q", title="Avg Demand Forecast"),
+                color="booking_class:N",
+                strokeDash=alt.StrokeDash("source:N", title="Source"),
+                strokeWidth=alt.Size("source:N", title="Source"),
+            )
+            .facet(
+                facet="flt_no:N",
+                columns=3,
+            )
+        )

@@ -169,3 +169,29 @@ def bookings_by_timeframe(
     """
 
     return cnx.dataframe(qry_bookings, (scenario,))
+
+
+def avg_leg_forecasts(cnx: Database, scenario: str, burn_samples: int = 100):
+    qry = """
+    SELECT
+        carrier,
+        flt_no,
+        bucket_number,
+        name as booking_class,
+        rrd,
+        AVG(demand_fcst) as demand_fcst
+    FROM
+        leg_bucket_detail
+    WHERE
+        scenario = ?1
+        AND sample >= ?2
+    GROUP BY
+        carrier, flt_no, bucket_number, name, rrd
+    """
+    return cnx.dataframe(
+        qry,
+        (
+            scenario,
+            burn_samples,
+        ),
+    )

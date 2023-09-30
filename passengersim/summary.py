@@ -121,6 +121,12 @@ class SummaryTables:
                 db, scenario, burn_samples
             )
 
+        if "leg_forecasts" in additional and db.is_open:
+            logger.info("loading leg_forecasts")
+            self.leg_forecasts = database.common_queries.avg_leg_forecasts(
+                db, scenario, burn_samples
+            )
+
     def __init__(
         self,
         demands: pd.DataFrame | None = None,
@@ -132,6 +138,7 @@ class SummaryTables:
         bookings_by_timeframe: pd.DataFrame | None = None,
         total_demand: float | None = None,
         od_fare_class_mix: dict[tuple[str, str], pd.DataFrame] | None = None,
+        leg_forecasts: pd.DataFrame | None = None,
     ):
         self.demands = demands
         self.legs = legs
@@ -142,6 +149,7 @@ class SummaryTables:
         self.load_factors = load_factors
         self.bookings_by_timeframe = bookings_by_timeframe
         self.total_demand = total_demand
+        self.leg_forecasts = leg_forecasts
 
     def to_records(self):
         return {k: v.to_dict(orient="records") for (k, v) in self.__dict__.items()}
@@ -630,3 +638,19 @@ class SummaryTables:
         return self._fig_carrier_load_factors(
             raw_df, "avg_rev", "Average Revenue", "$.4s", title="Carrier Revenues"
         )
+
+    @report_figure
+    def fig_leg_forecasts(self, by_flt_no: bool | int = True, raw_df=False):
+        columns = [
+            "carrier",
+            "flt_no",
+            "booking_class",
+            "rrd",
+            "demand_fcst",
+        ]
+        df = self.leg_forecasts[columns].reset_index()
+        if isinstance(by_flt_no, int) and by_flt_no is not True:
+            df = df[df.flt_no == by_flt_no]
+        if raw_df:
+            return df
+        raise NotImplementedError()
