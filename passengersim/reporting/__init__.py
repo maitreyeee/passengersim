@@ -2,13 +2,23 @@ import pandas as pd
 
 try:
     import xmle
+except ImportError:
+    import warnings
+
+    warnings.warn("reporting dependency 'xmle' not installed", stacklevel=2)
+    xmle = None
+
+try:
     from altair.utils.schemapi import UndefinedType
 except ImportError:
     import warnings
 
-    warnings.warn("reporting dependencies (xmle, altair) not installed", stacklevel=2)
-else:
-    from .report import Report
+    warnings.warn("reporting dependencies 'altair' not installed", stacklevel=2)
+    UndefinedType = None
+
+
+if xmle is not None and UndefinedType is not None:
+    from .report import Report  # noqa: F401
 
 
 def report_figure(func):
