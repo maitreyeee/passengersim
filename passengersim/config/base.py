@@ -11,6 +11,7 @@ import pathlib
 import sys
 import time
 import typing
+import warnings
 
 import addicty
 import yaml
@@ -28,6 +29,7 @@ from .legs import Leg
 from .named import DictOfNamed
 from .outputs import OutputConfig
 from .paths import Path
+from .places import Place, great_circle
 from .rm_systems import RmSystem
 from .simulation_controls import SimulationSettings
 from .snapshot_filter import SnapshotFilter
@@ -198,6 +200,9 @@ class Config(YamlConfig, extra="forbid"):
     codes.  See the
     [IATA code search](https://www.iata.org/en/publications/directories/code-search/)
     for more information."""
+
+    places: DictOfNamed[Place] = {}
+    """A list of places (airports, vertiports, other stations)."""
 
     classes: list[str] = []
     """A list of fare classes.
@@ -386,3 +391,18 @@ class Config(YamlConfig, extra="forbid"):
             if sf.directory:
                 sf.directory = prefix.joinpath(sf.directory)
         return prefix
+
+    @model_validator(mode="after")
+    def _attach_distance_to_legs_without_it(self):
+        """Attach distance in nautical miles to legs that are missing distance."""
+        for leg in self.legs:
+            if leg.distance is None:
+                place_o = self.places.get(leg.orig, None)
+                place_d = self.places.get(leg.dest, None)
+                if place_o is not None and place_d is not None:
+                    leg.distance = great_circle(place_o, place_d)
+                if place_o is None:
+                    warnings.warn(f"No defined place for {leg.orig}", stacklevel=2)
+                if place_d is None:
+                    warnings.warn(f"No defined place for {leg.dest}", stacklevel=2)
+        return self
