@@ -72,6 +72,24 @@ rm_systems:
         algorithm: emsrb
         kind: leg
 
+  rm_hybrid:
+    steps:
+#      - step_type: untruncation
+#        name: untruncation
+#        algorithm: em
+#        kind: hybrid
+      - step_type: forecast
+        name: hybrid_forecast
+        algorithm: exp_smoothing
+        alpha: 0.15
+        kind: hybrid
+      - step_type: aggregation
+        name: aggregate
+      - step_type: emsr
+        name: optimization
+        algorithm: emsrb
+        kind: leg
+
 choice_models:
   business:
     kind: pods
@@ -99,7 +117,7 @@ airlines:
     rm_system: rm_test1
     control: leg
   - name: AL2
-    rm_system: rm_test2
+    rm_system: rm_hybrid
     control: vn
 
 classes:
@@ -183,6 +201,7 @@ legs:
     arr_time: '16:00'
     capacity: 100
     distance: 864.0
+
   - carrier: AL2
     fltno: 201
     orig: BOS
@@ -201,6 +220,7 @@ legs:
     arr_time: '16:00'
     capacity: 100
     distance: 864.0
+
   - carrier: AL1
     fltno: 111
     orig: ORD
@@ -219,6 +239,7 @@ legs:
     arr_time: '19:00'
     capacity: 120
     distance: 1741.0
+
   - carrier: AL2
     fltno: 211
     orig: ORD
@@ -590,13 +611,18 @@ snapshot_filters:
 #    sample: 35
 #    dcp: 0
 #    flt_no: 202
-  - type: rm
-    title: RM Snapshot, EMSRb leg optimization
-    sample: [20, 30]
-    dcp: [42, 28, 14]
-    flt_no: 201
-  - type: pro_bp
-    title: ProBP Snapshot
-    sample: [20, 30]
-    dcp: 56
+  - type: forecast
+    title: Snapshot of forecasting
+    sample: 35
+    dcp: [10, 12, 14]
     flt_no: 211
+#  - type: rm
+#    title: RM Snapshot, EMSRb leg optimization
+#    sample: [20, 30]
+#    dcp: [42, 28, 14]
+#    flt_no: 201
+#  - type: pro_bp
+#    title: ProBP Snapshot
+#    sample: [20, 30]
+#    dcp: 56
+#    flt_no: 211
