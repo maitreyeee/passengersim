@@ -118,7 +118,7 @@ airlines:
     control: leg
   - name: AL2
     rm_system: rm_hybrid
-    control: vn
+    control: leg
 
 classes:
   - Y0
@@ -614,13 +614,13 @@ snapshot_filters:
   - type: forecast
     title: Snapshot of forecasting
     sample: 35
-    dcp: [10, 12, 14]
+    dcp: [14]
     flt_no: 211
-#  - type: rm
-#    title: RM Snapshot, EMSRb leg optimization
-#    sample: [20, 30]
-#    dcp: [42, 28, 14]
-#    flt_no: 201
+  - type: rm
+    title: RM Snapshot, EMSRb leg optimization
+    sample: [35]
+    dcp: [14]
+    flt_no: 211
 #  - type: pro_bp
 #    title: ProBP Snapshot
 #    sample: [20, 30]
