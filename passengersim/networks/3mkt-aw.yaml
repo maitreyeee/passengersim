@@ -4,7 +4,7 @@
 
 scenario: AW_test
 simulation_controls:
-  num_trials: 1
+  num_trials: 5
   num_samples: 600
   sys_k_factor: 0.1
   mkt_k_factor: 0.15
@@ -74,10 +74,6 @@ rm_systems:
 
   rm_hybrid:
     steps:
-#      - step_type: untruncation
-#        name: untruncation
-#        algorithm: em
-#        kind: hybrid
       - step_type: forecast
         name: hybrid_forecast
         algorithm: exp_smoothing
