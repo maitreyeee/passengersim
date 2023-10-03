@@ -20,6 +20,7 @@ from .choice_model import ChoiceModel
 from .database import DatabaseConfig
 from .demands import Demand
 from .fares import Fare
+from .frat5_curves import Frat5Curve
 from .legs import Leg
 from .named import DictOfNamed
 from .outputs import OutputConfig
@@ -134,6 +135,9 @@ class Config(YamlConfig, extra="forbid"):
 
     See [RM Systems][rm-systems] for details.
     """
+
+    frat5_curves: DictOfNamed[Frat5Curve] = {}
+    """ FRAT5 curves are used to model sellup rates in Q-forecasting"""
 
     choice_models: DictOfNamed[ChoiceModel] = {}
     """Several choice models are programmed behind the scenes.

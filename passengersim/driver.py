@@ -16,7 +16,7 @@ import passengersim.config.rm_systems
 import passengersim.core
 from passengersim.config import Config
 from passengersim.config.snapshot_filter import SnapshotFilter
-from passengersim.core import PathClass, SimulationEngine
+from passengersim.core import Event, PathClass, SimulationEngine
 from passengersim.summary import SummaryTables
 
 from . import database
@@ -331,10 +331,7 @@ class Simulation:
                     if sample == 0:
                         for leg in self.sim.legs:
                             leg.capacity = leg.capacity * 2.0
-                    elif (
-                        sample
-                        == self.sim.config.simulation_controls.double_capacity_until
-                    ):
+                    elif sample == self.sim.config.simulation_controls.double_capacity_until:
                         for leg in self.sim.legs:
                             leg.capacity = leg.capacity / 2.0
 
@@ -350,9 +347,7 @@ class Simulation:
                     for cxr in self.sim.airlines:
                         total_rev += cxr.revenue
                         n += 1
-                        airline_info += (
-                            f"{', ' if n > 0 else ''}{cxr.name}=${cxr.revenue:8.0f}"
-                        )
+                        airline_info += f"{', ' if n > 0 else ''}{cxr.name}=${cxr.revenue:8.0f}"
 
                     dmd_b, dmd_l = 0, 0
                     for dmd in self.sim.demands:
@@ -361,12 +356,7 @@ class Simulation:
                         else:
                             dmd_l += dmd.scenario_demand
                     d_info = f", {int(dmd_b)}, {int(dmd_l)}"
-                    # logger.info(
-                    # f"********** Trial = {self.sim.trial}, Sample = {self.sim.sample}, AvgRev = ${total_rev/n:11,.2f}"
-                    # )
-                    logger.info(
-                        f"Trial={self.sim.trial}, Sample={self.sim.sample}{airline_info}{d_info}"
-                    )
+                    logger.info(f"Trial={self.sim.trial}, Sample={self.sim.sample}{airline_info}{d_info}")
                 if self.sim.trial > 0 or self.sim.sample > 0:
                     self.sim.reset_counters()
                 self.generate_demands()
@@ -376,9 +366,7 @@ class Simulation:
                     event = self.sim.go()
                     self.run_airline_models(event)
                     if event is None or str(event) == "Done":
-                        assert (
-                            self.sim.num_events() == 0
-                        ), f"Event queue still has {self.sim.num_events()} events"
+                        assert (self.sim.num_events() == 0), f"Event queue still has {self.sim.num_events()} events"
                         break
                 if self.cnx:
                     try:
@@ -393,26 +381,27 @@ class Simulation:
         progress.stop()
 
     def run_airline_models(self, info: Any = None, departed: bool = False, debug=False):
+        event_type = info[0]
         dcp = 0 if info == "Done" else info[1]
         dcp_index = len(self.dcp_list) - 1 if info == "Done" else info[2]
         self.sim.last_dcp = dcp
-        for leg in self.sim.legs:
-            leg.capture_dcp(dcp_index)
-            if self.sim.sample == 2000 and leg.flt_no == 101:
-                logger.info(f"---------- DCP = {dcp} ----------")
-                leg.print_bucket_detail()
 
-        for path in self.sim.paths:
-            path.capture_dcp(dcp_index)
+        if event_type.lower() == "dcp":
+            self.capture_dcp_data(dcp_index)
 
         for airline in self.sim.airlines:
-            # logger.info(f"Running RM for {airline}, dcp={dcp}")
             airline.rm_system.run(self.sim, airline.name, dcp_index, dcp)
 
         if self.cnx.is_open:
             self.cnx.save_details(self.sim, dcp)
         if self.file_writer is not None:
             self.file_writer.save_details(self.sim, dcp)
+
+    def capture_dcp_data(self, dcp_index):
+        for leg in self.sim.legs:
+            leg.capture_dcp(dcp_index)
+        for path in self.sim.paths:
+            path.capture_dcp(dcp_index)
 
     def _accum_by_tf(self, dcp_index):
         # This is now replaced by C++ native counters ...
@@ -436,7 +425,8 @@ class Simulation:
                 self.fare_details_revenue[key3] += f.price * f.sold
 
     def generate_dcp_rm_events(self, debug=False):
-        """Pushes an event per reading day (DCP) onto the queue."""
+        """Pushes an event per reading day (DCP) onto the queue.
+           Also adds events for daily reoptimzation"""
         dcp_hour = self.sim.config.simulation_controls.dcp_hour
         if debug:
             tmp = datetime.fromtimestamp(self.sim.base_time, tz=timezone.utc)
@@ -449,10 +439,18 @@ class Simulation:
                 tmp = datetime.fromtimestamp(event_time, tz=timezone.utc)
                 print(f"Added DCP {dcp} at {tmp.strftime('%Y-%m-%d %H:%M:%S %Z')}")
             info = ("DCP", dcp, dcp_index)
-            from passengersim.core import Event
-
             rm_event = Event(info, event_time)
             self.sim.add_event(rm_event)
+
+        # Now add the events for daily reoptimization
+        max_days_prior = max(self.dcp_list)
+        for days_prior in range(max_days_prior):
+            if days_prior not in self.dcp_list:
+                info = ("daily", days_prior, 0)
+                event_time = int(self.sim.base_time - days_prior * 86400 + 3600 * dcp_hour)
+                rm_event = Event(info, event_time)
+                self.sim.add_event(rm_event)
+
 
     def generate_demands(self, system_rn=None, debug=False):
         """Generate demands, following the procedure used in PODS
