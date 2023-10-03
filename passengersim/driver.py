@@ -16,7 +16,7 @@ import passengersim.config.rm_systems
 import passengersim.core
 from passengersim.config import Config
 from passengersim.config.snapshot_filter import SnapshotFilter
-from passengersim.core import Event, PathClass, SimulationEngine
+from passengersim.core import Event, Frat5, PathClass, SimulationEngine
 from passengersim.summary import SummaryTables
 
 from . import database
@@ -67,6 +67,7 @@ class Simulation:
         self.demand_multiplier = 1.0
         self.airports = []
         self.choice_models = {}
+        self.frat5curves = {}
         self.debug = False
         self.update_frequency = None
         self.random_generator = passengersim.core.Generator(42)
@@ -157,10 +158,21 @@ class Simulation:
             x.random_generator = self.random_generator
             self.choice_models[cm_name] = x
 
+        for f5_name, f5_data in config.frat5_curves.items():
+            f5 = Frat5(f5_name)
+            for dcp, val in f5_data.curve.items():
+                f5.add_vals(val)
+            self.sim.add_frat5(f5)
+            self.frat5curves[f5_name] = f5
+
         for airline_name, airline_config in config.airlines.items():
             airline = passengersim.core.Airline(airline_name, airline_config.control)
             airline.rm_system = self.rm_systems[airline_config.rm_system]
+            if airline_config.frat5 != None and airline_config.frat5 != "":
+                f5 = self.frat5curves[airline_config.frat5]
+                airline.frat5 = f5
             self.sim.add_airline(airline)
+
         self.classes = config.classes
         self.init_rm = {}  # TODO
         self.dcps = config.dcps

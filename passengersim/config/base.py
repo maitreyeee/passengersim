@@ -145,6 +145,8 @@ class Config(YamlConfig, extra="forbid"):
     The choice_models option allows the user to set the parameters used in the
     utility model for a particular choice model. There are two choice models
     currently programmed.
+    1. PODS-like
+    2. MNL, using the Lurkin et. al. paper (needs more testing and pdating)
 
     Need to explaining more here"""
 
@@ -161,8 +163,9 @@ class Config(YamlConfig, extra="forbid"):
     """A list of fare classes.
 
     One convention is to use Y0, Y1, ... to label fare classes from the highest
-    fare (Y0) to the lowest fare (Yn).  An example of classes is below.
-
+    fare (Y0) to the lowest fare (Yn).  You can also use Y, B, M, H,... etc.  
+    An example of classes is below.
+    
     Example
     -------
     ```{yaml}

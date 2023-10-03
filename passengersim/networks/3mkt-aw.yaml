@@ -134,6 +134,7 @@ airlines:
     control: leg
   - name: AL2
     rm_system: rm_hybrid
+    frat5: curve_C
     control: leg
 
 classes:
@@ -160,6 +161,7 @@ dcps:
   - 5
   - 3
   - 1
+
 booking_curves:
   - name: c1
     curve:
