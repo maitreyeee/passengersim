@@ -190,7 +190,11 @@ class Database:
         if not sim.save_timeframe_details and dcp > 0:
             return
         if sim.config.db.fast and isinstance(self._connection, sqlite3.Connection):
-            sim.write_to_sqlite(self._connection, dcp, sim.config.db.write_items)
+            sim.write_to_sqlite(
+                self._connection,
+                dcp,
+                store_bid_prices=sim.config.db.store_leg_bid_prices,
+            )
         else:
             for leg in sim.legs:
                 if "leg" in sim.config.db.write_items:
@@ -207,7 +211,7 @@ class Database:
         self.commit()
 
     def save_final(self: Database, sim: SimulationEngine):
-        sim.final_write_to_sqlite(self._connection, sim.config.db.write_items)
+        sim.final_write_to_sqlite(self._connection)
 
     def dataframe(self, query: str, params: list | tuple | dict | None = None):
         """Run a SQL query and return the results as a pandas DataFrame."""
@@ -314,21 +318,6 @@ def delete_experiment(cnx: Database, name):
 
 
 n_commit = 0
-
-
-# Save details, can be done at each RRD/DCP and at the end of the run
-def save_details(cnx: Database, sim: SimulationEngine, dcp: int):
-    if not sim.save_timeframe_details and dcp > 0:
-        return
-    if sim.config.db.fast and isinstance(cnx._connection, sqlite3.Connection):
-        sim.write_to_sqlite(cnx._connection, dcp)
-    else:
-        save_demand_multi(cnx, sim, dcp)
-        for leg in sim.legs:
-            save_leg(cnx, sim, leg, dcp)
-            save_leg_bucket_multi(cnx, sim, leg, dcp)
-        save_fare_multi(cnx, sim, dcp)
-    cnx.commit()
 
 
 def sql_placeholders(cnx, n: int):

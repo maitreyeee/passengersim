@@ -1,9 +1,9 @@
 from passengersim_core import build_expiration
 from passengersim_core._version import __version__ as __core_version__
-from passengersim_core.cli._app import app
 from rich import print
 
 from passengersim._version import __version__
+from passengersim.cli._app import app
 
 
 @app.command()

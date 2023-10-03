@@ -74,7 +74,9 @@ def multi(config_file: pathlib.Path):
         ) in mp.jobs.items():
             job = []
             for oj in orig_job:
-                if os.path.isabs(oj):
+                if str(oj) == "SKIP":
+                    job.append("SKIP")
+                elif os.path.isabs(oj):
                     job.append(oj)
                 else:
                     job.append(pathlib.Path("..").joinpath(oj))
@@ -104,6 +106,8 @@ def multi(config_file: pathlib.Path):
                     job_name,
                     job,
                 ) in jobs.items():  # iterate over the jobs we need to run
+                    if "SKIP" in job:
+                        continue
                     # set visible false so we don't have a lot of bars all at once:
                     task_id = progress.add_task(job_name, visible=False)
                     futures.append(

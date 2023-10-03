@@ -28,8 +28,6 @@ def fig_bookings_by_timeframe(
         summaries, "bookings_by_timeframe", by_carrier=by_carrier, by_class=by_class
     )
     source_order = list(summaries.keys())
-    if raw_df:
-        return df
 
     title = "Bookings by Timeframe"
     if by_class is True:
@@ -42,23 +40,31 @@ def fig_bookings_by_timeframe(
     if title_annot:
         title = f"{title} ({', '.join(title_annot)})"
 
+    if raw_df:
+        df.attrs["title"] = title
+        return df
+
     if by_class:
-        if by_class is True:
-            title = "Bookings by Timeframe and Booking Class"
-        if isinstance(by_carrier, str):
-            title += f" ({by_carrier})"
+        if isinstance(by_class, str):
+            color = alt.Color("source:N", title="Source", sort=source_order).title(
+                "Source"
+            )
+            tooltips = ()
+        else:
+            color = alt.Color("class:N").title("Booking Class")
+            tooltips = (alt.Tooltip("class", title="Booking Class"),)
         return (
             alt.Chart(df.sort_values("source", ascending=False))
             .mark_bar()
             .encode(
-                color=alt.Color("class:N").title("Booking Class"),
+                color=color,
                 x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
                 xOffset=alt.XOffset("source:N", title="Source", sort=source_order),
                 y=alt.Y("sold", stack=True),
                 tooltip=[
                     alt.Tooltip("source:N", title="Source"),
                     alt.Tooltip("paxtype", title="Passenger Type"),
-                    alt.Tooltip("class", title="Booking Class"),
+                    *tooltips,
                     alt.Tooltip("rrd", title="DfD"),
                     alt.Tooltip("sold", format=".2f"),
                 ],
@@ -143,23 +149,36 @@ def _fig_carrier_measure(
     measure_format: str = ".2f",
     orient: Literal["h", "v"] = "h",
     title: str | None = None,
+    ratio: str | bool = False,
 ):
+    against = source_order[0]
+    if ratio:
+        if isinstance(ratio, str):
+            against = ratio
+        df_ = df.set_index(["source", "carrier"])
+        ratios = df_.div(df_.query(f"source == '{against}'").droplevel("source")) - 1.0
+        ratios.columns = ["ratio"]
+        df = df.join(ratios, on=["source", "carrier"])
+
     facet_kwargs = {}
     if title is not None:
         facet_kwargs["title"] = title
     chart = alt.Chart(df)
+    tooltips = [
+        alt.Tooltip("source", title=None),
+        alt.Tooltip("carrier", title="Carrier"),
+        alt.Tooltip(f"{load_measure}:Q", title=measure_name, format=measure_format),
+    ]
+    if ratio:
+        tooltips.append(
+            alt.Tooltip("ratio:Q", title=f"vs {against}", format=".3%"),
+        )
     if orient == "v":
         bars = chart.mark_bar().encode(
             color=alt.Color("source:N", title="Source"),
             x=alt.X("source:N", title=None, sort=source_order),
             y=alt.Y(f"{load_measure}:Q", title=measure_name).stack("zero"),
-            tooltip=[
-                alt.Tooltip("source", title=None),
-                alt.Tooltip("carrier", title="Carrier"),
-                alt.Tooltip(
-                    f"{load_measure}:Q", title=measure_name, format=measure_format
-                ),
-            ],
+            tooltip=tooltips,
         )
         text = chart.mark_text(dx=0, dy=3, color="white", baseline="top").encode(
             x=alt.X("source:N", title=None, sort=source_order),
@@ -180,13 +199,7 @@ def _fig_carrier_measure(
             color=alt.Color("source:N", title="Source"),
             y=alt.Y("source:N", title=None, sort=source_order),
             x=alt.X(f"{load_measure}:Q", title=measure_name).stack("zero"),
-            tooltip=[
-                alt.Tooltip("source", title=None),
-                alt.Tooltip("carrier", title="Carrier"),
-                alt.Tooltip(
-                    f"{load_measure}:Q", title=measure_name, format=measure_format
-                ),
-            ],
+            tooltip=tooltips,
         )
         text = chart.mark_text(
             dx=-5, dy=0, color="white", baseline="middle", align="right"
@@ -211,10 +224,12 @@ def fig_carrier_revenues(
     summaries,
     raw_df=False,
     orient: Literal["h", "v"] = "h",
+    ratio: str | bool = True,
 ):
     df = _assemble(summaries, "carrier_revenues")
     source_order = list(summaries.keys())
     if raw_df:
+        df.attrs["title"] = "Carrier Revenues"
         return df
     return _fig_carrier_measure(
         df,
@@ -224,6 +239,7 @@ def fig_carrier_revenues(
         measure_format="$.4s",
         orient=orient,
         title="Carrier Revenues",
+        ratio=ratio,
     )
 
 
@@ -233,6 +249,7 @@ def fig_carrier_load_factors(
     raw_df=False,
     load_measure: Literal["sys_lf", "avg_lf"] = "sys_lf",
     orient: Literal["h", "v"] = "h",
+    ratio: str | bool = True,
 ):
     measure_name = {"sys_lf": "System Load Factor", "avg_lf": "Leg Load factor"}.get(
         load_measure, "Load Factor"
@@ -240,6 +257,7 @@ def fig_carrier_load_factors(
     df = _assemble(summaries, "carrier_load_factors", load_measure=load_measure)
     source_order = list(summaries.keys())
     if raw_df:
+        df.attrs["title"] = f"Carrier {measure_name}s"
         return df
     return _fig_carrier_measure(
         df,
@@ -249,6 +267,7 @@ def fig_carrier_load_factors(
         measure_format=".2f",
         orient=orient,
         title=f"Carrier {measure_name}s",
+        ratio=ratio,
     )
 
 
@@ -257,6 +276,7 @@ def fig_fare_class_mix(summaries, raw_df=False, label_threshold=0.06):
     df = _assemble(summaries, "fare_class_mix")
     source_order = list(summaries.keys())
     if raw_df:
+        df.attrs["title"] = "Carrier Fare Class Mix"
         return df
     import altair as alt
 
@@ -299,3 +319,42 @@ def fig_fare_class_mix(summaries, raw_df=False, label_threshold=0.06):
         )
         .configure_title(fontSize=18)
     )
+
+
+@report_figure
+def fig_leg_forecasts(summaries, raw_df=False, by_flt_no=None):
+    df = _assemble(summaries, "leg_forecasts", by_flt_no=by_flt_no)
+    list(summaries.keys())
+    if raw_df:
+        df.attrs["title"] = "Average Leg Forecasts"
+        return df
+    import altair as alt
+
+    if isinstance(by_flt_no, int):
+        return (
+            alt.Chart(df)
+            .mark_line()
+            .encode(
+                x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+                y=alt.Y("demand_fcst:Q", title="Avg Demand Forecast"),
+                color="booking_class:N",
+                strokeDash=alt.StrokeDash("source:N", title="Source"),
+                strokeWidth=alt.StrokeWidth("source:N", title="Source"),
+            )
+        )
+    else:
+        return (
+            alt.Chart(df)
+            .mark_line()
+            .encode(
+                x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+                y=alt.Y("demand_fcst:Q", title="Avg Demand Forecast"),
+                color="booking_class:N",
+                strokeDash=alt.StrokeDash("source:N", title="Source"),
+                strokeWidth=alt.Size("source:N", title="Source"),
+            )
+            .facet(
+                facet="flt_no:N",
+                columns=3,
+            )
+        )

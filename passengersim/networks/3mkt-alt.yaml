@@ -16,6 +16,7 @@ simulation_controls:
   manual_paths: true
 rm_systems:
   rm_test1:
+    availability_control: leg
     steps:
     - step_type: untruncation
       name: untruncation

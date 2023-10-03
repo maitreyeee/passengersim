@@ -168,7 +168,7 @@ class SimulationSettings(BaseModel, extra="allow", validate_assignment=True):
     Future enhancements may include multi-day modeling.
     """
 
-    dcp_hour: float = 6.0
+    dcp_hour: float = 0.0
     """
     The hour of the day that the RM recalculation events are triggered.
 

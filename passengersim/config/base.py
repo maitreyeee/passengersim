@@ -4,12 +4,17 @@ from __future__ import annotations
 
 import gzip
 import importlib
+import io
 import logging
+import os
 import pathlib
 import sys
+import time
 import typing
+import warnings
 
 import addicty
+import yaml
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from passengersim.pseudonym import random_label
@@ -25,6 +30,7 @@ from .legs import Leg
 from .named import DictOfNamed
 from .outputs import OutputConfig
 from .paths import Path
+from .places import Place, great_circle
 from .rm_systems import RmSystem
 from .simulation_controls import SimulationSettings
 from .snapshot_filter import SnapshotFilter
@@ -102,6 +108,48 @@ class YamlConfig(BaseModel):
         raw_config = cls._load_unformatted_yaml(filenames)
         return cls.model_validate(raw_config.to_dict())
 
+    def to_yaml(self, stream: os.PathLike | io.FileIO | None = None) -> None | bytes:
+        """
+        Write a config to YAML format.
+
+        Parameters
+        ----------
+        stream : Path-like or File-like, optional
+            Write the results here.  If given as a path, a new file is written
+            at this location, or give a File-like object open for writing.
+
+        Returns
+        -------
+        bytes or None
+            When no stream is given, the YAML content is returned as bytes,
+            otherwise this method returns nothing.
+        """
+
+        def path_to_str(x):
+            if isinstance(x, dict):
+                return {k: path_to_str(v) for k, v in x.items()}
+            if isinstance(x, list):
+                return list(path_to_str(i) for i in x)
+            if isinstance(x, tuple):
+                return list(path_to_str(i) for i in x)
+            if isinstance(x, pathlib.Path):
+                return str(x)
+            else:
+                return x
+
+        y = path_to_str(self.model_dump())
+        b = yaml.dump(y, encoding="utf8", Dumper=yaml.SafeDumper)
+        if isinstance(stream, str):
+            stream = pathlib.Path(stream)
+        if isinstance(stream, pathlib.Path):
+            stream.write_bytes(b)
+        elif isinstance(stream, io.RawIOBase):
+            stream.write(b)
+        elif isinstance(stream, io.TextIOBase):
+            stream.write(b.decode())
+        else:
+            return b
+
 
 class Config(YamlConfig, extra="forbid"):
     scenario: str = Field(default_factory=random_label)
@@ -158,6 +206,9 @@ class Config(YamlConfig, extra="forbid"):
     codes.  See the
     [IATA code search](https://www.iata.org/en/publications/directories/code-search/)
     for more information."""
+
+    places: DictOfNamed[Place] = {}
+    """A list of places (airports, vertiports, other stations)."""
 
     classes: list[str] = []
     """A list of fare classes.
@@ -232,6 +283,12 @@ class Config(YamlConfig, extra="forbid"):
     paths: list[Path] = []
 
     snapshot_filters: list[SnapshotFilter] = []
+
+    @field_validator("snapshot_filters", mode="before")
+    def _handle_no_snapshot_filters(cls, v):
+        if v is None:
+            v = []
+        return v
 
     raw_license_certificate: bytes | None = None
 
@@ -315,3 +372,44 @@ class Config(YamlConfig, extra="forbid"):
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
         return reloaded_class.__pydantic_validator__.validate_python(*args, **kwargs)
+
+    def add_output_prefix(
+        self, prefix: pathlib.Path, spool_format: str = "%Y%m%d-%H%M"
+    ):
+        """
+        Add a prefix directory to all simulation output files.
+        """
+        if not isinstance(prefix, pathlib.Path):
+            prefix = pathlib.Path(prefix)
+        if spool_format:
+            proposal = prefix.joinpath(time.strftime(spool_format))
+            n = 0
+            while proposal.exists():
+                n += 1
+                proposal = prefix.joinpath(time.strftime(spool_format) + f".{n}")
+            prefix = proposal
+        prefix.mkdir(parents=True)
+
+        if self.db.filename:
+            self.db.filename = prefix.joinpath(self.db.filename)
+        if self.outputs.excel:
+            self.outputs.excel = prefix.joinpath(self.outputs.excel)
+        for sf in self.snapshot_filters:
+            if sf.directory:
+                sf.directory = prefix.joinpath(sf.directory)
+        return prefix
+
+    @model_validator(mode="after")
+    def _attach_distance_to_legs_without_it(self):
+        """Attach distance in nautical miles to legs that are missing distance."""
+        for leg in self.legs:
+            if leg.distance is None:
+                place_o = self.places.get(leg.orig, None)
+                place_d = self.places.get(leg.dest, None)
+                if place_o is not None and place_d is not None:
+                    leg.distance = great_circle(place_o, place_d)
+                if place_o is None:
+                    warnings.warn(f"No defined place for {leg.orig}", stacklevel=2)
+                if place_d is None:
+                    warnings.warn(f"No defined place for {leg.dest}", stacklevel=2)
+        return self

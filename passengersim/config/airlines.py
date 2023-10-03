@@ -11,16 +11,8 @@ class Airline(Named, extra="forbid"):
     rm_system: str
     """Name of the revenue management system used by this airline."""
 
-    control: Literal["leg", "theft", "bp", "vn", "none"] = "leg"
-    """Control method.
-    
-    Allowed values include:
-    - "leg" (default): Uses leg-based controls.
-    - "theft": Theft.
-    - "bp": Bid price.
-    - "vn": Virtual nesting.
-    - "none": No controls.
-    """
+    control: str = ""
+    """Deprecated.  No effect"""
 
     frat5: Optional[str] = ""
     """Named FRAT5 curve.  

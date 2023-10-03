@@ -43,6 +43,7 @@ rm_systems:
   fcfs:
     steps: []
   rm_no_detruncation:
+    availability_control: leg
     steps:
       - step_type: untruncation
         name: untruncation
@@ -58,6 +59,7 @@ rm_systems:
         algorithm: emsrb
         kind: leg
   rm_test1:
+    availability_control: leg
     steps:
       - step_type: untruncation
         name: untruncation
@@ -73,6 +75,7 @@ rm_systems:
         algorithm: emsrb
         kind: leg
   rm_test2:
+    availability_control: leg
     steps:
       - step_type: untruncation
         name: untruncation
@@ -93,6 +96,7 @@ rm_systems:
         kind: leg
 
   rm_hybrid:
+    availability_control: leg
     steps:
       - step_type: forecast
         name: hybrid_forecast
