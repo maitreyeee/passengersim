@@ -31,7 +31,7 @@ rm_systems:
       - step_type: forecast
         name: forecast
         algorithm: exp_smoothing
-        alpha: 0.1
+        alpha: 0.15
         kind: leg
       - step_type: emsr
         name: optimization
