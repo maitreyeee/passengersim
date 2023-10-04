@@ -422,13 +422,18 @@ class Simulation:
         if event_type.lower() == "dcp":
             self.capture_dcp_data(dcp_index)
 
+        # This will change once we have "dcp" and "daily" portions of an RM system in the YAML input file
         for airline in self.sim.airlines:
-            airline.rm_system.run(self.sim, airline.name, dcp_index, dcp)
+            if event_type.lower() == "dcp":
+                airline.rm_system.run(self.sim, airline.name, dcp_index, dcp)
+            elif event_type.lower() == "daily":
+                pass
 
-        if self.cnx.is_open:
-            self.cnx.save_details(self.sim, dcp)
-        if self.file_writer is not None:
-            self.file_writer.save_details(self.sim, dcp)
+        if event_type.lower() == "dcp":
+            if self.cnx.is_open:
+                self.cnx.save_details(self.sim, dcp)
+            if self.file_writer is not None:
+                self.file_writer.save_details(self.sim, dcp)
 
     def capture_dcp_data(self, dcp_index):
         for leg in self.sim.legs:
@@ -483,7 +488,6 @@ class Simulation:
                 event_time = int(self.sim.base_time - days_prior * 86400 + 3600 * dcp_hour)
                 rm_event = Event(info, event_time)
                 self.sim.add_event(rm_event)
-
 
     def generate_demands(self, system_rn=None, debug=False):
         """Generate demands, following the procedure used in PODS
