@@ -137,20 +137,17 @@ class Simulation:
             self.sim.set_parm(pname, float(pvalue))
 
         self.rm_systems = {}
+        from passengersim_core.airline.rm_system import Rm_System
         for rm_name, rm_system in config.rm_systems.items():
-            from passengersim_core.airline.rm_system import Rm_System
-
             x = self.rm_systems[rm_name] = Rm_System(rm_name)
-            for step_name, step in rm_system.steps.items():
-                step_list = []
-                for s in step:
-                    step_list.append(s._factory())
-                x.add_step(step_name, step_list)
+            for process_name, process in rm_system.processes.items():
+                step_list = [s._factory() for s in process]
+                x.add_process(process_name, step_list)
 
             ### This needs ot be revisited, now that we have DCP and DAILY step lists
             availability_control = rm_system.availability_control
-            steps = rm_system.steps
-            if len(steps) == 0:
+            processes = rm_system.processes["dcp"] if "dcp" in rm_system.processes else []
+            if len(processes) == 0:
                 _inferred_availability_control = "none"
             #elif steps[-1].step_type in ("probp", "udp"):
             #    _inferred_availability_control = "bp"

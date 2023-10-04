@@ -11,13 +11,13 @@ RmStep = RmStepBase.as_pydantic_field()
 
 class RmSystem(Named, extra="forbid"):
     # steps: list[RmStep]
-    steps: dict[str, list[RmStep]]
+    processes: dict[str, list[RmStep]]
 
     availability_control: Literal["infer", "leg", "theft", "bp", "vn", "none"] = "infer"
     """Fare class availability algorithm for carriers using this RmSystem.
 
-    The default value will infer the appropriate control based on the step_type
-    of the last step in `steps`. (This is pending implementation).
+    The default value will infer the appropriate control based on the steps in the DCP process
+    (This is pending implementation).
 
     Allowed values include:
     - "leg" (default): Uses leg-based controls.

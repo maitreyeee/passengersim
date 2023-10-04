@@ -42,10 +42,10 @@ frat5_curves:
 rm_systems:
   fcfs:
     availability_control: leg
-    steps: {}
+    processes: {}
   rm_no_detruncation:
     availability_control: leg
-    steps:
+    processes:
       DCP:
         - step_type: untruncation
           name: untruncation
@@ -62,7 +62,7 @@ rm_systems:
           kind: leg
   rm_test1:
     availability_control: leg
-    steps:
+    processes:
       DCP:
         - step_type: untruncation
           name: untruncation
@@ -79,7 +79,7 @@ rm_systems:
           kind: leg
   rm_test2:
     availability_control: leg
-    steps:
+    processes:
       DCP:
         - step_type: untruncation
           name: untruncation
@@ -99,9 +99,30 @@ rm_systems:
           algorithm: emsrb
           kind: leg
 
+  rm_bid_price:
+    availability_control: bp
+    processes:
+      DCP:
+        - step_type: untruncation
+          name: untruncation
+          algorithm: em
+          kind: path
+        - step_type: forecast
+          name: path_forecast
+          algorithm: exp_smoothing
+          alpha: 0.15
+          kind: path
+        - step_type: probp
+          name: optimization
+#      DAILY:
+#        - step_type: forecast_adjustment
+#          name: optimization
+#        - step_type: probp
+#          name: optimization
+
   rm_hybrid:
     availability_control: leg
-    steps:
+    processes:
       DCP:
         - step_type: forecast
           name: hybrid_forecast
