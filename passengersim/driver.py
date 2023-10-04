@@ -141,16 +141,21 @@ class Simulation:
             from passengersim_core.airline.rm_system import Rm_System
 
             x = self.rm_systems[rm_name] = Rm_System(rm_name)
-            for step in rm_system.steps:
-                x.add_step(step._factory())
+            for step_name, step in rm_system.steps.items():
+                step_list = []
+                for s in step:
+                    step_list.append(s._factory())
+                x.add_step(step_name, step_list)
+
+            ### This needs ot be revisited, now that we have DCP and DAILY step lists
             availability_control = rm_system.availability_control
             steps = rm_system.steps
             if len(steps) == 0:
                 _inferred_availability_control = "none"
-            elif steps[-1].step_type in ("probp", "udp"):
-                _inferred_availability_control = "bp"
-            else:
-                _inferred_availability_control = "vn"
+            #elif steps[-1].step_type in ("probp", "udp"):
+            #    _inferred_availability_control = "bp"
+            #else:
+            #    _inferred_availability_control = "vn"
             if availability_control == "infer":
                 raise NotImplementedError("")
             #   availability_control = _inferred_availability_control

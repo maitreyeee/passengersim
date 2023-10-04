@@ -42,74 +42,78 @@ frat5_curves:
 rm_systems:
   fcfs:
     availability_control: leg
-    steps: []
+    steps: {}
   rm_no_detruncation:
     availability_control: leg
     steps:
-      - step_type: untruncation
-        name: untruncation
-        algorithm: none
-        kind: leg
-      - step_type: forecast
-        name: forecast
-        algorithm: exp_smoothing
-        alpha: 0.15
-        kind: leg
-      - step_type: emsr
-        name: optimization
-        algorithm: emsrb
-        kind: leg
+      DCP:
+        - step_type: untruncation
+          name: untruncation
+          algorithm: none
+          kind: leg
+        - step_type: forecast
+          name: forecast
+          algorithm: exp_smoothing
+          alpha: 0.15
+          kind: leg
+        - step_type: emsr
+          name: optimization
+          algorithm: emsrb
+          kind: leg
   rm_test1:
     availability_control: leg
     steps:
-      - step_type: untruncation
-        name: untruncation
-        algorithm: em
-        kind: leg
-      - step_type: forecast
-        name: forecast
-        algorithm: exp_smoothing
-        alpha: 0.15
-        kind: leg
-      - step_type: emsr
-        name: optimization
-        algorithm: emsrb
-        kind: leg
+      DCP:
+        - step_type: untruncation
+          name: untruncation
+          algorithm: em
+          kind: leg
+        - step_type: forecast
+          name: forecast
+          algorithm: exp_smoothing
+          alpha: 0.15
+          kind: leg
+        - step_type: emsr
+          name: optimization
+          algorithm: emsrb
+          kind: leg
   rm_test2:
     availability_control: leg
     steps:
-      - step_type: untruncation
-        name: untruncation
-        algorithm: em
-        kind: path
-      - step_type: forecast
-        name: path_forecast
-        algorithm: exp_smoothing
-        alpha: 0.15
-        kind: path
-      - step_type: probp
-        name: optimization
-      - step_type: aggregation
-        name: aggregate
-      - step_type: emsr
-        name: optimization
-        algorithm: emsrb
-        kind: leg
+      DCP:
+        - step_type: untruncation
+          name: untruncation
+          algorithm: em
+          kind: path
+        - step_type: forecast
+          name: path_forecast
+          algorithm: exp_smoothing
+          alpha: 0.15
+          kind: path
+        - step_type: probp
+          name: optimization
+        - step_type: aggregation
+          name: aggregate
+        - step_type: emsr
+          name: optimization
+          algorithm: emsrb
+          kind: leg
 
   rm_hybrid:
     availability_control: leg
     steps:
-      - step_type: forecast
-        name: hybrid_forecast
-        algorithm: exp_smoothing
-        alpha: 0.15
-        kind: hybrid
-      - step_type: aggregation
-        name: aggregate
-      - step_type: emsr
-        name: optimization
-        algorithm: emsrb
-        kind: leg
+      DCP:
+        - step_type: forecast
+          name: hybrid_forecast
+          algorithm: exp_smoothing
+          alpha: 0.15
+          kind: hybrid
+        - step_type: aggregation
+          name: aggregate
+        - step_type: emsr
+          name: optimization
+          algorithm: emsrb
+          kind: leg
 
 choice_models:
   business:

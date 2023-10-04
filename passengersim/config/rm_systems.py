@@ -10,7 +10,8 @@ RmStep = RmStepBase.as_pydantic_field()
 
 
 class RmSystem(Named, extra="forbid"):
-    steps: list[RmStep]
+    # steps: list[RmStep]
+    steps: dict[str, list[RmStep]]
 
     availability_control: Literal["infer", "leg", "theft", "bp", "vn", "none"] = "infer"
     """Fare class availability algorithm for carriers using this RmSystem.
