@@ -704,4 +704,7 @@ class SummaryTables:
             df = df[df.path_id == by_path_id]
         if raw_df:
             return df
-        return self._fig_forecasts(df, facet_on=None, y="forecast_mean")
+        facet_on = None
+        if by_path_id is True:
+            facet_on = "path_id"
+        return self._fig_forecasts(df, facet_on=facet_on, y="forecast_mean")
