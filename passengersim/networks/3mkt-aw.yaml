@@ -114,11 +114,13 @@ rm_systems:
           kind: path
         - step_type: probp
           name: optimization
-#      DAILY:
-#        - step_type: forecast_adjustment
-#          name: optimization
-#        - step_type: probp
-#          name: optimization
+      DAILY:
+        - step_type: forecast_adjustment
+          name: adjust
+          algorithm: days_to_departure
+          kind: path
+        - step_type: probp
+          name: optimization
 
   rm_hybrid:
     availability_control: leg
