@@ -41,6 +41,7 @@ frat5_curves:
 
 rm_systems:
   fcfs:
+    availability_control: leg
     steps: []
   rm_no_detruncation:
     availability_control: leg
@@ -135,11 +136,9 @@ choice_models:
 airlines:
   - name: AL1
     rm_system: rm_test1
-    control: leg
   - name: AL2
     rm_system: rm_hybrid
     frat5: curve_C
-    control: leg
 
 classes:
   - Y0
