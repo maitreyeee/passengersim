@@ -321,22 +321,16 @@ def fig_fare_class_mix(summaries, raw_df=False, label_threshold=0.06):
     )
 
 
-@report_figure
-def fig_leg_forecasts(summaries, raw_df=False, by_flt_no=None):
-    df = _assemble(summaries, "leg_forecasts", by_flt_no=by_flt_no)
-    list(summaries.keys())
-    if raw_df:
-        df.attrs["title"] = "Average Leg Forecasts"
-        return df
+def _fig_forecasts(df, facet_on=None, y="demand_fcst"):
     import altair as alt
 
-    if isinstance(by_flt_no, int):
+    if not facet_on:
         return (
             alt.Chart(df)
             .mark_line()
             .encode(
                 x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
-                y=alt.Y("demand_fcst:Q", title="Avg Demand Forecast"),
+                y=alt.Y(f"{y}:Q", title="Avg Demand Forecast"),
                 color="booking_class:N",
                 strokeDash=alt.StrokeDash("source:N", title="Source"),
                 strokeWidth=alt.StrokeWidth("source:N", title="Source"),
@@ -348,13 +342,70 @@ def fig_leg_forecasts(summaries, raw_df=False, by_flt_no=None):
             .mark_line()
             .encode(
                 x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
-                y=alt.Y("demand_fcst:Q", title="Avg Demand Forecast"),
+                y=alt.Y(f"{y}:Q", title="Avg Demand Forecast"),
                 color="booking_class:N",
                 strokeDash=alt.StrokeDash("source:N", title="Source"),
                 strokeWidth=alt.Size("source:N", title="Source"),
             )
             .facet(
-                facet="flt_no:N",
+                facet=f"{facet_on}:N",
                 columns=3,
             )
         )
+
+
+@report_figure
+def fig_leg_forecasts(summaries, raw_df=False, by_flt_no=None):
+    df = _assemble(summaries, "leg_forecasts", by_flt_no=by_flt_no)
+    list(summaries.keys())
+    if raw_df:
+        df.attrs["title"] = "Average Leg Forecasts"
+        return df
+    return _fig_forecasts(
+        df, facet_on="flt_no" if not isinstance(by_flt_no, int) else None
+    )
+
+    # import altair as alt
+    #
+    # if isinstance(by_flt_no, int):
+    #     return (
+    #         alt.Chart(df)
+    #         .mark_line()
+    #         .encode(
+    #             x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+    #             y=alt.Y("demand_fcst:Q", title="Avg Demand Forecast"),
+    #             color="booking_class:N",
+    #             strokeDash=alt.StrokeDash("source:N", title="Source"),
+    #             strokeWidth=alt.StrokeWidth("source:N", title="Source"),
+    #         )
+    #     )
+    # else:
+    #     return (
+    #         alt.Chart(df)
+    #         .mark_line()
+    #         .encode(
+    #             x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+    #             y=alt.Y("demand_fcst:Q", title="Avg Demand Forecast"),
+    #             color="booking_class:N",
+    #             strokeDash=alt.StrokeDash("source:N", title="Source"),
+    #             strokeWidth=alt.Size("source:N", title="Source"),
+    #         )
+    #         .facet(
+    #             facet="flt_no:N",
+    #             columns=3,
+    #         )
+    #     )
+
+
+@report_figure
+def fig_path_forecasts(summaries, raw_df=False, by_path_id=None):
+    df = _assemble(summaries, "path_forecasts", by_path_id=by_path_id)
+    list(summaries.keys())
+    if raw_df:
+        df.attrs["title"] = "Average Path Forecasts"
+        return df
+    return _fig_forecasts(
+        df,
+        facet_on="path_id" if not isinstance(by_path_id, int) else None,
+        y="forecast_mean",
+    )

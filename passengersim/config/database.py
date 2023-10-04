@@ -39,6 +39,8 @@ class DatabaseConfig(BaseModel, extra="forbid", validate_assignment=True):
             "fare_final",
             "demand_final",
             "bookings",
+            "pathclass",
+            "pathclass_final",
         ]
     ] = {"leg_final", "fare_final", "demand_final", "bookings"}
     """Which items should be written to the database.

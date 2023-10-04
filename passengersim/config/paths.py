@@ -4,6 +4,7 @@ from pydantic import BaseModel, field_validator
 
 
 class Path(BaseModel, extra="forbid"):
+    path_id: int | None = None
     orig: str
     dest: str
     path_quality_index: float

@@ -233,6 +233,34 @@ def create_table_booking_curve(cnx: Database, primary_key: bool = True):
     cnx.execute(sql)
 
 
+def create_table_path_class_detail(cnx: Database, primary_key: bool = False):
+    sql = """
+    CREATE TABLE IF NOT EXISTS path_class_detail
+    (
+        scenario		VARCHAR(20) NOT NULL,
+        iteration		INT NOT NULL,
+        trial	    	INT NOT NULL,
+        sample  		INT NOT NULL,
+        rrd         	INT NOT NULL,
+        path_id			INT NOT NULL,
+        booking_class   VARCHAR(10) NOT NULL,
+        sold			INT,
+        forecast_mean   FLOAT,
+        forecast_stdev  FLOAT,
+        updated_at		DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        {primary_key}
+    );
+    """
+    if primary_key is True:
+        sql = sql.format(
+            primary_key=", PRIMARY KEY(scenario, iteration, trial, sample, rrd, "
+            "path_id, booking_class)"
+        )
+    else:
+        sql = sql.format(primary_key="")
+    cnx.execute(sql)
+
+
 def create_table_distance(cnx: Database, primary_key: bool = True):
     sql = """
     CREATE TABLE IF NOT EXISTS distance (
@@ -258,6 +286,7 @@ def create_tables(cnx: Database, primary_keys: dict[str, bool] | None = None):
         booking_curve=True,
         distance=True,
         bookings=False,
+        path_class=False,
     )
     if primary_keys is not None:
         pk.update(primary_keys)
@@ -268,5 +297,6 @@ def create_tables(cnx: Database, primary_keys: dict[str, bool] | None = None):
     create_table_fare_detail(cnx, pk["fare"])
     create_table_bookings_by_timeframe(cnx, pk["bookings"])
     create_table_booking_curve(cnx, pk["booking_curve"])
+    create_table_path_class_detail(cnx, pk["path_class"])
     create_table_distance(cnx, pk["distance"])
     cnx._commit_raw()

@@ -195,3 +195,28 @@ def avg_leg_forecasts(cnx: Database, scenario: str, burn_samples: int = 100):
             burn_samples,
         ),
     )
+
+
+def avg_path_forecasts(cnx: Database, scenario: str, burn_samples: int = 100):
+    qry = """
+    SELECT
+        path_id,
+        booking_class,
+        rrd,
+        AVG(forecast_mean) as forecast_mean,
+        AVG(forecast_stdev) as forecast_stdev
+    FROM
+        path_class_detail
+    WHERE
+        scenario = ?1
+        AND sample >= ?2
+    GROUP BY
+        path_id, booking_class, rrd
+    """
+    return cnx.dataframe(
+        qry,
+        (
+            scenario,
+            burn_samples,
+        ),
+    )

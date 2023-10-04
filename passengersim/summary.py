@@ -127,6 +127,12 @@ class SummaryTables:
                 db, scenario, burn_samples
             )
 
+        if "path_forecasts" in additional and db.is_open:
+            logger.info("loading path_forecasts")
+            self.path_forecasts = database.common_queries.avg_path_forecasts(
+                db, scenario, burn_samples
+            )
+
     def __init__(
         self,
         demands: pd.DataFrame | None = None,
@@ -139,6 +145,7 @@ class SummaryTables:
         total_demand: float | None = None,
         od_fare_class_mix: dict[tuple[str, str], pd.DataFrame] | None = None,
         leg_forecasts: pd.DataFrame | None = None,
+        path_forecasts: pd.DataFrame | None = None,
     ):
         self.demands = demands
         self.legs = legs
@@ -150,6 +157,7 @@ class SummaryTables:
         self.bookings_by_timeframe = bookings_by_timeframe
         self.total_demand = total_demand
         self.leg_forecasts = leg_forecasts
+        self.path_forecasts = path_forecasts
 
     def to_records(self):
         return {k: v.to_dict(orient="records") for (k, v) in self.__dict__.items()}
@@ -639,6 +647,34 @@ class SummaryTables:
             raw_df, "avg_rev", "Average Revenue", "$.4s", title="Carrier Revenues"
         )
 
+    def _fig_forecasts(self, df, facet_on=None, y="demand_fcst"):
+        import altair as alt
+
+        if not facet_on:
+            return (
+                alt.Chart(df)
+                .mark_line()
+                .encode(
+                    x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+                    y=alt.Y(f"{y}:Q", title="Avg Demand Forecast"),
+                    color="booking_class:N",
+                )
+            )
+        else:
+            return (
+                alt.Chart(df)
+                .mark_line()
+                .encode(
+                    x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+                    y=alt.Y(f"{y}:Q", title="Avg Demand Forecast"),
+                    color="booking_class:N",
+                )
+                .facet(
+                    facet=f"{facet_on}:N",
+                    columns=3,
+                )
+            )
+
     @report_figure
     def fig_leg_forecasts(self, by_flt_no: bool | int = True, raw_df=False):
         columns = [
@@ -653,4 +689,19 @@ class SummaryTables:
             df = df[df.flt_no == by_flt_no]
         if raw_df:
             return df
-        raise NotImplementedError()
+        return self._fig_forecasts(df, facet_on=None, y="demand_fcst")
+
+    @report_figure
+    def fig_path_forecasts(self, by_path_id: bool | int = True, raw_df=False):
+        columns = [
+            "path_id",
+            "booking_class",
+            "rrd",
+            "forecast_mean",
+        ]
+        df = self.path_forecasts[columns].reset_index()
+        if isinstance(by_path_id, int) and by_path_id is not True:
+            df = df[df.path_id == by_path_id]
+        if raw_df:
+            return df
+        return self._fig_forecasts(df, facet_on=None, y="forecast_mean")
