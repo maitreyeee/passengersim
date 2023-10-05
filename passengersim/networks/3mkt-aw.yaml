@@ -115,7 +115,7 @@ rm_systems:
         - step_type: probp
           name: optimization
       DAILY:
-        - step_type: forecast_adjustment
+        - step_type: forecastadjustment
           name: adjust
           algorithm: days_to_departure
           kind: path
