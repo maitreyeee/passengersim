@@ -872,3 +872,9 @@ class Simulation:
         dst : Path-like or sqlite3.Connection
         """
         return self.cnx.backup(dst)
+
+    def path_names(self):
+        result = {}
+        for p in self.sim.paths:
+            result[p.path_id] = str(p)
+        return result
