@@ -16,7 +16,7 @@ import passengersim.config.rm_systems
 import passengersim.core
 from passengersim.config import Config
 from passengersim.config.snapshot_filter import SnapshotFilter
-from passengersim.core import PathClass, SimulationEngine
+from passengersim.core import Event, Frat5, PathClass, SimulationEngine
 from passengersim.summary import SummaryTables
 
 from . import database
@@ -67,6 +67,7 @@ class Simulation:
         self.demand_multiplier = 1.0
         self.airports = []
         self.choice_models = {}
+        self.frat5curves = {}
         self.debug = False
         self.update_frequency = None
         self.random_generator = passengersim.core.Generator(42)
@@ -136,20 +137,25 @@ class Simulation:
             self.sim.set_parm(pname, float(pvalue))
 
         self.rm_systems = {}
-        for rm_name, rm_system in config.rm_systems.items():
-            from passengersim_core.airline.rm_system import Rm_System
+        from passengersim_core.airline.rm_system import Rm_System
 
+        for rm_name, rm_system in config.rm_systems.items():
             x = self.rm_systems[rm_name] = Rm_System(rm_name)
-            for step in rm_system.steps:
-                x.add_step(step._factory())
+            for process_name, process in rm_system.processes.items():
+                step_list = [s._factory() for s in process]
+                x.add_process(process_name, step_list)
+
+            ### This needs ot be revisited, now that we have DCP and DAILY step lists
             availability_control = rm_system.availability_control
-            steps = rm_system.steps
-            if len(steps) == 0:
+            processes = (
+                rm_system.processes["dcp"] if "dcp" in rm_system.processes else []
+            )
+            if len(processes) == 0:
                 _inferred_availability_control = "none"
-            elif steps[-1].step_type in ("probp", "udp"):
-                _inferred_availability_control = "bp"
-            else:
-                _inferred_availability_control = "vn"
+            # elif steps[-1].step_type in ("probp", "udp"):
+            #    _inferred_availability_control = "bp"
+            # else:
+            #    _inferred_availability_control = "vn"
             if availability_control == "infer":
                 raise NotImplementedError("")
             #   availability_control = _inferred_availability_control
@@ -176,13 +182,24 @@ class Simulation:
             x.random_generator = self.random_generator
             self.choice_models[cm_name] = x
 
+        for f5_name, f5_data in config.frat5_curves.items():
+            f5 = Frat5(f5_name)
+            for _dcp, val in f5_data.curve.items():
+                f5.add_vals(val)
+            self.sim.add_frat5(f5)
+            self.frat5curves[f5_name] = f5
+
         for airline_name, airline_config in config.airlines.items():
             availability_control = self.rm_systems[
                 airline_config.rm_system
             ].availability_control
             airline = passengersim.core.Airline(airline_name, availability_control)
             airline.rm_system = self.rm_systems[airline_config.rm_system]
+            if airline_config.frat5 is not None and airline_config.frat5 != "":
+                f5 = self.frat5curves[airline_config.frat5]
+                airline.frat5 = f5
             self.sim.add_airline(airline)
+
         self.classes = config.classes
         self.init_rm = {}  # TODO
         self.dcps = config.dcps
@@ -382,9 +399,6 @@ class Simulation:
                         else:
                             dmd_l += dmd.scenario_demand
                     d_info = f", {int(dmd_b)}, {int(dmd_l)}"
-                    # logger.info(
-                    # f"********** Trial = {self.sim.trial}, Sample = {self.sim.sample}, AvgRev = ${total_rev/n:11,.2f}"
-                    # )
                     logger.info(
                         f"Trial={self.sim.trial}, Sample={self.sim.sample}{airline_info}{d_info}"
                     )
@@ -414,26 +428,32 @@ class Simulation:
         progress.stop()
 
     def run_airline_models(self, info: Any = None, departed: bool = False, debug=False):
+        event_type = info[0]
         dcp = 0 if info == "Done" else info[1]
         dcp_index = len(self.dcp_list) - 1 if info == "Done" else info[2]
         self.sim.last_dcp = dcp
+
+        if event_type.lower() == "dcp":
+            self.capture_dcp_data(dcp_index)
+
+        # This will change once we have "dcp" and "daily" portions of an RM system in the YAML input file
+        for airline in self.sim.airlines:
+            if event_type.lower() == "dcp":
+                airline.rm_system.run(self.sim, airline.name, dcp_index, dcp)
+            elif event_type.lower() == "daily":
+                pass
+
+        if event_type.lower() == "dcp":
+            if self.cnx.is_open:
+                self.cnx.save_details(self.sim, dcp)
+            if self.file_writer is not None:
+                self.file_writer.save_details(self.sim, dcp)
+
+    def capture_dcp_data(self, dcp_index):
         for leg in self.sim.legs:
             leg.capture_dcp(dcp_index)
-            if self.sim.sample == 2000 and leg.flt_no == 101:
-                logger.info(f"---------- DCP = {dcp} ----------")
-                leg.print_bucket_detail()
-
         for path in self.sim.paths:
             path.capture_dcp(dcp_index)
-
-        for airline in self.sim.airlines:
-            # logger.info(f"Running RM for {airline}, dcp={dcp}")
-            airline.rm_system.run(self.sim, airline.name, dcp_index, dcp)
-
-        if self.cnx.is_open:
-            self.cnx.save_details(self.sim, dcp)
-        if self.file_writer is not None:
-            self.file_writer.save_details(self.sim, dcp)
 
     def _accum_by_tf(self, dcp_index):
         # This is now replaced by C++ native counters ...
@@ -457,7 +477,8 @@ class Simulation:
                 self.fare_details_revenue[key3] += f.price * f.sold
 
     def generate_dcp_rm_events(self, debug=False):
-        """Pushes an event per reading day (DCP) onto the queue."""
+        """Pushes an event per reading day (DCP) onto the queue.
+        Also adds events for daily reoptimzation"""
         dcp_hour = self.sim.config.simulation_controls.dcp_hour
         if debug:
             tmp = datetime.fromtimestamp(self.sim.base_time, tz=timezone.utc)
@@ -470,10 +491,19 @@ class Simulation:
                 tmp = datetime.fromtimestamp(event_time, tz=timezone.utc)
                 print(f"Added DCP {dcp} at {tmp.strftime('%Y-%m-%d %H:%M:%S %Z')}")
             info = ("DCP", dcp, dcp_index)
-            from passengersim.core import Event
-
             rm_event = Event(info, event_time)
             self.sim.add_event(rm_event)
+
+        # Now add the events for daily reoptimization
+        max_days_prior = max(self.dcp_list)
+        for days_prior in range(max_days_prior):
+            if days_prior not in self.dcp_list:
+                info = ("daily", days_prior, 0)
+                event_time = int(
+                    self.sim.base_time - days_prior * 86400 + 3600 * dcp_hour
+                )
+                rm_event = Event(info, event_time)
+                self.sim.add_event(rm_event)
 
     def generate_demands(self, system_rn=None, debug=False):
         """Generate demands, following the procedure used in PODS

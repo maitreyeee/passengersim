@@ -12,6 +12,7 @@ except ImportError:
     Event = None
     Fare = None
     Forecast = None
+    Frat5 = None
     Generator = None
     Leg = None
     LicenseError = None
@@ -30,6 +31,7 @@ else:
         Event,
         Fare,
         Forecast,
+        Frat5,
         Generator,
         Leg,
         LicenseError,
@@ -49,6 +51,7 @@ __all__ = [
     "Event",
     "Fare",
     "Forecast",
+    "Frat5",
     "Generator",
     "Leg",
     "LicenseError",

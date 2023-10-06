@@ -9,6 +9,7 @@ from .choice_model import ChoiceModel
 from .database import DatabaseConfig
 from .demands import Demand
 from .fares import Fare
+from .frat5_curves import Frat5Curve
 from .legs import Leg
 from .named import DictOfNamed
 from .paths import Path

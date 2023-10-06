@@ -25,6 +25,7 @@ from .choice_model import ChoiceModel
 from .database import DatabaseConfig
 from .demands import Demand
 from .fares import Fare
+from .frat5_curves import Frat5Curve
 from .legs import Leg
 from .named import DictOfNamed
 from .outputs import OutputConfig
@@ -183,12 +184,17 @@ class Config(YamlConfig, extra="forbid"):
     See [RM Systems][rm-systems] for details.
     """
 
+    frat5_curves: DictOfNamed[Frat5Curve] = {}
+    """ FRAT5 curves are used to model sellup rates in Q-forecasting"""
+
     choice_models: DictOfNamed[ChoiceModel] = {}
     """Several choice models are programmed behind the scenes.
 
     The choice_models option allows the user to set the parameters used in the
     utility model for a particular choice model. There are two choice models
     currently programmed.
+    1. PODS-like
+    2. MNL, using the Lurkin et. al. paper (needs more testing and pdating)
 
     Need to explaining more here"""
 
@@ -208,8 +214,9 @@ class Config(YamlConfig, extra="forbid"):
     """A list of fare classes.
 
     One convention is to use Y0, Y1, ... to label fare classes from the highest
-    fare (Y0) to the lowest fare (Yn).  An example of classes is below.
-
+    fare (Y0) to the lowest fare (Yn).  You can also use Y, B, M, H,... etc.  
+    An example of classes is below.
+    
     Example
     -------
     ```{yaml}
