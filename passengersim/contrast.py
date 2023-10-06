@@ -20,7 +20,11 @@ def _assemble(summaries, base, **kwargs):
 
 @report_figure
 def fig_bookings_by_timeframe(
-    summaries, by_carrier: bool | str = True, by_class: bool | str = False, raw_df=False
+    summaries,
+    by_carrier: bool | str = True,
+    by_class: bool | str = False,
+    raw_df=False,
+    source_labels: bool = False,
 ):
     if by_carrier is True and by_class is True:
         raise NotImplementedError("comparing by both class and carrier is messy")
@@ -53,22 +57,36 @@ def fig_bookings_by_timeframe(
         else:
             color = alt.Color("class:N").title("Booking Class")
             tooltips = (alt.Tooltip("class", title="Booking Class"),)
+        chart = alt.Chart(df.sort_values("source", ascending=False))
+        chart_1 = chart.mark_bar().encode(
+            color=color,
+            x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+            xOffset=alt.XOffset("source:N", title="Source", sort=source_order),
+            y=alt.Y("sold", stack=True),
+            tooltip=[
+                alt.Tooltip("source:N", title="Source"),
+                alt.Tooltip("paxtype", title="Passenger Type"),
+                *tooltips,
+                alt.Tooltip("rrd", title="DfD"),
+                alt.Tooltip("sold", format=".2f"),
+            ],
+        )
+        chart_2 = chart.mark_text(
+            color="#616161",
+            yOffset=-2,
+            angle=270,
+            fontSize=8,
+            baseline="middle",
+            align="left",
+        ).encode(
+            text=alt.Text("source:N", title="Source"),
+            x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+            xOffset=alt.XOffset("source:N", title="Source", sort=source_order),
+            # shape=alt.Shape("source:N", title="Source", sort=source_order),
+            y=alt.Y("sum(sold)", title=None),
+        )
         return (
-            alt.Chart(df.sort_values("source", ascending=False))
-            .mark_bar()
-            .encode(
-                color=color,
-                x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
-                xOffset=alt.XOffset("source:N", title="Source", sort=source_order),
-                y=alt.Y("sold", stack=True),
-                tooltip=[
-                    alt.Tooltip("source:N", title="Source"),
-                    alt.Tooltip("paxtype", title="Passenger Type"),
-                    *tooltips,
-                    alt.Tooltip("rrd", title="DfD"),
-                    alt.Tooltip("sold", format=".2f"),
-                ],
-            )
+            ((chart_1 + chart_2) if source_labels else chart_1)
             .properties(
                 width=500,
                 height=200,
