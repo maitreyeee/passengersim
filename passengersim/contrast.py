@@ -399,12 +399,18 @@ def fig_leg_forecasts(summaries, raw_df=False, by_flt_no=None):
 
 @report_figure
 def fig_path_forecasts(
-    summaries, raw_df=False, by_path_id=None, path_names: dict | None = None
+    summaries,
+    raw_df=False,
+    by_path_id=None,
+    path_names: dict | None = None,
+    agg_booking_classes: bool = False,
 ):
     df = _assemble(summaries, "path_forecasts", by_path_id=by_path_id)
     list(summaries.keys())
     if path_names is not None:
         df["path_id"] = df["path_id"].apply(lambda x: path_names.get(x, str(x)))
+    if agg_booking_classes:
+        df = df.groupby(["source", "path_id", "rrd"]).forecast_mean.sum().reset_index()
     if raw_df:
         df.attrs["title"] = "Average Path Forecasts"
         return df
