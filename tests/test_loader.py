@@ -14,35 +14,37 @@ def test_rm_systems():
     demo1 = """
     rm_systems:
       - name: SystemA
-        steps:
-        - step_type: untruncation
-          name: foo
-          algorithm: bar
-        - step_type: forecast
-          name: baz
-          algorithm: exp_smoothing
-          alpha: 0.42
+        processes:
+          DCP:
+          - step_type: untruncation
+            name: foo
+            algorithm: bar
+          - step_type: forecast
+            name: baz
+            algorithm: exp_smoothing
+            alpha: 0.42
       - name: SystemB
-        steps:
-        - step_type: forecast
-          name: baz
-          algorithm: additive_pickup
+        processes:
+          DCP:
+          - step_type: forecast
+            name: baz
+            algorithm: additive_pickup
     """
     content = yaml.safe_load(io.StringIO(demo1))
     loaded = Config.model_validate(content)
 
     system0 = loaded.rm_systems["SystemA"]
     assert system0.name == "SystemA"
-    assert len(system0.steps) == 2
-    assert isinstance(system0.steps[0], UntruncationStep)
-    assert isinstance(system0.steps[1], ForecastStep)
+    assert len(system0.processes["dcp"]) == 2
+    assert isinstance(system0.processes["dcp"][0], UntruncationStep)
+    assert isinstance(system0.processes["dcp"][1], ForecastStep)
 
     system1 = loaded.rm_systems["SystemB"]
     assert system1.name == "SystemB"
-    assert isinstance(system1.steps[0], ForecastStep)
-    assert system1.steps[0].step_type == "forecast"
-    assert system1.steps[0].algorithm == "additive_pickup"
-    assert system1.steps[0].name == "baz"
+    assert isinstance(system1.processes["dcp"][0], ForecastStep)
+    assert system1.processes["dcp"][0].step_type == "forecast"
+    assert system1.processes["dcp"][0].algorithm == "additive_pickup"
+    assert system1.processes["dcp"][0].name == "baz"
 
     # there are several errors in demo2, the parser finds and reports them all with legible error message
     demo2 = """

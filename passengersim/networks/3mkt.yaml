@@ -17,20 +17,21 @@ simulation_controls:
 rm_systems:
 - name: rm_test1
   availability_control: leg
-  steps:
-  - step_type: untruncation
-    name: untruncation
-    algorithm: em
-    kind: leg
-  - step_type: forecast
-    name: forecast
-    algorithm: exp_smoothing
-    alpha: 0.1
-    kind: leg
-  - step_type: emsr
-    name: optimization
-    algorithm: emsrb
-    kind: leg
+  processes:
+    dcp:
+    - step_type: untruncation
+      name: untruncation
+      algorithm: em
+      kind: leg
+    - step_type: forecast
+      name: forecast
+      algorithm: exp_smoothing
+      alpha: 0.1
+      kind: leg
+    - step_type: emsr
+      name: optimization
+      algorithm: emsrb
+      kind: leg
 choice_models:
   business:
     kind: pods

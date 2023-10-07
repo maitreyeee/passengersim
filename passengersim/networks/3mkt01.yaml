@@ -24,7 +24,8 @@ rm_systems:
   fcfs:
     steps: []
   rm_no_detruncation:
-    steps:
+    processes:
+      dcp:
       - step_type: untruncation
         name: untruncation
         algorithm: none
@@ -39,7 +40,8 @@ rm_systems:
         algorithm: emsrb
         kind: leg
   rm_test1:
-    steps:
+    processes:
+      dcp:
       - step_type: untruncation
         name: untruncation
         algorithm: none
@@ -54,7 +56,8 @@ rm_systems:
         algorithm: fcfs
         kind: leg
   rm_test2:
-    steps:
+    processes:
+      dcp:
       - step_type: untruncation
         name: untruncation
         algorithm: em

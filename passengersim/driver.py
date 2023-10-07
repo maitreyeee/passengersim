@@ -410,7 +410,7 @@ class Simulation:
                 while True:
                     event = self.sim.go()
                     self.run_airline_models(event)
-                    if event is None or str(event) == "Done":
+                    if event is None or str(event) == "Done" or (event[0] == "Done"):
                         assert (
                             self.sim.num_events() == 0
                         ), f"Event queue still has {self.sim.num_events()} events"
@@ -429,25 +429,29 @@ class Simulation:
 
     def run_airline_models(self, info: Any = None, departed: bool = False, debug=False):
         event_type = info[0]
-        dcp = 0 if info == "Done" else info[1]
-        dcp_index = len(self.dcp_list) - 1 if info == "Done" else info[2]
-        self.sim.last_dcp = dcp
+        recording_day = info[
+            1
+        ]  # could in theory also be non-integer for fractional days
+        dcp_index = info[2]
+        if dcp_index == -1:
+            dcp_index = len(self.dcp_list) - 1
 
-        if event_type.lower() == "dcp":
+        if event_type.lower() in {"dcp", "done"}:
+            self.sim.last_dcp = recording_day
             self.capture_dcp_data(dcp_index)
 
         # This will change once we have "dcp" and "daily" portions of an RM system in the YAML input file
         for airline in self.sim.airlines:
-            if event_type.lower() == "dcp":
-                airline.rm_system.run(self.sim, airline.name, dcp_index, dcp)
+            if event_type.lower() in {"dcp", "done"}:
+                airline.rm_system.run(self.sim, airline.name, dcp_index, recording_day)
             elif event_type.lower() == "daily":
                 pass
 
-        if event_type.lower() == "dcp":
+        if event_type.lower() in {"dcp", "done"}:
             if self.cnx.is_open:
-                self.cnx.save_details(self.sim, dcp)
+                self.cnx.save_details(self.sim, recording_day)
             if self.file_writer is not None:
-                self.file_writer.save_details(self.sim, dcp)
+                self.file_writer.save_details(self.sim, recording_day)
 
     def capture_dcp_data(self, dcp_index):
         for leg in self.sim.legs:
