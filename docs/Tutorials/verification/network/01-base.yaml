@@ -37,7 +37,8 @@ rm_systems:
     steps: []
   rm_no_detruncation:
     availability_control: vn
-    steps:
+    processes:
+      DCP:
       - step_type: untruncation
         name: untruncation
         algorithm: none
