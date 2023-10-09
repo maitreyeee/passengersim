@@ -95,7 +95,7 @@ class SimulationSettings(BaseModel, extra="allow", validate_assignment=True):
     identified level of total demand. See [k-factors]() for more details.
     """
 
-    z_factor: confloat(gt=0, lt=5.0) = 2.0
+    z_factor: confloat(gt=0, lt=100.0) = 2.0
     """
     Base level demand variance control.
 

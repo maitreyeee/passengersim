@@ -524,10 +524,15 @@ class Simulation:
         mrn_ref = {}
 
         # Need to have leisure / business split for PODS
-        trn_ref = {  # noqa: F841 # allow unused variable
+        trn_ref = {
             "business": self.random_generator.get_normal(),
             "leisure": self.random_generator.get_normal(),
         }
+
+        def get_or_make_random(grouping, key):
+            if key not in grouping:
+                grouping[key] = self.random_generator.get_normal()
+            return grouping[key]
 
         end_time = self.base_time
 
@@ -535,14 +540,8 @@ class Simulation:
             base = dmd.base_demand
 
             # Get the random numbers we're going to use to perturb demand
-            # trn = trn_ref.get(dmd.segment, 0.0)
-            trn = self.random_generator.get_normal()
-            key = (dmd.orig, dmd.dest)
-            if key in mrn_ref:
-                mrn = mrn_ref[key]
-            else:
-                mrn = self.random_generator.get_normal()
-                mrn_ref[key] = mrn
+            trn = get_or_make_random(trn_ref, dmd.segment)
+            mrn = get_or_make_random(mrn_ref, (dmd.orig, dmd.dest))
 
             mu = base * (
                 1.0
@@ -550,7 +549,7 @@ class Simulation:
                 + mrn * self.sim.mkt_k_factor
                 + trn * self.sim.pax_type_k_factor
             )
-            sigma = sqrt(abs(mu) * self.sim.z_factor)
+            sigma = sqrt(abs(mu) * self.sim.z_factor)  # Correct?
             n = mu + sigma * self.random_generator.get_normal()
             dmd.scenario_demand = max(n, 0)
 
