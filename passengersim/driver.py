@@ -882,6 +882,11 @@ class Simulation:
         user_cert = self._user_certificate(certificate_filename)
         return self.sim.license_info(user_cert)
 
+    @property
+    def config(self) -> Config:
+        """The configuration used for this Simulation."""
+        return self.sim.config
+
     def run(self, log_reports: bool = False) -> SummaryTables:
         start_time = time.time()
         self.setup_scenario()
