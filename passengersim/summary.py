@@ -647,7 +647,7 @@ class SummaryTables:
             raw_df, "avg_rev", "Average Revenue", "$.4s", title="Carrier Revenues"
         )
 
-    def _fig_forecasts(self, df, facet_on=None, y="demand_fcst"):
+    def _fig_forecasts(self, df, facet_on=None, y="forecast_mean"):
         import altair as alt
 
         if not facet_on:
@@ -676,28 +676,40 @@ class SummaryTables:
             )
 
     @report_figure
-    def fig_leg_forecasts(self, by_flt_no: bool | int = True, raw_df=False):
+    def fig_leg_forecasts(
+        self,
+        by_flt_no: bool | int = True,
+        of: Literal["mu", "sigma"] = "mu",
+        raw_df=False,
+    ):
+        y = "forecast_mean" if of == "mu" else "forecast_stdev"
         columns = [
             "carrier",
             "flt_no",
             "booking_class",
             "rrd",
-            "demand_fcst",
+            y,
         ]
         df = self.leg_forecasts[columns].reset_index()
         if isinstance(by_flt_no, int) and by_flt_no is not True:
             df = df[df.flt_no == by_flt_no]
         if raw_df:
             return df
-        return self._fig_forecasts(df, facet_on=None, y="demand_fcst")
+        return self._fig_forecasts(df, facet_on=None, y=y)
 
     @report_figure
-    def fig_path_forecasts(self, by_path_id: bool | int = True, raw_df=False):
+    def fig_path_forecasts(
+        self,
+        by_path_id: bool | int = True,
+        of: Literal["mu", "sigma"] = "mu",
+        raw_df=False,
+    ):
+        y = "forecast_mean" if of == "mu" else "forecast_stdev"
         columns = [
             "path_id",
             "booking_class",
             "rrd",
-            "forecast_mean",
+            y,
         ]
         df = self.path_forecasts[columns].reset_index()
         if isinstance(by_path_id, int) and by_path_id is not True:
@@ -707,4 +719,4 @@ class SummaryTables:
         facet_on = None
         if by_path_id is True:
             facet_on = "path_id"
-        return self._fig_forecasts(df, facet_on=facet_on, y="forecast_mean")
+        return self._fig_forecasts(df, facet_on=facet_on, y=y)

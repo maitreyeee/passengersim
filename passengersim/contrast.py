@@ -1,6 +1,7 @@
 from typing import Literal
 
 import altair as alt
+import numpy as np
 import pandas as pd
 
 from .reporting import report_figure
@@ -339,7 +340,7 @@ def fig_fare_class_mix(summaries, raw_df=False, label_threshold=0.06):
     )
 
 
-def _fig_forecasts(df, facet_on=None, y="demand_fcst"):
+def _fig_forecasts(df, facet_on=None, y="demand_fcst", y_title="Avg Demand Forecast"):
     import altair as alt
 
     if not facet_on:
@@ -348,7 +349,7 @@ def _fig_forecasts(df, facet_on=None, y="demand_fcst"):
             .mark_line()
             .encode(
                 x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
-                y=alt.Y(f"{y}:Q", title="Avg Demand Forecast"),
+                y=alt.Y(f"{y}:Q", title=y_title),
                 color="booking_class:N",
                 strokeDash=alt.StrokeDash("source:N", title="Source"),
                 strokeWidth=alt.StrokeWidth("source:N", title="Source"),
@@ -360,7 +361,7 @@ def _fig_forecasts(df, facet_on=None, y="demand_fcst"):
             .mark_line()
             .encode(
                 x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
-                y=alt.Y(f"{y}:Q", title="Avg Demand Forecast"),
+                y=alt.Y(f"{y}:Q", title=y_title),
                 color="booking_class:N",
                 strokeDash=alt.StrokeDash("source:N", title="Source"),
                 strokeWidth=alt.Size("source:N", title="Source"),
@@ -373,14 +374,19 @@ def _fig_forecasts(df, facet_on=None, y="demand_fcst"):
 
 
 @report_figure
-def fig_leg_forecasts(summaries, raw_df=False, by_flt_no=None):
-    df = _assemble(summaries, "leg_forecasts", by_flt_no=by_flt_no)
+def fig_leg_forecasts(
+    summaries, raw_df=False, by_flt_no=None, of: Literal["mu", "sigma"] = "mu"
+):
+    df = _assemble(summaries, "leg_forecasts", by_flt_no=by_flt_no, of=of)
     list(summaries.keys())
     if raw_df:
         df.attrs["title"] = "Average Leg Forecasts"
         return df
     return _fig_forecasts(
-        df, facet_on="flt_no" if not isinstance(by_flt_no, int) else None
+        df,
+        facet_on="flt_no" if not isinstance(by_flt_no, int) else None,
+        y="forecast_mean" if of == "mu" else "forecast_stdev",
+        y_title="Mean Demand Forecast" if of == "mu" else "Std Dev Demand Forecast",
     )
 
     # import altair as alt
@@ -422,18 +428,38 @@ def fig_path_forecasts(
     by_path_id=None,
     path_names: dict | None = None,
     agg_booking_classes: bool = False,
+    of: Literal["mu", "sigma"] = "mu",
 ):
-    df = _assemble(summaries, "path_forecasts", by_path_id=by_path_id)
+    df = _assemble(summaries, "path_forecasts", by_path_id=by_path_id, of=of)
     list(summaries.keys())
     if path_names is not None:
         df["path_id"] = df["path_id"].apply(lambda x: path_names.get(x, str(x)))
     if agg_booking_classes:
-        df = df.groupby(["source", "path_id", "rrd"]).forecast_mean.sum().reset_index()
+        if of == "mu":
+            df = (
+                df.groupby(["source", "path_id", "rrd"])
+                .forecast_mean.sum()
+                .reset_index()
+            )
+        elif of == "sigma":
+
+            def sum_sigma(x):
+                return np.sqrt(sum(x**2))
+
+            df = (
+                df.groupby(["source", "path_id", "rrd"])
+                .forecast_stdev.apply(sum_sigma)
+                .reset_index()
+            )
     if raw_df:
-        df.attrs["title"] = "Average Path Forecasts"
+        if of == "mu":
+            df.attrs["title"] = "Average Path Forecast Means"
+        elif of == "sigma":
+            df.attrs["title"] = "Average Path Forecast Standard Deviations"
         return df
     return _fig_forecasts(
         df,
         facet_on="path_id" if not isinstance(by_path_id, int) else None,
-        y="forecast_mean",
+        y="forecast_mean" if of == "mu" else "forecast_stdev",
+        y_title="Mean Demand Forecast" if of == "mu" else "Std Dev Demand Forecast",
     )

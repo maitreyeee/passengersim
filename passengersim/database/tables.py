@@ -110,7 +110,8 @@ def create_table_leg_bucket_detail(cnx: Database, primary_key: bool = False):
         revenue    		FLOAT,
         sold			INT,
         untruncated_demand     FLOAT,
-        demand_fcst     FLOAT,
+        forecast_mean   FLOAT,
+        forecast_stdev  FLOAT,
         updated_at		DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         {primary_key}
     );
