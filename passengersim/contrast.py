@@ -375,8 +375,18 @@ def _fig_forecasts(df, facet_on=None, y="demand_fcst", y_title="Avg Demand Forec
 
 @report_figure
 def fig_leg_forecasts(
-    summaries, raw_df=False, by_flt_no=None, of: Literal["mu", "sigma"] = "mu"
+    summaries,
+    raw_df=False,
+    by_flt_no=None,
+    of: Literal["mu", "sigma"] | list[Literal["mu", "sigma"]] = "mu",
 ):
+    if isinstance(of, list):
+        if raw_df:
+            raise NotImplementedError
+        fig = fig_leg_forecasts(summaries, by_flt_no=by_flt_no, of=of[0])
+        for of_ in of[1:]:
+            fig |= fig_leg_forecasts(summaries, by_flt_no=by_flt_no, of=of_)
+        return fig
     df = _assemble(summaries, "leg_forecasts", by_flt_no=by_flt_no, of=of)
     list(summaries.keys())
     if raw_df:
