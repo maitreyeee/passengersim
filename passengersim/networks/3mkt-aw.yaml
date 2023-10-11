@@ -18,6 +18,7 @@ simulation_controls:
   demand_multiplier: 1.0
   manual_paths: false
   debug_orders: false
+  timeframe_demand_allocation: pods
 
 frat5_curves:
   - name: curve_C
@@ -314,36 +315,42 @@ demands:
     base_demand: 70.0
     reference_fare: 250.0
     choice_model: business
+    curve: c1
   - orig: BOS
     dest: ORD
     segment: leisure
     base_demand: 90.0
     reference_fare: 100.0
     choice_model: leisure
+    curve: c2
   - orig: ORD
     dest: LAX
     segment: business
     base_demand: 120.0
     reference_fare: 375.0
     choice_model: business
+    curve: c1
   - orig: ORD
     dest: LAX
     segment: leisure
     base_demand: 150.0
     reference_fare: 150.0
     choice_model: leisure
+    curve: c2
   - orig: BOS
     dest: LAX
     segment: business
     base_demand: 100.0
     reference_fare: 500.0
     choice_model: business
+    curve: c1
   - orig: BOS
     dest: LAX
     segment: leisure
     base_demand: 140.0
     reference_fare: 200.0
     choice_model: leisure
+    curve: c2
 
 fares:
   - carrier: AL1
