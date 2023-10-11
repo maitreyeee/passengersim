@@ -24,9 +24,6 @@ class SnapshotInstruction:
 
     def write(self, content: str = ""):
         """Write snapshot content to a file, or just print it"""
-
-        print("WRITING TO ", self.filepath, f"{len(content)=}")
-
         if self.filepath:
             with self.filepath.open(mode="w") as f:
                 f.write(self.why)
