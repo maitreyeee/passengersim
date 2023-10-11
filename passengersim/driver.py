@@ -549,7 +549,8 @@ class Simulation:
                 + mrn * self.sim.mkt_k_factor
                 + trn * self.sim.pax_type_k_factor
             )
-            sigma = sqrt(abs(mu) * self.sim.z_factor)  # Correct?
+            mu = max(mu, 0.0)
+            sigma = sqrt(mu * self.sim.z_factor)  # Correct?
             n = mu + sigma * self.random_generator.get_normal()
             dmd.scenario_demand = max(n, 0)
 
