@@ -15,4 +15,4 @@ from .named import DictOfNamed
 from .paths import Path
 from .rm_systems import RmSystem
 from .simulation_controls import SimulationSettings
-from .snapshot_filter import SnapshotFilter
+from .snapshot_filter import SnapshotFilter, SnapshotInstruction
