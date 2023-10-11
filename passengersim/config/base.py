@@ -15,7 +15,7 @@ import warnings
 
 import addicty
 import yaml
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 
 from passengersim.pseudonym import random_label
 
@@ -31,6 +31,7 @@ from .named import DictOfNamed
 from .outputs import OutputConfig
 from .paths import Path
 from .places import Place, great_circle
+from .pretty import PrettyModel, repr_dict_with_indent
 from .rm_systems import RmSystem
 from .simulation_controls import SimulationSettings
 from .snapshot_filter import SnapshotFilter
@@ -41,7 +42,7 @@ logger = logging.getLogger("passengersim.config")
 TConfig = typing.TypeVar("TConfig", bound="YamlConfig")
 
 
-class YamlConfig(BaseModel):
+class YamlConfig(PrettyModel):
     @classmethod
     def _load_unformatted_yaml(
         cls: type[TConfig],
@@ -214,9 +215,9 @@ class Config(YamlConfig, extra="forbid"):
     """A list of fare classes.
 
     One convention is to use Y0, Y1, ... to label fare classes from the highest
-    fare (Y0) to the lowest fare (Yn).  You can also use Y, B, M, H,... etc.  
+    fare (Y0) to the lowest fare (Yn).  You can also use Y, B, M, H,... etc.
     An example of classes is below.
-    
+
     Example
     -------
     ```{yaml}
@@ -413,3 +414,25 @@ class Config(YamlConfig, extra="forbid"):
                 if place_d is None:
                     warnings.warn(f"No defined place for {leg.dest}", stacklevel=2)
         return self
+
+    def __repr__(self):
+        indent = 2
+        x = []
+        i = " " * indent
+        for k, v in self:
+            if k in {"legs", "paths", "fares", "demands"}:
+                val = f"<list of {len(v)} {k}>"
+            elif k in {"booking_curves"}:
+                val = f"<dict of {len(v)} {k}>"
+            elif isinstance(v, dict):
+                val = repr_dict_with_indent(v, indent)
+            else:
+                try:
+                    val = v.__repr_with_indent__(indent)
+                except AttributeError:
+                    val = repr(v)
+            if "\n" in val:
+                val_lines = val.split("\n")
+                val = "\n  " + "\n  ".join(val_lines)
+            x.append(f"{i}{k}: {val}")
+        return "passengersim.Config:\n" + "\n".join(x)

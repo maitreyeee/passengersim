@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, FieldValidationInfo, confloat, conint, field_validator
+from pydantic import FieldValidationInfo, confloat, conint, field_validator
 
 from passengersim.utils import iso_to_unix
 
+from .pretty import PrettyModel
 
-class SimulationSettings(BaseModel, extra="allow", validate_assignment=True):
+
+class SimulationSettings(PrettyModel, extra="allow", validate_assignment=True):
     num_trials: conint(ge=1, le=1000) = 1
     """The overall number of trials to run.
 

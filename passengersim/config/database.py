@@ -2,10 +2,12 @@ import pathlib
 from collections.abc import Callable
 from typing import Literal
 
-from pydantic import BaseModel, field_validator
+from pydantic import field_validator
+
+from .pretty import PrettyModel
 
 
-class DatabaseConfig(BaseModel, extra="forbid", validate_assignment=True):
+class DatabaseConfig(PrettyModel, extra="forbid", validate_assignment=True):
     engine: Literal["sqlite", "mysql", None] = "sqlite"
     """Database engine to use.
 
