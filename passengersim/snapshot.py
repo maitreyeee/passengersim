@@ -18,16 +18,20 @@ def apply_snapshot_filters(
         snapshot_filters = filters
     else:
         snapshot_filters = sim.snapshot_filters
+    filepath = True
     if snapshot_filters:
         for sf in snapshot_filters:
             if only_type is not None:
-                if sf.type == only_type and sf.run(sim, leg=leg, path=path):
-                    triggered = True
-                    if break_on_first:
-                        break
+                if sf.type == only_type:
+                    filepath = sf.run(sim, leg=leg, path=path)
+                    if filepath:
+                        triggered = True
+                        if break_on_first:
+                            break
             else:
-                if sf.run(sim, leg=leg, path=path):
+                filepath = sf.run(sim, leg=leg, path=path)
+                if filepath:
                     triggered = True
                     if break_on_first:
                         break
-    return triggered
+    return triggered and filepath
