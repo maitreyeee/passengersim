@@ -374,7 +374,7 @@ def save_leg_bucket_multi(
             ] = f"""INSERT INTO leg_bucket_detail
                 (scenario, iteration, trial, sample, rrd, carrier, orig, dest, flt_no,
                 dep_date, bucket_number, name, auth, revenue, sold, untruncated_demand,
-                demand_fcst) VALUES ({sql_placeholders(cnx, 17)})"""
+                forecast_mean) VALUES ({sql_placeholders(cnx, 17)})"""
         else:
             sql = leg_bucket_sql.get(cnx_type)
         data_list = []

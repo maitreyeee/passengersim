@@ -340,7 +340,7 @@ def fig_fare_class_mix(summaries, raw_df=False, label_threshold=0.06):
     )
 
 
-def _fig_forecasts(df, facet_on=None, y="demand_fcst", y_title="Avg Demand Forecast"):
+def _fig_forecasts(df, facet_on=None, y="forecast_mean", y_title="Avg Demand Forecast"):
     import altair as alt
 
     if not facet_on:
@@ -424,7 +424,7 @@ def fig_leg_forecasts(
     #         .mark_line()
     #         .encode(
     #             x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
-    #             y=alt.Y("demand_fcst:Q", title="Avg Demand Forecast"),
+    #             y=alt.Y("forecast_mean:Q", title="Avg Demand Forecast"),
     #             color="booking_class:N",
     #             strokeDash=alt.StrokeDash("source:N", title="Source"),
     #             strokeWidth=alt.StrokeWidth("source:N", title="Source"),
@@ -436,7 +436,7 @@ def fig_leg_forecasts(
     #         .mark_line()
     #         .encode(
     #             x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
-    #             y=alt.Y("demand_fcst:Q", title="Avg Demand Forecast"),
+    #             y=alt.Y("forecast_mean:Q", title="Avg Demand Forecast"),
     #             color="booking_class:N",
     #             strokeDash=alt.StrokeDash("source:N", title="Source"),
     #             strokeWidth=alt.Size("source:N", title="Source"),
