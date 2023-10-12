@@ -148,6 +148,21 @@ class SimulationSettings(PrettyModel, extra="allow", validate_assignment=True):
     write_raw_files: bool = False
 
     random_seed: int | None = None
+    """
+    Integer used to control the reproducibility of simulation results.
+
+    A seed is base value used by a pseudo-random generator to generate random
+    numbers. A fixed random seed is used to ensure the same randomness pattern
+    is reproducible and does not change between simulation runs, i.e. allows
+    subsequent runs to be conducted with the same randomness pattern as a
+    previous one. Any value set here will allow results to be repeated.
+
+    The random number generator is re-seeded at the beginning of every sample
+    in every trial with a fixed tuple of three values: this "global" random seed,
+    plus the sample number and trial number.  This ensures that partial results
+    are also reproducible: the simulation of sample 234 in trial 2 will be the
+    same regardless of how many samples are in trial 1.
+    """
 
     update_frequency: int | None = None
 
