@@ -48,10 +48,8 @@ rm_systems:
         algorithm: additive_pickup
         alpha: 0.15
         kind: leg
-      - step_type: emsr
+      - step_type: fcfs
         name: optimization
-        algorithm: fcfs
-        kind: leg
   rm_probp:
     steps:
       - step_type: untruncation
@@ -141,7 +139,7 @@ at the leg level (will this generate an error?)
 ```{yaml}
 - step_type: emsr
   name: optimization
-  algorithm: emsra, emsrb, fcfs
+  algorithm: emsra, emsrb
   kind: leg
 ```
 
