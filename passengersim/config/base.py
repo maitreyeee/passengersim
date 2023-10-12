@@ -12,6 +12,7 @@ import sys
 import time
 import typing
 import warnings
+from urllib.request import urlopen
 
 import addicty
 import yaml
@@ -40,6 +41,10 @@ logger = logging.getLogger("passengersim.config")
 
 
 TConfig = typing.TypeVar("TConfig", bound="YamlConfig")
+
+
+def web_opener(x):
+    return urlopen(x.parts[0] + "//" + "/".join(x.parts[1:]))
 
 
 class YamlConfig(PrettyModel):
@@ -73,6 +78,12 @@ class YamlConfig(PrettyModel):
                     raw_config.raw_license_certificate = f.read()
             else:
                 opener = gzip.open if filename.suffix == ".gz" else open
+                if filename.parts[0] in {"https:", "http:", "s3:"}:
+                    opener = web_opener
+                    if filename.suffix == ".gz":
+                        raise NotImplementedError(
+                            "cannot load compressed files from web yet"
+                        )
                 with opener(filename) as f:
                     content = addicty.Dict.load(f, freeze=False)
                     include = content.pop("include", None)
