@@ -357,75 +357,83 @@ class Simulation:
         n_samples_done = 0
         self.sample_done_callback(n_samples_done, n_samples_total)
         if self.sim.config.simulation_controls.show_progress_bar:
-            progress = ProgressBar(total=n_samples_total).start()
+            progress = ProgressBar(total=n_samples_total)
         else:
             progress = DummyProgressBar()
-        for trial in range(self.sim.num_trials):
-            self.sim.trial = trial
-            self.sim.reset_trial_counters()
-            for sample in range(self.sim.num_samples):
-                if self.sim.config.simulation_controls.double_capacity_until:
-                    # Just trying this, PODS has something similar during the burn phase
-                    if sample == 0:
-                        for leg in self.sim.legs:
-                            leg.capacity = leg.capacity * 2.0
-                    elif (
-                        sample
-                        == self.sim.config.simulation_controls.double_capacity_until
-                    ):
-                        for leg in self.sim.legs:
-                            leg.capacity = leg.capacity / 2.0
+        with progress:
+            for trial in range(self.sim.num_trials):
+                self.sim.trial = trial
+                self.sim.reset_trial_counters()
+                for sample in range(self.sim.num_samples):
+                    if self.sim.config.simulation_controls.double_capacity_until:
+                        # Just trying this, PODS has something similar during the burn phase
+                        if sample == 0:
+                            for leg in self.sim.legs:
+                                leg.capacity = leg.capacity * 2.0
+                        elif (
+                            sample
+                            == self.sim.config.simulation_controls.double_capacity_until
+                        ):
+                            for leg in self.sim.legs:
+                                leg.capacity = leg.capacity / 2.0
 
-                progress.tick(refresh=(sample == 0))
-                self.sim.sample = sample
-                if self.sim.config.simulation_controls.random_seed is not None:
-                    self.reseed(
-                        [self.sim.config.simulation_controls.random_seed, trial, sample]
-                    )
-                if update_freq is not None and self.sim.sample % update_freq == 0:
-                    total_rev, n = 0.0, 0
-                    airline_info = ""
-                    for cxr in self.sim.airlines:
-                        total_rev += cxr.revenue
-                        n += 1
-                        airline_info += (
-                            f"{', ' if n > 0 else ''}{cxr.name}=${cxr.revenue:8.0f}"
+                    progress.tick(refresh=(sample == 0))
+                    self.sim.sample = sample
+                    if self.sim.config.simulation_controls.random_seed is not None:
+                        self.reseed(
+                            [
+                                self.sim.config.simulation_controls.random_seed,
+                                trial,
+                                sample,
+                            ]
                         )
+                    if update_freq is not None and self.sim.sample % update_freq == 0:
+                        total_rev, n = 0.0, 0
+                        airline_info = ""
+                        for cxr in self.sim.airlines:
+                            total_rev += cxr.revenue
+                            n += 1
+                            airline_info += (
+                                f"{', ' if n > 0 else ''}{cxr.name}=${cxr.revenue:8.0f}"
+                            )
 
-                    dmd_b, dmd_l = 0, 0
-                    for dmd in self.sim.demands:
-                        if dmd.business:
-                            dmd_b += dmd.scenario_demand
-                        else:
-                            dmd_l += dmd.scenario_demand
-                    d_info = f", {int(dmd_b)}, {int(dmd_l)}"
-                    logger.info(
-                        f"Trial={self.sim.trial}, Sample={self.sim.sample}{airline_info}{d_info}"
-                    )
-                if self.sim.trial > 0 or self.sim.sample > 0:
-                    self.sim.reset_counters()
-                self.generate_demands()
+                        dmd_b, dmd_l = 0, 0
+                        for dmd in self.sim.demands:
+                            if dmd.business:
+                                dmd_b += dmd.scenario_demand
+                            else:
+                                dmd_l += dmd.scenario_demand
+                        d_info = f", {int(dmd_b)}, {int(dmd_l)}"
+                        logger.info(
+                            f"Trial={self.sim.trial}, Sample={self.sim.sample}{airline_info}{d_info}"
+                        )
+                    if self.sim.trial > 0 or self.sim.sample > 0:
+                        self.sim.reset_counters()
+                    self.generate_demands()
 
-                # Loop on passengers
-                while True:
-                    event = self.sim.go()
-                    self.run_airline_models(event)
-                    if event is None or str(event) == "Done" or (event[0] == "Done"):
-                        assert (
-                            self.sim.num_events() == 0
-                        ), f"Event queue still has {self.sim.num_events()} events"
-                        break
-                if self.cnx:
-                    try:
-                        self.cnx.commit()
-                    except AttributeError:
-                        pass
+                    # Loop on passengers
+                    while True:
+                        event = self.sim.go()
+                        self.run_airline_models(event)
+                        if (
+                            event is None
+                            or str(event) == "Done"
+                            or (event[0] == "Done")
+                        ):
+                            assert (
+                                self.sim.num_events() == 0
+                            ), f"Event queue still has {self.sim.num_events()} events"
+                            break
+                    if self.cnx:
+                        try:
+                            self.cnx.commit()
+                        except AttributeError:
+                            pass
 
-                n_samples_done += 1
-                self.sample_done_callback(n_samples_done, n_samples_total)
-            if self.cnx.is_open:
-                self.cnx.save_final(self.sim)
-        progress.stop()
+                    n_samples_done += 1
+                    self.sample_done_callback(n_samples_done, n_samples_total)
+                if self.cnx.is_open:
+                    self.cnx.save_final(self.sim)
 
     def run_airline_models(self, info: Any = None, departed: bool = False, debug=False):
         event_type = info[0]

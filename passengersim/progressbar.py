@@ -46,10 +46,19 @@ class ProgressBar:
 
     def __enter__(self) -> "ProgressBar":
         self.progress.start()
+        self.start_time = self.progress.get_time()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.progress.stop()
+        current_time = self.progress.get_time()
+        elapsed_time = current_time - self.start_time
+        happened = "Completed"
+        if exc_type is KeyboardInterrupt:
+            happened = "Aborted"
+        elif exc_type is not None:
+            happened = "Errored"
+        self.progress.print(f"Task {happened} after {elapsed_time:,.2f} seconds")
 
     def tick(self, refresh=False):
         self.progress.update(self.task, advance=1)

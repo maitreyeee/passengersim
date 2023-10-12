@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import os.path
 import pathlib
@@ -167,7 +169,7 @@ class SummaryTables:
 
         Parameters
         ----------
-        filename : Pathlike
+        filename : Path-like
             The excel file to write.
         """
         if isinstance(filename, str):
@@ -178,8 +180,20 @@ class SummaryTables:
                 if isinstance(v, pd.DataFrame):
                     v.to_excel(writer, sheet_name=k)
 
-    def fig_carrier_loads(self, raw_df=False, report=None):
-        """Figure showing ASM, RPM by carrier."""
+    def fig_carrier_mileage(self, raw_df: bool = False, report=None):
+        """
+        Figure showing ASM, RPM by carrier.
+
+        ASM is available seat miles.  RPM is revenue passenger miles.
+
+        Parameters
+        ----------
+        raw_df : bool, default False
+            Return the raw data for this figure as a pandas DataFrame, instead
+            of generating the figure itself.
+        report : xmle.Reporter, optional
+            Also append this figure to the given report.
+        """
         df = (
             self.carriers.set_index("name")[["asm", "rpm"]]
             .rename_axis(columns="measure")

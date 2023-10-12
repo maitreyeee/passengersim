@@ -130,7 +130,7 @@ There are two forecasting algorithms: exponential smoothing (that uses a smoothi
 or alpha parameter) and additive_pickup model.  The exponential smoothing model
 does not (currently) incorporate trend or seasonality.  The additive_pickup model
 is based on information from departed flights only and does not use the alpha
-parameter. The forecasting step can be performaned at the leg or path level.
+parameter. The forecasting step can be performed at the leg or path level.
 However, if the forecast is at the leg level then detruncation can only be done
 at the leg level (will this generate an error?)
 
