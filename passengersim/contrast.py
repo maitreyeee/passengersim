@@ -379,6 +379,7 @@ def fig_leg_forecasts(
     raw_df=False,
     by_flt_no=None,
     of: Literal["mu", "sigma"] | list[Literal["mu", "sigma"]] = "mu",
+    agg_booking_classes: bool = False,
 ):
     if isinstance(of, list):
         if raw_df:
@@ -388,7 +389,23 @@ def fig_leg_forecasts(
             fig |= fig_leg_forecasts(summaries, by_flt_no=by_flt_no, of=of_)
         return fig
     df = _assemble(summaries, "leg_forecasts", by_flt_no=by_flt_no, of=of)
-    list(summaries.keys())
+    if agg_booking_classes:
+        if of == "mu":
+            df = (
+                df.groupby(["source", "flt_no", "rrd"])
+                .forecast_mean.sum()
+                .reset_index()
+            )
+        elif of == "sigma":
+
+            def sum_sigma(x):
+                return np.sqrt(sum(x**2))
+
+            df = (
+                df.groupby(["source", "flt_no", "rrd"])
+                .forecast_stdev.apply(sum_sigma)
+                .reset_index()
+            )
     if raw_df:
         df.attrs["title"] = "Average Leg Forecasts"
         return df
