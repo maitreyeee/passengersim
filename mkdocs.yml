@@ -100,12 +100,18 @@ nav:
       - API/config/database.md
       - API/config/demands.md
       - API/config/fares.md
+      - API/config/frat5_curves.md
       - API/config/legs.md
       - API/config/named.md
+      - API/config/outputs.md
       - API/config/paths.md
+      - API/config/places.md
+      - API/config/pretty.md
       - API/config/rm_steps.md
       - API/config/rm_systems.md
       - API/config/snapshot_filter.md
+    - API/summary.md
+    - API/contrast.md
     - Core:
       - API/Core/index.md
       - API/Core/00-SimulationEngine.md

@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 
 from .reporting import report_figure
+from .summary import SummaryTables
 
 
 def _assemble(summaries, base, **kwargs):
@@ -21,12 +22,45 @@ def _assemble(summaries, base, **kwargs):
 
 @report_figure
 def fig_bookings_by_timeframe(
-    summaries,
+    summaries: dict[str, SummaryTables],
     by_carrier: bool | str = True,
     by_class: bool | str = False,
     raw_df=False,
     source_labels: bool = False,
-):
+) -> alt.Chart | pd.DataFrame:
+    """
+    Generate a figure contrasting bookings by timeframe for one or more runs.
+
+    Parameters
+    ----------
+    summaries : dict[str, SummaryTables]
+        One or more SummaryTables to compare. The keys of this dictionary are the
+        text names used to label the "source" for each set of data in the figure.
+    by_carrier : bool or str, default True
+        Whether to differentiate carriers by colors (the default) or give the name
+        of a particular carrier as a string to filter the results shown in the
+        figure to only that one carrier.
+    by_class : bool or str, default False
+        Whether to differentiate booking class by colors (the default) or give the
+        name of a particular booking class as a string to filter the results shown
+        in the figure to only that one booking class.
+    raw_df : bool, default False
+        Set to true to return the raw dataframe used to generate the figure, instead
+        of the figure itself.
+    source_labels : bool, default False
+        Write source labels above the columns of the figure. Source labels are also
+        available as tool tips, but if the figure is being shared as an image without
+        tooltips, the source labels may make it easier to interpret.
+
+    Other Parameters
+    ----------------
+    report : xmle.Reporter, optional
+        Giving a reporter for this keyword only argument allow you to automatically
+        append this figure to the report (in addition to returning it for display
+        or other processing).
+    trace : pd.ExcelWriter or (pd.ExcelWriter, str), optional
+        Write the raw dataframe backing this figure to the Excel workbook.
+    """
     if by_carrier is True and by_class is True:
         raise NotImplementedError("comparing by both class and carrier is messy")
     df = _assemble(
