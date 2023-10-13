@@ -9,7 +9,8 @@ simulation_controls:
 rm_systems:
   rm_test1:
     availability_control: leg
-    steps:
+    processes:
+      DCP:
       - step_type: untruncation
         name: untruncation
         algorithm: em

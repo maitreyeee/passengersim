@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from typing import Annotated, TypeVar
 
-from pydantic import BaseModel
 from pydantic.functional_validators import BeforeValidator
 
+from .pretty import PrettyModel
 
-class Named(BaseModel):
+
+class Named(PrettyModel):
     name: str
 
 

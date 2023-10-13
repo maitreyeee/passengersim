@@ -71,7 +71,31 @@ def test_3mkt_db_detail(fast):
     legs = sim.cnx.dataframe("SELECT * FROM leg_detail")
     assert legs.shape == (num_samples * n_dcps * n_legs, 13)  # 3060
     buckets = sim.cnx.dataframe("SELECT * FROM leg_bucket_detail")
-    assert buckets.shape == (num_samples * n_classes * n_dcps * n_legs, 18)  # 30600
+    assert all(
+        buckets.columns
+        == [
+            "scenario",
+            "iteration",
+            "trial",
+            "sample",
+            "rrd",
+            "carrier",
+            "orig",
+            "dest",
+            "flt_no",
+            "dep_date",
+            "bucket_number",
+            "name",
+            "auth",
+            "revenue",
+            "sold",
+            "untruncated_demand",
+            "forecast_mean",
+            "forecast_stdev",
+            "updated_at",
+        ]
+    )
+    assert buckets.shape == (num_samples * n_classes * n_dcps * n_legs, 19)  # 30600
     dmds = sim.cnx.dataframe("SELECT * FROM demand_detail")
     assert dmds.shape == (num_samples * n_demands * n_dcps, 13)  # 2040
 

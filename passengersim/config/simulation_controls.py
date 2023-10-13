@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, FieldValidationInfo, confloat, conint, field_validator
+from pydantic import FieldValidationInfo, confloat, conint, field_validator
 
 from passengersim.utils import iso_to_unix
 
+from .pretty import PrettyModel
 
-class SimulationSettings(BaseModel, extra="allow", validate_assignment=True):
+
+class SimulationSettings(PrettyModel, extra="allow", validate_assignment=True):
     num_trials: conint(ge=1, le=1000) = 1
     """The overall number of trials to run.
 
@@ -95,7 +97,7 @@ class SimulationSettings(BaseModel, extra="allow", validate_assignment=True):
     identified level of total demand. See [k-factors]() for more details.
     """
 
-    z_factor: confloat(gt=0, lt=5.0) = 2.0
+    z_factor: confloat(gt=0, lt=100.0) = 2.0
     """
     Base level demand variance control.
 
@@ -146,6 +148,21 @@ class SimulationSettings(BaseModel, extra="allow", validate_assignment=True):
     write_raw_files: bool = False
 
     random_seed: int | None = None
+    """
+    Integer used to control the reproducibility of simulation results.
+
+    A seed is base value used by a pseudo-random generator to generate random
+    numbers. A fixed random seed is used to ensure the same randomness pattern
+    is reproducible and does not change between simulation runs, i.e. allows
+    subsequent runs to be conducted with the same randomness pattern as a
+    previous one. Any value set here will allow results to be repeated.
+
+    The random number generator is re-seeded at the beginning of every sample
+    in every trial with a fixed tuple of three values: this "global" random seed,
+    plus the sample number and trial number.  This ensures that partial results
+    are also reproducible: the simulation of sample 234 in trial 2 will be the
+    same regardless of how many samples are in trial 1.
+    """
 
     update_frequency: int | None = None
 

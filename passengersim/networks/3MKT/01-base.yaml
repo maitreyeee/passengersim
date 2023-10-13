@@ -69,10 +69,8 @@ rm_systems:
         algorithm: additive_pickup
         alpha: 0.15
         kind: leg
-      - step_type: emsr
+      - step_type: fcfs
         name: optimization
-        algorithm: fcfs
-        kind: leg
   rm_test2:
     availability_control: bp
     steps:

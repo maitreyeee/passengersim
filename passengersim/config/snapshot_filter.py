@@ -1,7 +1,42 @@
 import pathlib
+import time
 from typing import Literal
 
 from pydantic import BaseModel, field_validator
+
+
+class SnapshotInstruction:
+    def __init__(
+        self,
+        trigger: bool = False,
+        filepath: pathlib.Path | None = None,
+        why: str | None = None,
+    ):
+        self.trigger = bool(trigger)
+        """Has this snapshot been triggered."""
+        self.why = why
+        """Explanation of why snapshot is (or is not) triggered."""
+        self.filepath = filepath
+        """Where to save snapshot content."""
+
+    def __bool__(self) -> bool:
+        return self.trigger
+
+    def write(self, content: str = ""):
+        """Write snapshot content to a file, or just print it"""
+        if self.filepath:
+            with self.filepath.open(mode="w") as f:
+                f.write(self.why)
+                f.write("\n")
+                if isinstance(content, bytes):
+                    f.write(content.decode("utf-8"))
+                elif isinstance(content, str):
+                    f.write(content)
+                else:
+                    f.write(str(content))
+        else:
+            print(self.why)
+            print(content)
 
 
 class SnapshotFilter(BaseModel, validate_assignment=True):
@@ -48,79 +83,76 @@ class SnapshotFilter(BaseModel, validate_assignment=True):
         pth.parent.mkdir(parents=True, exist_ok=True)
         return pth.with_suffix(".log")
 
-    def run(self, sim, leg=None, path=None, why=False):
+    def run(
+        self, sim, leg=None, path=None, carrier=None, why=False
+    ) -> SnapshotInstruction:
         # Check the filter conditions
         info = ""
         if len(self.sample) > 0 and sim.sample not in self.sample:
-            if why:
-                print(f" cause {sim.sample}")
-            return False
+            return SnapshotInstruction(False, why=f"cause {sim.sample=}")
         info += f"  sample={sim.sample}"
 
         if len(self.dcp) > 0 and sim.last_dcp not in self.dcp:
-            if why:
-                print(f" cause {sim.last_dcp=}")
-            return False
+            return SnapshotInstruction(False, why=f"cause {sim.last_dcp=}")
         info += f"  dcp={sim.last_dcp}"
 
         if leg is not None:
             if self.airline and leg.carrier != self.airline:
-                if why:
-                    print(f" cause {leg.carrier=}")
-                return False
+                return SnapshotInstruction(False, why=f"cause {leg.carrier=}")
             info += f"  carrier={leg.carrier}"
 
             if len(self.orig) > 0 and leg.orig not in self.orig:
-                if why:
-                    print(f" cause {leg.orig=}")
-                return False
+                return SnapshotInstruction(False, why=f"cause {leg.orig=}")
             info += f"  orig={leg.orig}"
 
             if len(self.dest) > 0 and leg.dest not in self.dest:
-                if why:
-                    print(f" cause {leg.dest=}")
-                return False
+                return SnapshotInstruction(False, why=f"cause {leg.dest=}")
             info += f"  dest={leg.dest}"
 
             if len(self.flt_no) > 0 and leg.flt_no not in self.flt_no:
-                if why:
-                    print(f" cause {leg.flt_no=}")
-                return False
+                return SnapshotInstruction(False, why=f"cause {leg.flt_no=}")
             info += f"  flt_no={leg.flt_no}"
 
         if path is not None:
             if len(self.orig) > 0 and path.orig not in self.orig:
-                return False
+                return SnapshotInstruction(False, why=f"cause {path.orig=}")
             info += f"  orig={path.orig}"
 
             if len(self.dest) > 0 and path.dest not in self.dest:
-                return False
+                return SnapshotInstruction(False, why=f"cause {path.dest=}")
             info += f"  dest={path.dest}"
 
             if len(self.flt_no) > 0 and path.get_leg_fltno(0) not in self.flt_no:
-                return False
+                return SnapshotInstruction(False, why=f"cause {path.get_leg_fltno(0)=}")
             info += f"  flt_no={path.get_leg_fltno(0)}"
 
+        if carrier is not None:
+            if self.airline and carrier != self.airline:
+                return SnapshotInstruction(False, why=f"cause {carrier=}")
+            info += f"  carrier={carrier}"
+
         # Now do something
-        if len(self.title) > 0:
+        snapshot_file = self.filepath(sim, leg, path)
+        title = f"{self.title}:{info}\n{time.strftime('Snapshot created %Y-%m-%d %A %I:%M:%S %p')}\n"
+        if len(self.title) > 0 and not snapshot_file:
             print(f"{self.title}:{info}", flush=True)
 
         self._last_run_info = info
 
         if self.type in ["leg_untruncation", "path_untruncation"]:
-            return (
-                True  # We have a match but, for now, the caller will print the output
-            )
+            return SnapshotInstruction(True, snapshot_file, why=title)
         elif self.type == "forecast":
-            return True  # Haven't decided on the approach to this yet
+            return SnapshotInstruction(True, snapshot_file, why=title)
         elif self.type == "rm":
             bucket_detail = leg.print_bucket_detail()
             snapshot_file = self.filepath(sim, leg, path)
             if snapshot_file:
-                snapshot_file.write_text(bucket_detail)
+                with snapshot_file.open(mode="a") as f:
+                    f.write(bucket_detail)
             else:
                 print(bucket_detail)
+            return SnapshotInstruction(True, snapshot_file, why=title)
         elif self.type == "pro_bp":
-            return self.filepath(sim, leg, path) or True
-        if why:
-            print(" cause EOF")
+            return SnapshotInstruction(True, snapshot_file, why=title)
+
+        return SnapshotInstruction(False, why="cause unknown")

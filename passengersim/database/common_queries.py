@@ -179,7 +179,8 @@ def avg_leg_forecasts(cnx: Database, scenario: str, burn_samples: int = 100):
         bucket_number,
         name as booking_class,
         rrd,
-        AVG(demand_fcst) as demand_fcst
+        AVG(forecast_mean) as forecast_mean,
+        AVG(forecast_stdev) as forecast_stdev
     FROM
         leg_bucket_detail
     WHERE

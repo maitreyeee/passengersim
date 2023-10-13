@@ -48,10 +48,8 @@ rm_systems:
         algorithm: additive_pickup
         alpha: 0.15
         kind: leg
-      - step_type: emsr
+      - step_type: fcfs
         name: optimization
-        algorithm: fcfs
-        kind: leg
   rm_probp:
     steps:
       - step_type: untruncation
@@ -132,7 +130,7 @@ There are two forecasting algorithms: exponential smoothing (that uses a smoothi
 or alpha parameter) and additive_pickup model.  The exponential smoothing model
 does not (currently) incorporate trend or seasonality.  The additive_pickup model
 is based on information from departed flights only and does not use the alpha
-parameter. The forecasting step can be performaned at the leg or path level.
+parameter. The forecasting step can be performed at the leg or path level.
 However, if the forecast is at the leg level then detruncation can only be done
 at the leg level (will this generate an error?)
 
@@ -141,7 +139,7 @@ at the leg level (will this generate an error?)
 ```{yaml}
 - step_type: emsr
   name: optimization
-  algorithm: emsra, emsrb, fcfs
+  algorithm: emsra, emsrb
   kind: leg
 ```
 

@@ -16,7 +16,7 @@ def fig_forecasts_and_bid_prices(
         SELECT
           sample,
           name as booking_class,
-          demand_fcst
+          forecast_mean
         FROM leg_bucket_detail
         WHERE sample >= ?1
           AND trial == ?2
@@ -40,7 +40,7 @@ def fig_forecasts_and_bid_prices(
         (burn, trial, rrd, flt_no),
     )
 
-    lg_df = lg_df.join(bp_df.groupby("sample").demand_fcst.sum(), on="sample")
+    lg_df = lg_df.join(bp_df.groupby("sample").forecast_mean.sum(), on="sample")
 
     chart = alt.Chart(bp_df, height=40)
     forecast = (
@@ -48,7 +48,7 @@ def fig_forecasts_and_bid_prices(
         .encode(
             x="sample:Q",
             y=alt.Y(
-                "demand_fcst:Q",
+                "forecast_mean:Q",
                 scale=alt.Scale(zero=False),
                 axis=alt.Axis(title=None),
             ),
@@ -72,7 +72,7 @@ def fig_forecasts_and_bid_prices(
     agg_forecast = chart2.mark_line(color="#5e5e5e").encode(
         x="sample:Q",
         y=alt.Y(
-            "demand_fcst:Q",
+            "forecast_mean:Q",
             scale=alt.Scale(zero=False),
             axis=alt.Axis(title="Agg. Forecast", titleColor="#5e5e5e"),
         ),

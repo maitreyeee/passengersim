@@ -1,9 +1,11 @@
 from typing import Literal
 
 import altair as alt
+import numpy as np
 import pandas as pd
 
 from .reporting import report_figure
+from .summary import SummaryTables
 
 
 def _assemble(summaries, base, **kwargs):
@@ -20,12 +22,45 @@ def _assemble(summaries, base, **kwargs):
 
 @report_figure
 def fig_bookings_by_timeframe(
-    summaries,
+    summaries: dict[str, SummaryTables],
     by_carrier: bool | str = True,
     by_class: bool | str = False,
     raw_df=False,
     source_labels: bool = False,
-):
+) -> alt.Chart | pd.DataFrame:
+    """
+    Generate a figure contrasting bookings by timeframe for one or more runs.
+
+    Parameters
+    ----------
+    summaries : dict[str, SummaryTables]
+        One or more SummaryTables to compare. The keys of this dictionary are the
+        text names used to label the "source" for each set of data in the figure.
+    by_carrier : bool or str, default True
+        Whether to differentiate carriers by colors (the default) or give the name
+        of a particular carrier as a string to filter the results shown in the
+        figure to only that one carrier.
+    by_class : bool or str, default False
+        Whether to differentiate booking class by colors (the default) or give the
+        name of a particular booking class as a string to filter the results shown
+        in the figure to only that one booking class.
+    raw_df : bool, default False
+        Set to true to return the raw dataframe used to generate the figure, instead
+        of the figure itself.
+    source_labels : bool, default False
+        Write source labels above the columns of the figure. Source labels are also
+        available as tool tips, but if the figure is being shared as an image without
+        tooltips, the source labels may make it easier to interpret.
+
+    Other Parameters
+    ----------------
+    report : xmle.Reporter, optional
+        Giving a reporter for this keyword only argument allow you to automatically
+        append this figure to the report (in addition to returning it for display
+        or other processing).
+    trace : pd.ExcelWriter or (pd.ExcelWriter, str), optional
+        Write the raw dataframe backing this figure to the Excel workbook.
+    """
     if by_carrier is True and by_class is True:
         raise NotImplementedError("comparing by both class and carrier is messy")
     df = _assemble(
@@ -339,7 +374,7 @@ def fig_fare_class_mix(summaries, raw_df=False, label_threshold=0.06):
     )
 
 
-def _fig_forecasts(df, facet_on=None, y="demand_fcst"):
+def _fig_forecasts(df, facet_on=None, y="forecast_mean", y_title="Avg Demand Forecast"):
     import altair as alt
 
     if not facet_on:
@@ -348,7 +383,7 @@ def _fig_forecasts(df, facet_on=None, y="demand_fcst"):
             .mark_line()
             .encode(
                 x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
-                y=alt.Y(f"{y}:Q", title="Avg Demand Forecast"),
+                y=alt.Y(f"{y}:Q", title=y_title),
                 color="booking_class:N",
                 strokeDash=alt.StrokeDash("source:N", title="Source"),
                 strokeWidth=alt.StrokeWidth("source:N", title="Source"),
@@ -360,7 +395,7 @@ def _fig_forecasts(df, facet_on=None, y="demand_fcst"):
             .mark_line()
             .encode(
                 x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
-                y=alt.Y(f"{y}:Q", title="Avg Demand Forecast"),
+                y=alt.Y(f"{y}:Q", title=y_title),
                 color="booking_class:N",
                 strokeDash=alt.StrokeDash("source:N", title="Source"),
                 strokeWidth=alt.Size("source:N", title="Source"),
@@ -373,14 +408,46 @@ def _fig_forecasts(df, facet_on=None, y="demand_fcst"):
 
 
 @report_figure
-def fig_leg_forecasts(summaries, raw_df=False, by_flt_no=None):
-    df = _assemble(summaries, "leg_forecasts", by_flt_no=by_flt_no)
-    list(summaries.keys())
+def fig_leg_forecasts(
+    summaries,
+    raw_df=False,
+    by_flt_no=None,
+    of: Literal["mu", "sigma"] | list[Literal["mu", "sigma"]] = "mu",
+    agg_booking_classes: bool = False,
+):
+    if isinstance(of, list):
+        if raw_df:
+            raise NotImplementedError
+        fig = fig_leg_forecasts(summaries, by_flt_no=by_flt_no, of=of[0])
+        for of_ in of[1:]:
+            fig |= fig_leg_forecasts(summaries, by_flt_no=by_flt_no, of=of_)
+        return fig
+    df = _assemble(summaries, "leg_forecasts", by_flt_no=by_flt_no, of=of)
+    if agg_booking_classes:
+        if of == "mu":
+            df = (
+                df.groupby(["source", "flt_no", "rrd"])
+                .forecast_mean.sum()
+                .reset_index()
+            )
+        elif of == "sigma":
+
+            def sum_sigma(x):
+                return np.sqrt(sum(x**2))
+
+            df = (
+                df.groupby(["source", "flt_no", "rrd"])
+                .forecast_stdev.apply(sum_sigma)
+                .reset_index()
+            )
     if raw_df:
         df.attrs["title"] = "Average Leg Forecasts"
         return df
     return _fig_forecasts(
-        df, facet_on="flt_no" if not isinstance(by_flt_no, int) else None
+        df,
+        facet_on="flt_no" if not isinstance(by_flt_no, int) else None,
+        y="forecast_mean" if of == "mu" else "forecast_stdev",
+        y_title="Mean Demand Forecast" if of == "mu" else "Std Dev Demand Forecast",
     )
 
     # import altair as alt
@@ -391,7 +458,7 @@ def fig_leg_forecasts(summaries, raw_df=False, by_flt_no=None):
     #         .mark_line()
     #         .encode(
     #             x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
-    #             y=alt.Y("demand_fcst:Q", title="Avg Demand Forecast"),
+    #             y=alt.Y("forecast_mean:Q", title="Avg Demand Forecast"),
     #             color="booking_class:N",
     #             strokeDash=alt.StrokeDash("source:N", title="Source"),
     #             strokeWidth=alt.StrokeWidth("source:N", title="Source"),
@@ -403,7 +470,7 @@ def fig_leg_forecasts(summaries, raw_df=False, by_flt_no=None):
     #         .mark_line()
     #         .encode(
     #             x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
-    #             y=alt.Y("demand_fcst:Q", title="Avg Demand Forecast"),
+    #             y=alt.Y("forecast_mean:Q", title="Avg Demand Forecast"),
     #             color="booking_class:N",
     #             strokeDash=alt.StrokeDash("source:N", title="Source"),
     #             strokeWidth=alt.Size("source:N", title="Source"),
@@ -422,18 +489,38 @@ def fig_path_forecasts(
     by_path_id=None,
     path_names: dict | None = None,
     agg_booking_classes: bool = False,
+    of: Literal["mu", "sigma"] = "mu",
 ):
-    df = _assemble(summaries, "path_forecasts", by_path_id=by_path_id)
+    df = _assemble(summaries, "path_forecasts", by_path_id=by_path_id, of=of)
     list(summaries.keys())
     if path_names is not None:
         df["path_id"] = df["path_id"].apply(lambda x: path_names.get(x, str(x)))
     if agg_booking_classes:
-        df = df.groupby(["source", "path_id", "rrd"]).forecast_mean.sum().reset_index()
+        if of == "mu":
+            df = (
+                df.groupby(["source", "path_id", "rrd"])
+                .forecast_mean.sum()
+                .reset_index()
+            )
+        elif of == "sigma":
+
+            def sum_sigma(x):
+                return np.sqrt(sum(x**2))
+
+            df = (
+                df.groupby(["source", "path_id", "rrd"])
+                .forecast_stdev.apply(sum_sigma)
+                .reset_index()
+            )
     if raw_df:
-        df.attrs["title"] = "Average Path Forecasts"
+        if of == "mu":
+            df.attrs["title"] = "Average Path Forecast Means"
+        elif of == "sigma":
+            df.attrs["title"] = "Average Path Forecast Standard Deviations"
         return df
     return _fig_forecasts(
         df,
         facet_on="path_id" if not isinstance(by_path_id, int) else None,
-        y="forecast_mean",
+        y="forecast_mean" if of == "mu" else "forecast_stdev",
+        y_title="Mean Demand Forecast" if of == "mu" else "Std Dev Demand Forecast",
     )

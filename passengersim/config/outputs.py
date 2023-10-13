@@ -1,9 +1,9 @@
 import pathlib
 
-from pydantic import BaseModel
+from .pretty import PrettyModel
 
 
-class OutputConfig(BaseModel, extra="forbid", validate_assignment=True):
+class OutputConfig(PrettyModel, extra="forbid", validate_assignment=True):
     log_reports: bool = False
     """Write basic reports directly to the run log."""
 

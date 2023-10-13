@@ -4,13 +4,14 @@ include:
 scenario: 3MKTproBP
 
 simulation_controls:
-  num_trials: 1 # 10
+  num_trials: 4
   show_progress_bar: false
 
 rm_systems:
   rm_probp:
     availability_control: bp
-    steps:
+    processes:
+      DCP:
       - step_type: untruncation
         name: untruncation
         algorithm: em
