@@ -1,3 +1,4 @@
+import warnings
 from typing import Literal
 
 import altair as alt
@@ -10,13 +11,25 @@ from .summary import SummaryTables
 
 def _assemble(summaries, base, **kwargs):
     summaries_ = {}
+    last_exception = RuntimeError("no summaries loaded")
     for k, v in summaries.items():
         if (fun := getattr(v, f"fig_{base}", None)) is not None:
-            summaries_[k] = fun(raw_df=True, **kwargs)
+            try:
+                summaries_[k] = fun(raw_df=True, **kwargs)
+            except Exception as err:
+                last_exception = err
+                warnings.warn(f"error in getting data from {k!r}: {err}", stacklevel=3)
         elif (raw := getattr(v, f"raw_{base}", None)) is not None:
-            summaries_[k] = raw
+            try:
+                summaries_[k] = raw
+            except Exception as err:
+                last_exception = err
+                warnings.warn(f"error in getting data from {k!r}: {err}", stacklevel=3)
         elif isinstance(v, pd.DataFrame | pd.Series):
             summaries_[k] = v
+    if len(summaries_) == 0:
+        # no data recovered, re-raise last exception
+        raise last_exception
     return pd.concat(summaries_, names=["source"]).reset_index(level="source")
 
 

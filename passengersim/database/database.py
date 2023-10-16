@@ -213,13 +213,15 @@ class Database:
     def save_final(self: Database, sim: SimulationEngine):
         sim.final_write_to_sqlite(self._connection)
 
-    def dataframe(self, query: str, params: list | tuple | dict | None = None):
+    def dataframe(
+        self, query: str, params: list | tuple | dict | None = None, dtype=None
+    ):
         """Run a SQL query and return the results as a pandas DataFrame."""
         if not self.is_open:
             raise ValueError("database is not open")
         import pandas as pd
 
-        return pd.read_sql_query(query, self._connection, params=params)
+        return pd.read_sql_query(query, self._connection, params=params, dtype=dtype)
 
     def save_dataframe(
         self,

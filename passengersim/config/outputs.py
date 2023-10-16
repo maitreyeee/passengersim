@@ -17,3 +17,6 @@ class OutputConfig(PrettyModel, extra="forbid", validate_assignment=True):
         "total_demand",
     ]
     """Reports to include."""
+
+    # TODO what reports require what database items?
+    # e.g. demand_to_come requires we store all `demand` not just demand_final

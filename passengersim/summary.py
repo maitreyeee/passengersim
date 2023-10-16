@@ -135,6 +135,10 @@ class SummaryTables:
                 db, scenario, burn_samples
             )
 
+        if "demand_to_come" in additional and db.is_open:
+            logger.info("loading path_forecasts")
+            self.demand_to_come = database.common_queries.demand_to_come(db, scenario)
+
     def __init__(
         self,
         demands: pd.DataFrame | None = None,

@@ -1,5 +1,6 @@
 import logging
 
+import numpy as np
 import pandas as pd
 
 from .database import Database
@@ -221,3 +222,26 @@ def avg_path_forecasts(cnx: Database, scenario: str, burn_samples: int = 100):
             burn_samples,
         ),
     )
+
+
+def demand_to_come(cnx: Database, scenario: str):
+    # Provides content roughly equivalent to PODS *.DHS output file.
+    qry = """
+    SELECT
+        iteration, trial, sample, segment, orig, dest, rrd, sold, no_go,
+        (round(sample_demand) - sold - no_go) AS future_demand
+    FROM
+        demand_detail
+    WHERE
+        scenario = ?1
+    """
+    dmd = cnx.dataframe(qry, (scenario,), dtype={"future_demand": np.int32})
+    # dmd["future_demand"] = dmd.sample_demand.round().astype(int) - dmd.sold - dmd.no_go
+    dhs = (
+        dmd.set_index(
+            ["iteration", "trial", "sample", "segment", "orig", "dest", "rrd"]
+        )["future_demand"]
+        .unstack("rrd")
+        .sort_values(by="rrd", axis=1, ascending=False)
+    )
+    return dhs
