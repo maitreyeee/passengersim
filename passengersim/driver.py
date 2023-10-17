@@ -681,12 +681,14 @@ class Simulation:
         dmd_df = self.compute_demand_report(sim, to_log, to_db)
         leg_df = self.compute_leg_report(sim, to_log, to_db)
         path_df = self.compute_path_report(sim, to_log, to_db)
+#        path_classes_df = self.compute_path_class_report(sim, to_log, to_db)
         carrier_df = self.compute_carrier_report(sim, to_log, to_db)
 
         summary = SummaryTables(
             demands=dmd_df,
             legs=leg_df,
             paths=path_df,
+#            path_classes=path_classes_df,
             carriers=carrier_df,
         )
         summary.load_additional_tables(self.cnx, sim.name, sim.burn_samples, additional)
@@ -774,6 +776,7 @@ class Simulation:
         path_df = []
         for path in sim.paths:
             avg_sold = path.gt_sold / num_samples
+            avg_sold_priceable = path.gt_sold_priceable / num_samples
             avg_rev = path.gt_revenue / num_samples
             if to_log:
                 logger.info(
@@ -789,6 +792,7 @@ class Simulation:
                         carrier2=None,
                         flt_no2=None,
                         avg_sold=avg_sold,
+                        avg_sold_priceable=avg_sold_priceable,
                         avg_rev=avg_rev,
                     )
                 )
@@ -802,6 +806,7 @@ class Simulation:
                         carrier2=path.get_leg_carrier(1),
                         flt_no2=path.get_leg_fltno(1),
                         avg_sold=avg_sold,
+                        avg_sold_priceable=avg_sold_priceable,
                         avg_rev=avg_rev,
                     )
                 )
@@ -811,6 +816,72 @@ class Simulation:
         if to_db and to_db.is_open:
             to_db.save_dataframe("path_summary", path_df)
         return path_df
+
+    def compute_path_class_report(
+            self, sim: SimulationEngine, to_log=True, to_db: database.Database | None = None
+    ):
+        num_samples = sim.num_trials * (sim.num_samples - sim.burn_samples)
+        avg_lf, n = 0.0, 0
+        for leg in sim.legs:
+            lf = 100.0 * leg.gt_sold / (leg.capacity * num_samples)
+            avg_lf += lf
+            n += 1
+
+        tot_rev = 0.0
+        for m in sim.demands:
+            tot_rev += m.revenue
+
+        avg_lf = avg_lf / n if n > 0 else 0
+        if to_log:
+            logger.info(f"    LF:  {avg_lf:6.2f}%, Total revenue = ${tot_rev:,.2f}")
+
+        path_class_df = []
+        for path in sim.paths:
+            for pc in path.pathclasses:
+
+                avg_sold =  pc.gt_sold / num_samples
+                avg_sold_priceable = pc.gt_sold_priceable / num_samples
+                avg_rev = pc.gt_revenue / num_samples
+                if to_log:
+                    logger.info(
+                        f"{pc}, avg_sold={avg_sold:6.2f}, avg_rev=${avg_rev:10,.2f}"
+                    )
+                if path.num_legs() == 1:
+                    path_class_df.append(
+                        dict(
+                            orig=path.orig,
+                            dest=path.dest,
+                            carrier1=path.get_leg_carrier(0),
+                            flt_no1=path.get_leg_fltno(0),
+                            carrier2=None,
+                            flt_no2=None,
+                            booking_class=pc.booking_class,
+                            avg_sold=avg_sold,
+                            avg_sold_priceable=avg_sold_priceable,
+                            avg_rev=avg_rev,
+                        )
+                    )
+                elif path.num_legs() == 2:
+                    path_class_df.append(
+                        dict(
+                            orig=path.orig,
+                            dest=path.dest,
+                            carrier1=path.get_leg_carrier(0),
+                            flt_no1=path.get_leg_fltno(0),
+                            carrier2=path.get_leg_carrier(1),
+                            flt_no2=path.get_leg_fltno(1),
+                            booking_class=pc.booking_class,
+                            avg_sold=avg_sold,
+                            avg_sold_priceable=avg_sold_priceable,
+                            avg_rev=avg_rev,
+                        )
+                    )
+                else:
+                    raise NotImplementedError("path with other than 1 or 2 legs")
+        path_class_df = pd.DataFrame(path_class_df)
+#        if to_db and to_db.is_open:
+#            to_db.save_dataframe("path_class_summary", path_class_df)
+        return path_class_df
 
     def compute_carrier_report(
         self,
