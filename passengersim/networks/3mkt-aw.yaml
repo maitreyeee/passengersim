@@ -113,6 +113,10 @@ rm_systems:
           algorithm: exp_smoothing
           alpha: 0.15
           kind: path
+        - step_type: fareadjustment
+          name: adjust_fares
+          algorithm: mr
+          kind: path
         - step_type: probp
           name: optimization
       DAILY:
@@ -165,7 +169,7 @@ airlines:
   - name: AL1
     rm_system: rm_test1
   - name: AL2
-    rm_system: rm_hybrid
+    rm_system: rm_test1
     frat5: curve_C
 
 classes:
