@@ -1,4 +1,6 @@
 import warnings
+from collections.abc import Callable
+from functools import partial
 from typing import Literal
 
 import altair as alt
@@ -7,6 +9,25 @@ import pandas as pd
 
 from .reporting import report_figure
 from .summary import SummaryTables
+
+
+class Contrast(dict):
+    def apply(
+        self, func: Callable, axis: int | Literal["index", "columns", "rows"] = 0
+    ) -> pd.DataFrame | pd.Series:
+        data = {k: func(v) for k, v in self.items()}
+        try:
+            return pd.concat(data, axis=axis, names=["source"])
+        except TypeError:
+            return pd.Series(data).rename_axis(index="source")
+
+    def __getattr__(self, attr):
+        if attr.startswith("fig_"):
+            g = globals()
+            if attr in g:
+                return partial(g[attr], self)
+                # return lambda *a, **k: g[attr](self, *a, **k)
+        raise AttributeError(attr)
 
 
 def _assemble(summaries, base, **kwargs):

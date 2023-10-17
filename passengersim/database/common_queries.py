@@ -245,3 +245,40 @@ def demand_to_come(cnx: Database, scenario: str):
         .sort_values(by="rrd", axis=1, ascending=False)
     )
     return dhs
+
+
+def carrier_history(cnx: Database, scenario: str):
+    # Provides content similar to PODS *.HST output file.
+    max_rrd = int(
+        cnx.dataframe(
+            """
+            SELECT max(rrd) FROM leg_bucket_detail WHERE scenario == ?1
+            """,
+            (scenario,),
+        ).iloc[0, 0]
+    )
+    bd1 = cnx.dataframe(
+        """
+        SELECT
+            iteration, trial, sample, carrier,
+            sum(forecast_mean) as forecast_mean,
+            sqrt(sum(forecast_stdev*forecast_stdev)) as forecast_stdev
+        FROM leg_bucket_detail
+        WHERE rrd == ?2 AND scenario == ?1
+        GROUP BY iteration, trial, sample, carrier
+        """,
+        (scenario, max_rrd),
+    ).set_index(["iteration", "trial", "sample", "carrier"])
+    bd2 = cnx.dataframe(
+        """
+        SELECT
+            iteration, trial, sample, carrier,
+            sum(sold) as sold,
+            sum(revenue) as revenue
+        FROM leg_bucket_detail
+        WHERE rrd == 0 AND scenario == ?1
+        GROUP BY iteration, trial, sample, carrier
+        """,
+        (scenario,),
+    ).set_index(["iteration", "trial", "sample", "carrier"])
+    return pd.concat([bd1, bd2], axis=1).unstack("carrier")

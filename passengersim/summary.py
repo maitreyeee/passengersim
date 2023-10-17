@@ -139,6 +139,10 @@ class SummaryTables:
             logger.info("loading path_forecasts")
             self.demand_to_come = database.common_queries.demand_to_come(db, scenario)
 
+        if "carrier_history" in additional and db.is_open:
+            logger.info("loading carrier_history")
+            self.carrier_history = database.common_queries.carrier_history(db, scenario)
+
     def __init__(
         self,
         demands: pd.DataFrame | None = None,
@@ -152,6 +156,8 @@ class SummaryTables:
         od_fare_class_mix: dict[tuple[str, str], pd.DataFrame] | None = None,
         leg_forecasts: pd.DataFrame | None = None,
         path_forecasts: pd.DataFrame | None = None,
+        carrier_history: pd.DataFrame | None = None,
+        demand_to_come: pd.DataFrame | None = None,
     ):
         self.demands = demands
         self.legs = legs
@@ -164,6 +170,8 @@ class SummaryTables:
         self.total_demand = total_demand
         self.leg_forecasts = leg_forecasts
         self.path_forecasts = path_forecasts
+        self.carrier_history = carrier_history
+        self.demand_to_come = demand_to_come
 
     def to_records(self):
         return {k: v.to_dict(orient="records") for (k, v) in self.__dict__.items()}
@@ -183,6 +191,26 @@ class SummaryTables:
             for k, v in self.__dict__.items():
                 if isinstance(v, pd.DataFrame):
                     v.to_excel(writer, sheet_name=k)
+
+    def aggregate_demand_history(self, by_segment: bool = True) -> pd.Series:
+        """
+        Total demand by sample, aggregated over all markets.
+
+        Parameters
+        ----------
+        by_segment : bool, default True
+            Aggregate by segment.  If false, segments are also aggregated.
+
+        Returns
+        -------
+        pandas.Series
+            Total demand, indexed by trial, sample, and segment
+            (business/leisure).
+        """
+        groupbys = ["trial", "sample"]
+        if by_segment:
+            groupbys.append("segment")
+        return self.demand_to_come.iloc[:, 0].groupby(groupbys).sum()
 
     def fig_carrier_mileage(self, raw_df: bool = False, report=None):
         """

@@ -97,9 +97,22 @@ class SimulationSettings(PrettyModel, extra="allow", validate_assignment=True):
     identified level of total demand. See [k-factors]() for more details.
     """
 
-    z_factor: confloat(ge=0, lt=100.0) = 2.0
+    tot_z_factor: confloat(ge=0, le=100.0) = 2.0
     """
     Base level demand variance control.
+
+    This factor scales the variance in the amount of total demand for any given
+    market segment.
+
+    See [k-factors][demand-generation-k-factors] for more details.
+    """
+
+    tf_z_factor: confloat(ge=0, le=100.0) = 2.0
+    """
+    Timeframe demand variance control.
+
+    This factor scales the variance in the allocation of total demand to the
+    various arrival timeframes.
 
     See [k-factors][demand-generation-k-factors] for more details.
     """

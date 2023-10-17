@@ -130,6 +130,8 @@ class Simulation:
                 pass
             elif pname == "timeframe_demand_allocation":
                 pass
+            elif pname == "tot_z_factor":
+                pass
             else:
                 self.sim.set_parm(pname, float(pvalue))
         for pname, pvalue in config.simulation_controls.model_extra.items():
@@ -558,7 +560,9 @@ class Simulation:
                 + trn * self.sim.pax_type_k_factor
             )
             mu = max(mu, 0.0)
-            sigma = sqrt(mu * self.sim.z_factor)  # Correct?
+            sigma = sqrt(
+                mu * self.sim.config.simulation_controls.tot_z_factor
+            )  # Correct?
             n = mu + sigma * self.random_generator.get_normal()
             dmd.scenario_demand = max(n, 0)
 
