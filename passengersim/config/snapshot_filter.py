@@ -38,6 +38,19 @@ class SnapshotInstruction:
             print(self.why)
             print(content)
 
+    def write_more(self, content: str = ""):
+        """Write additional snapshot content to a file, or just print it"""
+        if self.filepath:
+            with self.filepath.open(mode="a") as f:
+                if isinstance(content, bytes):
+                    f.write(content.decode("utf-8"))
+                elif isinstance(content, str):
+                    f.write(content)
+                else:
+                    f.write(str(content))
+        else:
+            print(content)
+
 
 class SnapshotFilter(BaseModel, validate_assignment=True):
     type: Literal[
@@ -45,6 +58,7 @@ class SnapshotFilter(BaseModel, validate_assignment=True):
     ] = None
     title: str = ""
     airline: str = ""
+    trial: list[int] = []
     sample: list[int] = []
     dcp: list[int] = []
     orig: list[str] = []
@@ -53,7 +67,7 @@ class SnapshotFilter(BaseModel, validate_assignment=True):
     logger: str | None = None
     directory: pathlib.Path | None = None
 
-    @field_validator("sample", "dcp", "orig", "dest", "flt_no", mode="before")
+    @field_validator("trial", "sample", "dcp", "orig", "dest", "flt_no", mode="before")
     def _allow_singletons(cls, v):
         """Allow a singleton value that is converted to a list of one item."""
         if not isinstance(v, list | tuple):
@@ -79,6 +93,8 @@ class SnapshotFilter(BaseModel, validate_assignment=True):
             pth = pth.joinpath(f"fltno-{leg.flt_no}")
         elif path is not None:
             pth = pth.joinpath(f"fltno-{path.get_leg_fltno(0)}")
+        if sim.num_trials > 1:
+            pth = pth.joinpath(f"trial-{sim.trial}")
         pth = pth.joinpath(f"sample-{sim.sample}")
         pth.parent.mkdir(parents=True, exist_ok=True)
         return pth.with_suffix(".log")
@@ -88,6 +104,11 @@ class SnapshotFilter(BaseModel, validate_assignment=True):
     ) -> SnapshotInstruction:
         # Check the filter conditions
         info = ""
+
+        if len(self.trial) > 0 and sim.trial not in self.trial and sim.num_trials > 1:
+            return SnapshotInstruction(False, why=f"cause {sim.trial=}")
+        info += f"  trial={sim.trial}"
+
         if len(self.sample) > 0 and sim.sample not in self.sample:
             return SnapshotInstruction(False, why=f"cause {sim.sample=}")
         info += f"  sample={sim.sample}"
@@ -148,6 +169,7 @@ class SnapshotFilter(BaseModel, validate_assignment=True):
             snapshot_file = self.filepath(sim, leg, path)
             if snapshot_file:
                 with snapshot_file.open(mode="a") as f:
+                    f.write(title)
                     f.write(bucket_detail)
             else:
                 print(bucket_detail)
