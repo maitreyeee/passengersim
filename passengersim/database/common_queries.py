@@ -181,7 +181,9 @@ def avg_leg_forecasts(cnx: Database, scenario: str, burn_samples: int = 100):
         name as booking_class,
         rrd,
         AVG(forecast_mean) as forecast_mean,
-        AVG(forecast_stdev) as forecast_stdev
+        AVG(forecast_stdev) as forecast_stdev,
+        AVG(forecast_closed_in_tf) as forecast_closed_in_tf,
+        AVG(forecast_closed_in_future) as forecast_closed_in_future
     FROM
         leg_bucket_detail
     WHERE
@@ -206,7 +208,9 @@ def avg_path_forecasts(cnx: Database, scenario: str, burn_samples: int = 100):
         booking_class,
         rrd,
         AVG(forecast_mean) as forecast_mean,
-        AVG(forecast_stdev) as forecast_stdev
+        AVG(forecast_stdev) as forecast_stdev,
+        AVG(forecast_closed_in_tf) as forecast_closed_in_tf,
+        AVG(forecast_closed_in_future) as forecast_closed_in_future
     FROM
         path_class_detail
     WHERE
@@ -290,7 +294,9 @@ def bid_price_history(cnx: Database, scenario: str, burn_samples: int = 100):
         carrier,
         rrd,
         avg(bid_price) as bid_price_mean,
-        stdev(bid_price) as bid_price_stdev
+        stdev(bid_price) as bid_price_stdev,
+        avg(CASE WHEN leg_detail.sold < leg_defs.capacity THEN 1.0 ELSE 0.0 END) as fraction_some_cap,
+        avg(CASE WHEN leg_detail.sold < leg_defs.capacity THEN 0.0 ELSE 1.0 END) as fraction_zero_cap
     FROM leg_detail
         LEFT JOIN leg_defs ON leg_detail.flt_no = leg_defs.flt_no
     WHERE
@@ -306,5 +312,28 @@ def bid_price_history(cnx: Database, scenario: str, burn_samples: int = 100):
             burn_samples,
         ),
     )
-    bph = bph.set_index(["carrier", "rrd"]).sort_index(ascending=(True, False))
+    qry2 = """
+    SELECT
+        carrier,
+        rrd,
+        avg(bid_price) as some_cap_bid_price_mean,
+        stdev(bid_price) as some_cap_bid_price_stdev
+    FROM leg_detail
+        LEFT JOIN leg_defs ON leg_detail.flt_no = leg_defs.flt_no
+    WHERE
+        scenario == ?1
+        AND sample >= ?2
+        AND leg_detail.sold < leg_defs.capacity
+    GROUP BY
+        carrier, rrd
+    """
+    bph_some_cap = cnx.dataframe(
+        qry2,
+        (
+            scenario,
+            burn_samples,
+        ),
+    ).set_index(["carrier", "rrd"])
+    bph = bph.set_index(["carrier", "rrd"]).join(bph_some_cap)
+    bph = bph.sort_index(ascending=(True, False))
     return bph
