@@ -838,14 +838,11 @@ class Simulation:
         path_class_df = []
         for path in sim.paths:
             for pc in path.pathclasses:
-
                 avg_sold =  pc.gt_sold / num_samples
                 avg_sold_priceable = pc.gt_sold_priceable / num_samples
                 avg_rev = pc.gt_revenue / num_samples
                 if to_log:
-                    logger.info(
-                        f"{pc}, avg_sold={avg_sold:6.2f}, avg_rev=${avg_rev:10,.2f}"
-                    )
+                    logger.info(f"{pc}, avg_sold={avg_sold:6.2f}, avg_rev=${avg_rev:10,.2f}")
                 if path.num_legs() == 1:
                     path_class_df.append(
                         dict(
@@ -879,6 +876,7 @@ class Simulation:
                 else:
                     raise NotImplementedError("path with other than 1 or 2 legs")
         path_class_df = pd.DataFrame(path_class_df)
+        path_class_df.sort_values(by=["orig", "dest", "carrier1", "flt_no1", "booking_class"])
 #        if to_db and to_db.is_open:
 #            to_db.save_dataframe("path_class_summary", path_class_df)
         return path_class_df
