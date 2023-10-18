@@ -140,6 +140,7 @@ class SummaryTables:
         demands: pd.DataFrame | None = None,
         legs: pd.DataFrame | None = None,
         paths: pd.DataFrame | None = None,
+        path_classes: pd.DataFrame | None = None,
         carriers: pd.DataFrame | None = None,
         fare_class_mix: pd.DataFrame | None = None,
         load_factors: pd.DataFrame | None = None,
@@ -152,6 +153,7 @@ class SummaryTables:
         self.demands = demands
         self.legs = legs
         self.paths = paths
+        self.path_classes = path_classes
         self.carriers = carriers
         self.fare_class_mix = fare_class_mix
         self.od_fare_class_mix = od_fare_class_mix

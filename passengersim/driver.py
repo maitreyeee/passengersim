@@ -681,14 +681,14 @@ class Simulation:
         dmd_df = self.compute_demand_report(sim, to_log, to_db)
         leg_df = self.compute_leg_report(sim, to_log, to_db)
         path_df = self.compute_path_report(sim, to_log, to_db)
-#        path_classes_df = self.compute_path_class_report(sim, to_log, to_db)
+        path_classes_df = self.compute_path_class_report(sim, to_log, to_db)
         carrier_df = self.compute_carrier_report(sim, to_log, to_db)
 
         summary = SummaryTables(
             demands=dmd_df,
             legs=leg_df,
             paths=path_df,
-#            path_classes=path_classes_df,
+            path_classes=path_classes_df,
             carriers=carrier_df,
         )
         summary.load_additional_tables(self.cnx, sim.name, sim.burn_samples, additional)
@@ -822,18 +822,18 @@ class Simulation:
     ):
         num_samples = sim.num_trials * (sim.num_samples - sim.burn_samples)
         avg_lf, n = 0.0, 0
-        for leg in sim.legs:
-            lf = 100.0 * leg.gt_sold / (leg.capacity * num_samples)
-            avg_lf += lf
-            n += 1
+#        for leg in sim.legs:
+#            lf = 100.0 * leg.gt_sold / (leg.capacity * num_samples)
+#            avg_lf += lf
+#            n += 1
 
-        tot_rev = 0.0
-        for m in sim.demands:
-            tot_rev += m.revenue
+#        tot_rev = 0.0
+#        for m in sim.demands:
+#            tot_rev += m.revenue
 
-        avg_lf = avg_lf / n if n > 0 else 0
-        if to_log:
-            logger.info(f"    LF:  {avg_lf:6.2f}%, Total revenue = ${tot_rev:,.2f}")
+#        avg_lf = avg_lf / n if n > 0 else 0
+#        if to_log:
+#            logger.info(f"    LF:  {avg_lf:6.2f}%, Total revenue = ${tot_rev:,.2f}")
 
         path_class_df = []
         for path in sim.paths:
