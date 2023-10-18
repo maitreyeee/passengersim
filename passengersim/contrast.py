@@ -564,3 +564,53 @@ def fig_path_forecasts(
         y_title="Mean Demand Forecast" if of == "mu" else "Std Dev Demand Forecast",
         color=color,
     )
+
+
+@report_figure
+def fig_bid_price_history(
+    summaries,
+    by_carrier: bool | str = True,
+    show_stdev: float | bool | None = None,
+    raw_df=False,
+):
+    if not isinstance(by_carrier, str):
+        raise NotImplementedError(
+            "contrast.fig_bid_price_history requires looking at a single carrier (set `by_carrier`)"
+        )
+    df = _assemble(
+        summaries,
+        "bid_price_history",
+        by_carrier=by_carrier,
+        show_stdev=show_stdev,
+    )
+    if raw_df:
+        return df
+
+    line_encoding = dict(
+        x=alt.X("rrd:Q").scale(reverse=True).title("Days from Departure"),
+        y=alt.Y("bid_price_mean", title="Bid Price"),
+        color="source:N",
+    )
+    chart = alt.Chart(df)
+    fig = chart.mark_line(interpolate="step-before").encode(**line_encoding)
+    if show_stdev:
+        area_encoding = dict(
+            x=alt.X("rrd:Q").scale(reverse=True).title("Days from Departure"),
+            y=alt.Y("bid_price_lower:Q", title="Bid Price"),
+            y2=alt.Y2("bid_price_upper:Q", title="Bid Price"),
+            color="source:N",
+        )
+        bound = chart.mark_area(
+            opacity=0.1,
+            interpolate="step-before",
+        ).encode(**area_encoding)
+        bound_line = chart.mark_line(
+            opacity=0.4, strokeDash=[5, 5], interpolate="step-before"
+        ).encode(
+            x=alt.X("rrd:Q").scale(reverse=True).title("Days from Departure"),
+            color="source:N",
+        )
+        top_line = bound_line.encode(y=alt.Y("bid_price_lower:Q", title="Bid Price"))
+        bottom_line = bound_line.encode(y=alt.Y("bid_price_upper:Q", title="Bid Price"))
+        fig = fig + bound + top_line + bottom_line
+    return fig
