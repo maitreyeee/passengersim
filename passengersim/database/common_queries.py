@@ -282,3 +282,29 @@ def carrier_history(cnx: Database, scenario: str):
         (scenario,),
     ).set_index(["iteration", "trial", "sample", "carrier"])
     return pd.concat([bd1, bd2], axis=1).unstack("carrier")
+
+
+def bid_price_history(cnx: Database, scenario: str, burn_samples: int = 100):
+    qry = """
+    SELECT
+        carrier,
+        rrd,
+        avg(bid_price) as bid_price_mean,
+        stdev(bid_price) as bid_price_stdev
+    FROM leg_detail
+        LEFT JOIN leg_defs ON leg_detail.flt_no = leg_defs.flt_no
+    WHERE
+        scenario == ?1
+        AND sample >= ?2
+    GROUP BY
+        carrier, rrd
+    """
+    bph = cnx.dataframe(
+        qry,
+        (
+            scenario,
+            burn_samples,
+        ),
+    )
+    bph = bph.set_index(["carrier", "rrd"]).sort_index(ascending=(True, False))
+    return bph

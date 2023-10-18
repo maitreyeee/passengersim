@@ -408,32 +408,31 @@ def fig_fare_class_mix(summaries, raw_df=False, label_threshold=0.06):
     )
 
 
-def _fig_forecasts(df, facet_on=None, y="forecast_mean", y_title="Avg Demand Forecast"):
+def _fig_forecasts(
+    df,
+    facet_on=None,
+    y="forecast_mean",
+    y_title="Avg Demand Forecast",
+    color="booking_class:N",
+):
     import altair as alt
 
+    encoding = dict(
+        x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+        y=alt.Y(f"{y}:Q", title=y_title),
+        color="booking_class:N",
+        strokeDash=alt.StrokeDash("source:N", title="Source"),
+        strokeWidth=alt.StrokeWidth("source:N", title="Source"),
+    )
+    if color:
+        encoding["color"] = color
     if not facet_on:
-        return (
-            alt.Chart(df)
-            .mark_line()
-            .encode(
-                x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
-                y=alt.Y(f"{y}:Q", title=y_title),
-                color="booking_class:N",
-                strokeDash=alt.StrokeDash("source:N", title="Source"),
-                strokeWidth=alt.StrokeWidth("source:N", title="Source"),
-            )
-        )
+        return alt.Chart(df).mark_line().encode(**encoding)
     else:
         return (
             alt.Chart(df)
             .mark_line()
-            .encode(
-                x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
-                y=alt.Y(f"{y}:Q", title=y_title),
-                color="booking_class:N",
-                strokeDash=alt.StrokeDash("source:N", title="Source"),
-                strokeWidth=alt.Size("source:N", title="Source"),
-            )
+            .encode(**encoding)
             .facet(
                 facet=f"{facet_on}:N",
                 columns=3,
@@ -446,18 +445,29 @@ def fig_leg_forecasts(
     summaries,
     raw_df=False,
     by_flt_no=None,
+    by_class: bool | str = True,
     of: Literal["mu", "sigma"] | list[Literal["mu", "sigma"]] = "mu",
     agg_booking_classes: bool = False,
 ):
     if isinstance(of, list):
         if raw_df:
             raise NotImplementedError
-        fig = fig_leg_forecasts(summaries, by_flt_no=by_flt_no, of=of[0])
+        fig = fig_leg_forecasts(
+            summaries, by_flt_no=by_flt_no, by_class=by_class, of=of[0]
+        )
         for of_ in of[1:]:
-            fig |= fig_leg_forecasts(summaries, by_flt_no=by_flt_no, of=of_)
+            fig |= fig_leg_forecasts(
+                summaries, by_flt_no=by_flt_no, by_class=by_class, of=of_
+            )
         return fig
-    df = _assemble(summaries, "leg_forecasts", by_flt_no=by_flt_no, of=of)
-    if agg_booking_classes:
+    df = _assemble(
+        summaries, "leg_forecasts", by_flt_no=by_flt_no, by_class=by_class, of=of
+    )
+    color = "booking_class:N"
+    if isinstance(by_class, str):
+        color = "source:N"
+    if agg_booking_classes or not by_class:
+        color = "source:N"
         if of == "mu":
             df = (
                 df.groupby(["source", "flt_no", "rrd"])
@@ -482,38 +492,8 @@ def fig_leg_forecasts(
         facet_on="flt_no" if not isinstance(by_flt_no, int) else None,
         y="forecast_mean" if of == "mu" else "forecast_stdev",
         y_title="Mean Demand Forecast" if of == "mu" else "Std Dev Demand Forecast",
+        color=color,
     )
-
-    # import altair as alt
-    #
-    # if isinstance(by_flt_no, int):
-    #     return (
-    #         alt.Chart(df)
-    #         .mark_line()
-    #         .encode(
-    #             x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
-    #             y=alt.Y("forecast_mean:Q", title="Avg Demand Forecast"),
-    #             color="booking_class:N",
-    #             strokeDash=alt.StrokeDash("source:N", title="Source"),
-    #             strokeWidth=alt.StrokeWidth("source:N", title="Source"),
-    #         )
-    #     )
-    # else:
-    #     return (
-    #         alt.Chart(df)
-    #         .mark_line()
-    #         .encode(
-    #             x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
-    #             y=alt.Y("forecast_mean:Q", title="Avg Demand Forecast"),
-    #             color="booking_class:N",
-    #             strokeDash=alt.StrokeDash("source:N", title="Source"),
-    #             strokeWidth=alt.Size("source:N", title="Source"),
-    #         )
-    #         .facet(
-    #             facet="flt_no:N",
-    #             columns=3,
-    #         )
-    #     )
 
 
 @report_figure
@@ -523,12 +503,37 @@ def fig_path_forecasts(
     by_path_id=None,
     path_names: dict | None = None,
     agg_booking_classes: bool = False,
+    by_class: bool | str = True,
     of: Literal["mu", "sigma"] = "mu",
 ):
-    df = _assemble(summaries, "path_forecasts", by_path_id=by_path_id, of=of)
+    if isinstance(of, list):
+        if raw_df:
+            raise NotImplementedError
+        fig = fig_path_forecasts(
+            summaries,
+            by_path_id=by_path_id,
+            path_names=path_names,
+            by_class=by_class,
+            of=of[0],
+        )
+        for of_ in of[1:]:
+            fig |= fig_path_forecasts(
+                summaries,
+                by_path_id=by_path_id,
+                path_names=path_names,
+                by_class=by_class,
+                of=of_,
+            )
+        return fig
+    df = _assemble(
+        summaries, "path_forecasts", by_path_id=by_path_id, of=of, by_class=by_class
+    )
     list(summaries.keys())
     if path_names is not None:
         df["path_id"] = df["path_id"].apply(lambda x: path_names.get(x, str(x)))
+    color = "booking_class:N"
+    if isinstance(by_class, str):
+        color = "source:N"
     if agg_booking_classes:
         if of == "mu":
             df = (
@@ -557,4 +562,5 @@ def fig_path_forecasts(
         facet_on="path_id" if not isinstance(by_path_id, int) else None,
         y="forecast_mean" if of == "mu" else "forecast_stdev",
         y_title="Mean Demand Forecast" if of == "mu" else "Std Dev Demand Forecast",
+        color=color,
     )

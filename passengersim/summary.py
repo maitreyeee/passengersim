@@ -143,6 +143,12 @@ class SummaryTables:
             logger.info("loading carrier_history")
             self.carrier_history = database.common_queries.carrier_history(db, scenario)
 
+        if "bid_price_history" in additional and db.is_open:
+            logger.info("loading carrier_history")
+            self.bid_price_history = database.common_queries.bid_price_history(
+                db, scenario, burn_samples
+            )
+
     def __init__(
         self,
         demands: pd.DataFrame | None = None,
@@ -158,6 +164,7 @@ class SummaryTables:
         path_forecasts: pd.DataFrame | None = None,
         carrier_history: pd.DataFrame | None = None,
         demand_to_come: pd.DataFrame | None = None,
+        bid_price_history: pd.DataFrame | None = None,
     ):
         self.demands = demands
         self.legs = legs
@@ -172,6 +179,7 @@ class SummaryTables:
         self.path_forecasts = path_forecasts
         self.carrier_history = carrier_history
         self.demand_to_come = demand_to_come
+        self.bid_price_history = bid_price_history
 
     def to_records(self):
         return {k: v.to_dict(orient="records") for (k, v) in self.__dict__.items()}
@@ -211,6 +219,16 @@ class SummaryTables:
         if by_segment:
             groupbys.append("segment")
         return self.demand_to_come.iloc[:, 0].groupby(groupbys).sum()
+
+    def demand_in_tf(self) -> pd.DataFrame | None:
+        """History of demand arriving in each timeframe.
+
+        This dataframe is derived from the `demand_to_come` dataframe
+        by taking the sequential differences.
+        """
+        if self.demand_to_come is None:
+            return None
+        return self.demand_to_come.diff(-1, axis=1).iloc[:, :-1]
 
     def fig_carrier_mileage(self, raw_df: bool = False, report=None):
         """
@@ -693,28 +711,24 @@ class SummaryTables:
             raw_df, "avg_rev", "Average Revenue", "$.4s", title="Carrier Revenues"
         )
 
-    def _fig_forecasts(self, df, facet_on=None, y="forecast_mean"):
+    def _fig_forecasts(
+        self, df, facet_on=None, y="forecast_mean", color="booking_class:N"
+    ):
         import altair as alt
 
+        encoding = dict(
+            x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+            y=alt.Y(f"{y}:Q", title="Avg Demand Forecast"),
+        )
+        if color:
+            encoding["color"] = color
         if not facet_on:
-            return (
-                alt.Chart(df)
-                .mark_line()
-                .encode(
-                    x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
-                    y=alt.Y(f"{y}:Q", title="Avg Demand Forecast"),
-                    color="booking_class:N",
-                )
-            )
+            return alt.Chart(df).mark_line().encode(**encoding)
         else:
             return (
                 alt.Chart(df)
                 .mark_line()
-                .encode(
-                    x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
-                    y=alt.Y(f"{y}:Q", title="Avg Demand Forecast"),
-                    color="booking_class:N",
-                )
+                .encode(**encoding)
                 .facet(
                     facet=f"{facet_on}:N",
                     columns=3,
@@ -725,6 +739,7 @@ class SummaryTables:
     def fig_leg_forecasts(
         self,
         by_flt_no: bool | int = True,
+        by_class: bool | str = True,
         of: Literal["mu", "sigma"] = "mu",
         raw_df=False,
     ):
@@ -737,16 +752,21 @@ class SummaryTables:
             y,
         ]
         df = self.leg_forecasts[columns].reset_index()
+        color = "booking_class:N"
         if isinstance(by_flt_no, int) and by_flt_no is not True:
             df = df[df.flt_no == by_flt_no]
+        if isinstance(by_class, str):
+            df = df[df.booking_class == by_class]
+            color = None
         if raw_df:
             return df
-        return self._fig_forecasts(df, facet_on=None, y=y)
+        return self._fig_forecasts(df, facet_on=None, y=y, color=color)
 
     @report_figure
     def fig_path_forecasts(
         self,
         by_path_id: bool | int = True,
+        by_class: bool | str = True,
         of: Literal["mu", "sigma"] = "mu",
         raw_df=False,
     ):
@@ -758,11 +778,74 @@ class SummaryTables:
             y,
         ]
         df = self.path_forecasts[columns].reset_index()
+        color = "booking_class:N"
         if isinstance(by_path_id, int) and by_path_id is not True:
             df = df[df.path_id == by_path_id]
+        if isinstance(by_class, str):
+            df = df[df.booking_class == by_class]
+            color = None
         if raw_df:
             return df
         facet_on = None
         if by_path_id is True:
             facet_on = "path_id"
-        return self._fig_forecasts(df, facet_on=facet_on, y=y)
+        return self._fig_forecasts(df, facet_on=facet_on, y=y, color=color)
+
+    @report_figure
+    def fig_bid_price_history(
+        self,
+        by_carrier: bool | str = True,
+        show_stdev: float | bool | None = None,
+        raw_df=False,
+    ):
+        df = self.bid_price_history.reset_index()
+        color = None
+        if isinstance(by_carrier, str):
+            df = df[df.carrier == by_carrier]
+        elif by_carrier:
+            color = "carrier:N"
+            if show_stdev is None:
+                show_stdev = False
+        if show_stdev:
+            if show_stdev is True:
+                show_stdev = 2
+            df["bid_price_upper"] = (
+                df["bid_price_mean"] + show_stdev * df["bid_price_stdev"]
+            )
+            df["bid_price_lower"] = (
+                df["bid_price_mean"] - show_stdev * df["bid_price_stdev"]
+            ).clip(0, None)
+        if raw_df:
+            return df
+
+        import altair as alt
+
+        line_encoding = dict(
+            x=alt.X("rrd:Q").scale(reverse=True).title("Days from Departure"),
+            y=alt.Y("bid_price_mean", title="Bid Price"),
+        )
+        if color:
+            line_encoding["color"] = color
+        chart = alt.Chart(df)
+        fig = chart.mark_line(interpolate="step-before").encode(**line_encoding)
+        if show_stdev:
+            area_encoding = dict(
+                x=alt.X("rrd:Q").scale(reverse=True).title("Days from Departure"),
+                y=alt.Y("bid_price_lower:Q", title="Bid Price"),
+                y2=alt.Y2("bid_price_upper:Q", title="Bid Price"),
+            )
+            bound = chart.mark_area(
+                opacity=0.1,
+                interpolate="step-before",
+            ).encode(**area_encoding)
+            bound_line = chart.mark_line(
+                opacity=0.4, strokeDash=[5, 5], interpolate="step-before"
+            ).encode(x=alt.X("rrd:Q").scale(reverse=True).title("Days from Departure"))
+            top_line = bound_line.encode(
+                y=alt.Y("bid_price_lower:Q", title="Bid Price")
+            )
+            bottom_line = bound_line.encode(
+                y=alt.Y("bid_price_upper:Q", title="Bid Price")
+            )
+            fig = fig + bound + top_line + bottom_line
+        return fig
