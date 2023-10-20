@@ -767,10 +767,15 @@ class SummaryTables:
         self,
         by_path_id: bool | int = True,
         by_class: bool | str = True,
-        of: Literal["mu", "sigma"] = "mu",
+        of: Literal["mu", "sigma", "closed"] = "mu",
         raw_df=False,
     ):
-        y = "forecast_mean" if of == "mu" else "forecast_stdev"
+        of_columns = {
+            "mu": "forecast_mean",
+            "sigma": "forecast_stdev",
+            "closed": "forecast_closed_in_tf",
+        }
+        y = of_columns.get(of)
         columns = [
             "path_id",
             "booking_class",
@@ -796,8 +801,17 @@ class SummaryTables:
         self,
         by_carrier: bool | str = True,
         show_stdev: float | bool | None = None,
+        cap: Literal["some", "zero", None] = None,
         raw_df=False,
     ):
+        if cap is None:
+            bp_mean = "bid_price_mean"
+        elif cap == "some":
+            bp_mean = "some_cap_bid_price_mean"
+        elif cap == "zero":
+            bp_mean = "zero_cap_bid_price_mean"
+        else:
+            raise ValueError(f"cap={cap!r} not in ['some', 'zero', None]")
         df = self.bid_price_history.reset_index()
         color = None
         if isinstance(by_carrier, str):
@@ -809,11 +823,9 @@ class SummaryTables:
         if show_stdev:
             if show_stdev is True:
                 show_stdev = 2
-            df["bid_price_upper"] = (
-                df["bid_price_mean"] + show_stdev * df["bid_price_stdev"]
-            )
+            df["bid_price_upper"] = df[bp_mean] + show_stdev * df["bid_price_stdev"]
             df["bid_price_lower"] = (
-                df["bid_price_mean"] - show_stdev * df["bid_price_stdev"]
+                df[bp_mean] - show_stdev * df["bid_price_stdev"]
             ).clip(0, None)
         if raw_df:
             return df
@@ -822,7 +834,7 @@ class SummaryTables:
 
         line_encoding = dict(
             x=alt.X("rrd:Q").scale(reverse=True).title("Days from Departure"),
-            y=alt.Y("bid_price_mean", title="Bid Price"),
+            y=alt.Y(bp_mean, title="Bid Price"),
         )
         if color:
             line_encoding["color"] = color

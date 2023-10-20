@@ -504,7 +504,7 @@ def fig_path_forecasts(
     path_names: dict | None = None,
     agg_booking_classes: bool = False,
     by_class: bool | str = True,
-    of: Literal["mu", "sigma"] = "mu",
+    of: Literal["mu", "sigma", "closed"] = "mu",
 ):
     if isinstance(of, list):
         if raw_df:
@@ -551,17 +551,36 @@ def fig_path_forecasts(
                 .forecast_stdev.apply(sum_sigma)
                 .reset_index()
             )
+        elif of == "closed":
+            df = (
+                df.groupby(["source", "path_id", "rrd"])
+                .forecast_closed_in_tf.mean()
+                .reset_index()
+            )
     if raw_df:
         if of == "mu":
             df.attrs["title"] = "Average Path Forecast Means"
         elif of == "sigma":
             df.attrs["title"] = "Average Path Forecast Standard Deviations"
+        elif of == "closed":
+            df.attrs["title"] = "Average Path Forecast Closed in Timeframe"
         return df
+    if of == "mu":
+        y = "forecast_mean"
+        y_title = "Mean Demand Forecast"
+    elif of == "sigma":
+        y = "forecast_stdev"
+        y_title = "Std Dev Demand Forecast"
+    elif of == "closed":
+        y = "forecast_closed_in_tf"
+        y_title = "Mean Time Frame Closed of Demand Forecast"
+    else:
+        raise NotImplementedError
     return _fig_forecasts(
         df,
         facet_on="path_id" if not isinstance(by_path_id, int) else None,
-        y="forecast_mean" if of == "mu" else "forecast_stdev",
-        y_title="Mean Demand Forecast" if of == "mu" else "Std Dev Demand Forecast",
+        y=y,
+        y_title=y_title,
         color=color,
     )
 
@@ -571,8 +590,18 @@ def fig_bid_price_history(
     summaries,
     by_carrier: bool | str = True,
     show_stdev: float | bool | None = None,
+    cap: Literal["some", "zero", None] = None,
     raw_df=False,
 ):
+    if cap is None:
+        bp_mean = "bid_price_mean"
+    elif cap == "some":
+        bp_mean = "some_cap_bid_price_mean"
+    elif cap == "zero":
+        bp_mean = "zero_cap_bid_price_mean"
+    else:
+        raise ValueError(f"cap={cap!r} not in ['some', 'zero', None]")
+
     if not isinstance(by_carrier, str):
         raise NotImplementedError(
             "contrast.fig_bid_price_history requires looking at a single carrier (set `by_carrier`)"
@@ -582,13 +611,14 @@ def fig_bid_price_history(
         "bid_price_history",
         by_carrier=by_carrier,
         show_stdev=show_stdev,
+        cap=cap,
     )
     if raw_df:
         return df
 
     line_encoding = dict(
         x=alt.X("rrd:Q").scale(reverse=True).title("Days from Departure"),
-        y=alt.Y("bid_price_mean", title="Bid Price"),
+        y=alt.Y(bp_mean, title="Bid Price"),
         color="source:N",
     )
     chart = alt.Chart(df)
