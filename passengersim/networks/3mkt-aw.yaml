@@ -429,6 +429,7 @@ demands:
     reference_fare: 250.0
     choice_model: business
     curve: c1
+    distance: 864.0
   - orig: BOS
     dest: ORD
     segment: leisure
@@ -436,6 +437,7 @@ demands:
     reference_fare: 100.0
     choice_model: leisure
     curve: c2
+    distance: 864.0
   - orig: ORD
     dest: LAX
     segment: business
