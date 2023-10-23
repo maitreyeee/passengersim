@@ -9,6 +9,7 @@ class Demand(BaseModel, extra="forbid"):
     segment: str
     base_demand: float
     reference_fare: float
+    distance: float | None = 0.0
     choice_model: str | None = None
     """The name of the choice model that is applied for this demand."""
 
