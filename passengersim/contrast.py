@@ -15,7 +15,10 @@ class Contrast(dict):
     def apply(
         self, func: Callable, axis: int | Literal["index", "columns", "rows"] = 0
     ) -> pd.DataFrame | pd.Series:
-        data = {k: func(v) for k, v in self.items()}
+        data = {}
+        for k, v in self.items():
+            if v is not None:
+                data[k] = func(v)
         try:
             return pd.concat(data, axis=axis, names=["source"])
         except TypeError:
@@ -644,3 +647,50 @@ def fig_bid_price_history(
         bottom_line = bound_line.encode(y=alt.Y("bid_price_upper:Q", title="Bid Price"))
         fig = fig + bound + top_line + bottom_line
     return fig
+
+
+@report_figure
+def fig_demand_to_come(
+    summaries: Contrast,
+    func: Literal["mean", "std"] = "mean",
+    raw_df=False,
+):
+    def dtc_seg(s):
+        if s is None:
+            return pd.DataFrame(columns=["segment"])
+        sum_on = []
+        if "orig" in s.index.names:
+            sum_on.append("orig")
+        if "dest" in s.index.names:
+            sum_on.append("dest")
+        if sum_on:
+            s = s.groupby(s.index.names.difference(sum_on)).sum()
+        return s
+
+    if func == "mean":
+        y_title = "Mean Demand to Come"
+        demand_to_come_by_segment = summaries.apply(
+            lambda s: dtc_seg(s.demand_to_come).groupby("segment").mean().stack(),
+            axis=1,
+        )
+        df = demand_to_come_by_segment.stack().rename("dtc").reset_index()
+    elif func == "std":
+        y_title = "Std Dev Demand to Come"
+        demand_to_come_by_segment = summaries.apply(
+            lambda s: dtc_seg(s.demand_to_come).groupby("segment").std().stack(), axis=1
+        )
+        df = demand_to_come_by_segment.stack().rename("dtc").reset_index()
+    else:
+        raise ValueError(f"func must be in [mean, std] not {func}")
+    if raw_df:
+        return df
+    return (
+        alt.Chart(df)
+        .mark_line()
+        .encode(
+            x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+            y=alt.Y("dtc:Q").title(y_title),
+            color="segment:N",
+            strokeDash="source:N",
+        )
+    )  # .properties(width=500, height=400)
