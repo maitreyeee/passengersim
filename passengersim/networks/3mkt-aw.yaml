@@ -221,10 +221,10 @@ rm_systems:
           algorithm: exp_smoothing
           alpha: 0.15
           kind: path
-        - step_type: fareadjustment
-          name: adjust_fares
-          algorithm: mr
-          kind: path
+#        - step_type: fareadjustment
+#          name: adjust_fares
+#          algorithm: mr
+#          kind: path
         - step_type: probp
           name: optimization
       DAILY:
@@ -244,6 +244,31 @@ rm_systems:
           algorithm: exp_smoothing
           alpha: 0.15
           kind: hybrid
+        - step_type: aggregation
+          name: aggregate
+        - step_type: emsr
+          name: optimization
+          algorithm: emsrb
+          kind: leg
+
+  rm_fare_adj:
+    availability_control: leg
+    processes:
+      DCP:
+        - step_type: untruncation
+          name: untruncation
+          algorithm: em
+          kind: path
+        - step_type: forecast
+          name: path_forecast
+          algorithm: exp_smoothing
+          alpha: 0.15
+          kind: path
+        - step_type: fareadjustment
+          name: aggregate
+          algorithm: mr
+          kind: path
+          frat5: curve_C
         - step_type: aggregation
           name: aggregate
         - step_type: emsr
@@ -275,10 +300,10 @@ choice_models:
 
 airlines:
   - name: AL1
-    rm_system: rm_hybrid
+    rm_system: rm_test1
     frat5: curve_A
   - name: AL2
-    rm_system: rm_hybrid
+    rm_system: rm_fare_adj
     frat5: curve_C
 
 classes:
