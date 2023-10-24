@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pathlib
 import time
 from typing import Literal
@@ -11,6 +13,7 @@ class SnapshotInstruction:
         trigger: bool = False,
         filepath: pathlib.Path | None = None,
         why: str | None = None,
+        filter: SnapshotFilter | None = None,
     ):
         self.trigger = bool(trigger)
         """Has this snapshot been triggered."""
@@ -18,6 +21,8 @@ class SnapshotInstruction:
         """Explanation of why snapshot is (or is not) triggered."""
         self.filepath = filepath
         """Where to save snapshot content."""
+        self.filter = filter
+        """A reference to the filter that spawned this instruction."""
 
     def __bool__(self) -> bool:
         return self.trigger
@@ -29,11 +34,12 @@ class SnapshotInstruction:
                 f.write(self.why)
                 f.write("\n")
                 if isinstance(content, bytes):
-                    f.write(content.decode("utf-8"))
-                elif isinstance(content, str):
-                    f.write(content)
-                else:
-                    f.write(str(content))
+                    content = content.decode("utf-8")
+                elif not isinstance(content, str):
+                    content = str(content)
+                f.write(content)
+                if content[-1] != "\n":
+                    f.write("\n")
         else:
             print(self.why)
             print(content)
@@ -43,11 +49,12 @@ class SnapshotInstruction:
         if self.filepath:
             with self.filepath.open(mode="a") as f:
                 if isinstance(content, bytes):
-                    f.write(content.decode("utf-8"))
-                elif isinstance(content, str):
-                    f.write(content)
-                else:
-                    f.write(str(content))
+                    content = content.decode("utf-8")
+                elif not isinstance(content, str):
+                    content = str(content)
+                f.write(content)
+                if content[-1] != "\n":
+                    f.write("\n")
         else:
             print(content)
 
@@ -161,9 +168,9 @@ class SnapshotFilter(BaseModel, validate_assignment=True):
         self._last_run_info = info
 
         if self.type in ["leg_untruncation", "path_untruncation"]:
-            return SnapshotInstruction(True, snapshot_file, why=title)
+            return SnapshotInstruction(True, snapshot_file, why=title, filter=self)
         elif self.type == "forecast":
-            return SnapshotInstruction(True, snapshot_file, why=title)
+            return SnapshotInstruction(True, snapshot_file, why=title, filter=self)
         elif self.type == "rm":
             bucket_detail = leg.print_bucket_detail()
             snapshot_file = self.filepath(sim, leg, path)
@@ -173,8 +180,8 @@ class SnapshotFilter(BaseModel, validate_assignment=True):
                     f.write(bucket_detail)
             else:
                 print(bucket_detail)
-            return SnapshotInstruction(True, snapshot_file, why=title)
+            return SnapshotInstruction(True, snapshot_file, why=title, filter=self)
         elif self.type == "pro_bp":
-            return SnapshotInstruction(True, snapshot_file, why=title)
+            return SnapshotInstruction(True, snapshot_file, why=title, filter=self)
 
         return SnapshotInstruction(False, why="cause unknown")
