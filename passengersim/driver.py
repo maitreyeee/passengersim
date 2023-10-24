@@ -132,6 +132,8 @@ class Simulation:
                 pass
             elif pname == "tot_z_factor":
                 pass
+            elif pname == "simple_k_factor":
+                pass
             else:
                 self.sim.set_parm(pname, float(pvalue))
         for pname, pvalue in config.simulation_controls.model_extra.items():
@@ -550,14 +552,23 @@ class Simulation:
             base = dmd.base_demand
 
             # Get the random numbers we're going to use to perturb demand
-            trn = get_or_make_random(trn_ref, dmd.segment)
+            trn = get_or_make_random(trn_ref, (dmd.orig, dmd.dest, dmd.segment))
             mrn = get_or_make_random(mrn_ref, (dmd.orig, dmd.dest))
+            if self.sim.config.simulation_controls.simple_k_factor:
+                urn = (
+                    self.random_generator.get_normal()
+                    * self.sim.config.simulation_controls.simple_k_factor
+                )
+            else:
+                urn = 0
 
+            # scale = (1.0 + system_rn + mrn + trn)
             mu = base * (
                 1.0
                 + system_rn * self.sim.sys_k_factor
                 + mrn * self.sim.mkt_k_factor
                 + trn * self.sim.pax_type_k_factor
+                + urn
             )
             mu = max(mu, 0.0)
             sigma = sqrt(

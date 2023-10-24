@@ -78,12 +78,22 @@ class SimulationSettings(PrettyModel, extra="allow", validate_assignment=True):
     for more details.
     """
 
-    pax_type_k_factor: confloat(ge=0, le=5.0) = 0.40
+    pax_type_k_factor: confloat(ge=0, le=5.0) = 0.0
     """
     Passenger-type randomness factor.
 
     This factor controls the level of correlation in demand levels across passenger
     types.
+
+    See [k-factors][demand-generation-k-factors]
+    for more details.
+    """
+
+    simple_k_factor: confloat(ge=0, le=5.0) = 0.40
+    """
+    Passenger-type randomness factor.
+
+    This factor add uncorrelated variance to every demand.
 
     See [k-factors][demand-generation-k-factors]
     for more details.
