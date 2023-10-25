@@ -266,7 +266,7 @@ rm_systems:
           kind: path
         - step_type: fareadjustment
           name: aggregate
-          algorithm: ki
+          algorithm: mr
           kind: path
           frat5: curve_C
         - step_type: aggregation
