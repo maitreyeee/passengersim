@@ -32,6 +32,11 @@ class Contrast(dict):
                 # return lambda *a, **k: g[attr](self, *a, **k)
         raise AttributeError(attr)
 
+    def __dir__(self):
+        x = set(super().__dir__())
+        x |= {g for g in globals() if g.startswith("fig_")}
+        return sorted(x)
+
 
 def _assemble(summaries, base, **kwargs):
     summaries_ = {}
@@ -456,11 +461,19 @@ def fig_leg_forecasts(
         if raw_df:
             raise NotImplementedError
         fig = fig_leg_forecasts(
-            summaries, by_flt_no=by_flt_no, by_class=by_class, of=of[0]
+            summaries,
+            by_flt_no=by_flt_no,
+            by_class=by_class,
+            of=of[0],
+            agg_booking_classes=agg_booking_classes,
         )
         for of_ in of[1:]:
             fig |= fig_leg_forecasts(
-                summaries, by_flt_no=by_flt_no, by_class=by_class, of=of_
+                summaries,
+                by_flt_no=by_flt_no,
+                by_class=by_class,
+                of=of_,
+                agg_booking_classes=agg_booking_classes,
             )
         return fig
     df = _assemble(
