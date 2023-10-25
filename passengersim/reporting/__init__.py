@@ -1,3 +1,5 @@
+from functools import wraps
+
 import pandas as pd
 
 try:
@@ -22,6 +24,7 @@ if xmle is not None and UndefinedType is not None:
 
 
 def report_figure(func):
+    @wraps(func)
     def report_figure_wrapper(*args, report=None, trace=None, **kwargs):
         fig = func(*args, **kwargs)
         if report is not None:

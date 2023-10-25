@@ -22,14 +22,14 @@ class SimulationSettings(PrettyModel, extra="allow", validate_assignment=True):
     See [Counting Simulations][counting-simulations] for more details.
     """
 
-    num_samples: conint(ge=1, le=1000) = 600
+    num_samples: conint(ge=1, le=10000) = 600
     """The number of samples to run within each trial.
 
     Each sample represents one "typical" day of travel.
     See [Counting Simulations][counting-simulations] for more details.
     """
 
-    burn_samples: conint(ge=1, le=1000) = 100
+    burn_samples: conint(ge=1, le=10000) = 100
     """The number of samples to burn when starting each trial.
 
     Burned samples are used to populate a stable history of data to support
@@ -56,7 +56,7 @@ class SimulationSettings(PrettyModel, extra="allow", validate_assignment=True):
             raise ValueError("doubled capacity will pollute results")
         return v
 
-    sys_k_factor: confloat(gt=0, lt=5.0) = 0.10
+    sys_k_factor: confloat(ge=0, le=5.0) = 0.10
     """
     System-level randomness factor.
 
@@ -67,7 +67,7 @@ class SimulationSettings(PrettyModel, extra="allow", validate_assignment=True):
     for more details.
     """
 
-    mkt_k_factor: confloat(gt=0, lt=5.0) = 0.20
+    mkt_k_factor: confloat(ge=0, le=5.0) = 0.20
     """
     Market-level randomness factor.
 
@@ -78,7 +78,7 @@ class SimulationSettings(PrettyModel, extra="allow", validate_assignment=True):
     for more details.
     """
 
-    pax_type_k_factor: confloat(gt=0, lt=5.0) = 0.40
+    pax_type_k_factor: confloat(ge=0, le=5.0) = 0.0
     """
     Passenger-type randomness factor.
 
@@ -89,7 +89,17 @@ class SimulationSettings(PrettyModel, extra="allow", validate_assignment=True):
     for more details.
     """
 
-    tf_k_factor: confloat(gt=0) = 0.1
+    simple_k_factor: confloat(ge=0, le=5.0) = 0.40
+    """
+    Passenger-type randomness factor.
+
+    This factor add uncorrelated variance to every demand.
+
+    See [k-factors][demand-generation-k-factors]
+    for more details.
+    """
+
+    tf_k_factor: confloat(ge=0) = 0.1
     """
     Time frame randomness factor.
 
@@ -97,9 +107,22 @@ class SimulationSettings(PrettyModel, extra="allow", validate_assignment=True):
     identified level of total demand. See [k-factors]() for more details.
     """
 
-    z_factor: confloat(gt=0, lt=100.0) = 2.0
+    tot_z_factor: confloat(ge=0, le=100.0) = 2.0
     """
     Base level demand variance control.
+
+    This factor scales the variance in the amount of total demand for any given
+    market segment.
+
+    See [k-factors][demand-generation-k-factors] for more details.
+    """
+
+    tf_z_factor: confloat(ge=0, le=100.0) = 2.0
+    """
+    Timeframe demand variance control.
+
+    This factor scales the variance in the allocation of total demand to the
+    various arrival timeframes.
 
     See [k-factors][demand-generation-k-factors] for more details.
     """

@@ -130,6 +130,10 @@ class Simulation:
                 pass
             elif pname == "timeframe_demand_allocation":
                 pass
+            elif pname == "tot_z_factor":
+                pass
+            elif pname == "simple_k_factor":
+                pass
             else:
                 self.sim.set_parm(pname, float(pvalue))
         for pname, pvalue in config.simulation_controls.model_extra.items():
@@ -548,17 +552,27 @@ class Simulation:
             base = dmd.base_demand
 
             # Get the random numbers we're going to use to perturb demand
-            trn = get_or_make_random(trn_ref, dmd.segment)
+            trn = get_or_make_random(trn_ref, (dmd.orig, dmd.dest, dmd.segment))
             mrn = get_or_make_random(mrn_ref, (dmd.orig, dmd.dest))
+            if self.sim.config.simulation_controls.simple_k_factor:
+                urn = (
+                    self.random_generator.get_normal()
+                    * self.sim.config.simulation_controls.simple_k_factor
+                )
+            else:
+                urn = 0
 
             mu = base * (
                 1.0
                 + system_rn * self.sim.sys_k_factor
                 + mrn * self.sim.mkt_k_factor
                 + trn * self.sim.pax_type_k_factor
+                + urn
             )
             mu = max(mu, 0.0)
-            sigma = sqrt(mu * self.sim.z_factor)  # Correct?
+            sigma = sqrt(
+                mu * self.sim.config.simulation_controls.tot_z_factor
+            )  # Correct?
             n = mu + sigma * self.random_generator.get_normal()
             dmd.scenario_demand = max(n, 0)
 
@@ -574,13 +588,14 @@ class Simulation:
                 self.sim.config.simulation_controls.timeframe_demand_allocation
                 == "pods"
             ):
-                num_events = self.sim.allocate_demand_to_tf_pods(
+                num_events_by_tf = self.sim.allocate_demand_to_tf_pods(
                     dmd, num_pax, self.sim.tf_k_factor, int(end_time)
                 )
             else:
-                num_events = self.sim.allocate_demand_to_tf(
+                num_events_by_tf = self.sim.allocate_demand_to_tf(
                     dmd, num_pax, self.sim.tf_k_factor, int(end_time)
                 )
+            num_events = sum(num_events_by_tf)
             total_events += num_events
             if num_events != round(num_pax):
                 # print(f"Generate demand function, num_pax={num_pax}, num_events={num_events}")
@@ -728,7 +743,7 @@ class Simulation:
         return dmd_df
 
     def compute_fare_report(
-            self, sim: SimulationEngine, to_log=True, to_db: database.Database | None = None
+        self, sim: SimulationEngine, to_log=True, to_db: database.Database | None = None
     ):
         fare_df = []
         for f in sim.fares:
@@ -743,19 +758,19 @@ class Simulation:
                         price=f.price,
                         sold=f.sold,
                         gt_sold=f.gt_sold,
-                        avg_adjusted_price=f.get_adjusted_by_dcp(dcp_index)
+                        avg_adjusted_price=f.get_adjusted_by_dcp(dcp_index),
                     )
                 )
                 if to_log:
                     logger.info(
                         f"   Fare: {f.carrier} {f.orig}-{f.dest}:{f.booking_class}"
-                        f"AvgAdjFare = {avg_adj_price:.2f},"
+                        # f"AvgAdjFare = {avg_adj_price:.2f},"
                         f"  Sold = {f.sold},  "
                         f"Price = {f.price}"
                     )
         fare_df = pd.DataFrame(fare_df)
-#        if to_db and to_db.is_open:
-#            to_db.save_dataframe("fare_summary", fare_df)
+        #        if to_db and to_db.is_open:
+        #            to_db.save_dataframe("fare_summary", fare_df)
         return fare_df
 
     def compute_leg_report(
@@ -851,31 +866,33 @@ class Simulation:
         return path_df
 
     def compute_path_class_report(
-            self, sim: SimulationEngine, to_log=True, to_db: database.Database | None = None
+        self, sim: SimulationEngine, to_log=True, to_db: database.Database | None = None
     ):
         num_samples = sim.num_trials * (sim.num_samples - sim.burn_samples)
-        avg_lf, n = 0.0, 0
-#        for leg in sim.legs:
-#            lf = 100.0 * leg.gt_sold / (leg.capacity * num_samples)
-#            avg_lf += lf
-#            n += 1
+        # avg_lf, n = 0.0, 0
+        #        for leg in sim.legs:
+        #            lf = 100.0 * leg.gt_sold / (leg.capacity * num_samples)
+        #            avg_lf += lf
+        #            n += 1
 
-#        tot_rev = 0.0
-#        for m in sim.demands:
-#            tot_rev += m.revenue
+        #        tot_rev = 0.0
+        #        for m in sim.demands:
+        #            tot_rev += m.revenue
 
-#        avg_lf = avg_lf / n if n > 0 else 0
-#        if to_log:
-#            logger.info(f"    LF:  {avg_lf:6.2f}%, Total revenue = ${tot_rev:,.2f}")
+        #        avg_lf = avg_lf / n if n > 0 else 0
+        #        if to_log:
+        #            logger.info(f"    LF:  {avg_lf:6.2f}%, Total revenue = ${tot_rev:,.2f}")
 
         path_class_df = []
         for path in sim.paths:
             for pc in path.pathclasses:
-                avg_sold =  pc.gt_sold / num_samples
+                avg_sold = pc.gt_sold / num_samples
                 avg_sold_priceable = pc.gt_sold_priceable / num_samples
                 avg_rev = pc.gt_revenue / num_samples
                 if to_log:
-                    logger.info(f"{pc}, avg_sold={avg_sold:6.2f}, avg_rev=${avg_rev:10,.2f}")
+                    logger.info(
+                        f"{pc}, avg_sold={avg_sold:6.2f}, avg_rev=${avg_rev:10,.2f}"
+                    )
                 if path.num_legs() == 1:
                     path_class_df.append(
                         dict(
@@ -909,9 +926,11 @@ class Simulation:
                 else:
                     raise NotImplementedError("path with other than 1 or 2 legs")
         path_class_df = pd.DataFrame(path_class_df)
-        path_class_df.sort_values(by=["orig", "dest", "carrier1", "flt_no1", "booking_class"])
-#        if to_db and to_db.is_open:
-#            to_db.save_dataframe("path_class_summary", path_class_df)
+        path_class_df.sort_values(
+            by=["orig", "dest", "carrier1", "flt_no1", "booking_class"]
+        )
+        #        if to_db and to_db.is_open:
+        #            to_db.save_dataframe("path_class_summary", path_class_df)
         return path_class_df
 
     def compute_carrier_report(
