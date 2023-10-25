@@ -10,12 +10,12 @@ class OutputConfig(PrettyModel, extra="forbid", validate_assignment=True):
     excel: pathlib.Path | None = None
     """Write excel outputs to this file after a run."""
 
-    reports: list[str | tuple[str, ...]] = [
+    reports: set[str | tuple[str, ...]] = {
         "fare_class_mix",
         "load_factors",
         "bookings_by_timeframe",
         "total_demand",
-    ]
+    }
     """Reports to include."""
 
     # TODO what reports require what database items?
