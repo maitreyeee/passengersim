@@ -266,7 +266,7 @@ rm_systems:
           kind: path
         - step_type: fareadjustment
           name: aggregate
-          algorithm: mr
+          algorithm: ki
           kind: path
           frat5: curve_C
         - step_type: aggregation
@@ -304,7 +304,7 @@ airlines:
     frat5: curve_A
   - name: AL2
     rm_system: rm_fare_adj
-    frat5: curve_C
+    frat5: curve_G
 
 classes:
   - Y0

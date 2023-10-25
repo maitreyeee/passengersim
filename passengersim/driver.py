@@ -679,6 +679,7 @@ class Simulation:
         if to_db is True:
             to_db = self.cnx
         dmd_df = self.compute_demand_report(sim, to_log, to_db)
+        fare_df = self.compute_fare_report(sim, to_log, to_db)
         leg_df = self.compute_leg_report(sim, to_log, to_db)
         path_df = self.compute_path_report(sim, to_log, to_db)
         path_classes_df = self.compute_path_class_report(sim, to_log, to_db)
@@ -686,6 +687,7 @@ class Simulation:
 
         summary = SummaryTables(
             demands=dmd_df,
+            fares=fare_df,
             legs=leg_df,
             paths=path_df,
             path_classes=path_classes_df,
@@ -724,6 +726,37 @@ class Simulation:
         if to_db and to_db.is_open:
             to_db.save_dataframe("demand_summary", dmd_df)
         return dmd_df
+
+    def compute_fare_report(
+            self, sim: SimulationEngine, to_log=True, to_db: database.Database | None = None
+    ):
+        fare_df = []
+        for f in sim.fares:
+            for dcp_index in range(16):
+                fare_df.append(
+                    dict(
+                        carrier=f.carrier,
+                        orig=f.orig,
+                        dest=f.dest,
+                        booking_class=f.booking_class,
+                        dcp_index=dcp_index,
+                        price=f.price,
+                        sold=f.sold,
+                        gt_sold=f.gt_sold,
+                        avg_adjusted_price=f.get_adjusted_by_dcp(dcp_index)
+                    )
+                )
+                if to_log:
+                    logger.info(
+                        f"   Fare: {f.carrier} {f.orig}-{f.dest}:{f.booking_class}"
+                        f"AvgAdjFare = {avg_adj_price:.2f},"
+                        f"  Sold = {f.sold},  "
+                        f"Price = {f.price}"
+                    )
+        fare_df = pd.DataFrame(fare_df)
+#        if to_db and to_db.is_open:
+#            to_db.save_dataframe("fare_summary", fare_df)
+        return fare_df
 
     def compute_leg_report(
         self, sim: SimulationEngine, to_log=True, to_db: database.Database | None = None

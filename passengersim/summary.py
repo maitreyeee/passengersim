@@ -138,6 +138,7 @@ class SummaryTables:
     def __init__(
         self,
         demands: pd.DataFrame | None = None,
+        fares: pd.DataFrame | None = None,
         legs: pd.DataFrame | None = None,
         paths: pd.DataFrame | None = None,
         path_classes: pd.DataFrame | None = None,
@@ -151,6 +152,7 @@ class SummaryTables:
         path_forecasts: pd.DataFrame | None = None,
     ):
         self.demands = demands
+        self.fares = fares
         self.legs = legs
         self.paths = paths
         self.path_classes = path_classes
