@@ -83,15 +83,16 @@ nav:
     - Tutorials/demo-3mkt.nbconvert.ipynb
     - Tutorials/demo-3mkt-db.nbconvert.ipynb
     - 3MKT:
-        - Tutorials/verification/3mkt-01.nbconvert.ipynb
-        - Tutorials/verification/3mkt-02.nbconvert.ipynb
-        - Tutorials/verification/3mkt-03.nbconvert.ipynb
-        - Tutorials/verification/3mkt-04.nbconvert.ipynb
-        - Tutorials/verification/3mkt-05.nbconvert.ipynb
-        - Tutorials/verification/3mkt-06.nbconvert.ipynb
-        - Tutorials/verification/3mkt-07.nbconvert.ipynb
-        - Tutorials/verification/3mkt-08.nbconvert.ipynb
-        - Tutorials/verification/3mkt-09.nbconvert.ipynb
+        - Tutorials/3MKT/3mkt-01.nbconvert.ipynb
+        - Tutorials/3MKT/3mkt-02.nbconvert.ipynb
+        - Tutorials/3MKT/3mkt-03.nbconvert.ipynb
+        - Tutorials/3MKT/3mkt-04.nbconvert.ipynb
+        - Tutorials/3MKT/3mkt-05.nbconvert.ipynb
+        - Tutorials/3MKT/3mkt-06.nbconvert.ipynb
+        - Tutorials/3MKT/3mkt-07.nbconvert.ipynb
+        - Tutorials/3MKT/3mkt-08.nbconvert.ipynb
+        - Tutorials/3MKT/3mkt-09.nbconvert.ipynb
+        - Tutorials/3MKT/3mkt-10.nbconvert.ipynb
   - API:
     - API/index.md
     - Config:
