@@ -23,16 +23,20 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
+#          import:
+#            - https://docs.python-requests.org/en/master/objects.inv
           options:
             show_source: true
             separate_signature: true
             show_signature_annotations: true
-            signature_crossrefs: false
+            signature_crossrefs: true
             docstring_style: numpy
             allow_inspection: false
             docstring_section_style: list
             show_if_no_docstring: true
             load_external_modules: false
+            preload_modules:
+              - passengersim_core
   - search
   - exclude-search:
       exclude:
@@ -75,7 +79,10 @@ nav:
   - User Guide:
     - Installation: 'user-guide/installation.md'
     - How it Works: user-guide/how-it-works.md
-    - RM Systems: user-guide/rm-systems.md
+    - RM Systems:
+      - user-guide/rm-systems/index.md
+      - user-guide/rm-systems/untruncation.md
+      - user-guide/rm-systems/forecast.md
     - Writing Configs: user-guide/writing-configs.md
   - Tutorials:
     - Tutorials/index.md

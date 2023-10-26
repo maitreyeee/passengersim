@@ -119,20 +119,28 @@ Am I able to add links (behind a password) to course notes/reference where they 
 ## Forecast
 
 ```{yaml}
-- step_type: forecast
-  name: path_forecast
-  algorithm: exp_smoothing, additive_pickup
-  alpha: 0.15
-  kind: leg, path
+- step_type: 'forecast'
+  algorithm: { additive_pickup, exp_smoothing }
+  alpha: float
+  kind: { leg, path, hybrid }
 ```
 
 There are two forecasting algorithms: exponential smoothing (that uses a smoothing
-or alpha parameter) and additive_pickup model.  The exponential smoothing model
-does not (currently) incorporate trend or seasonality.  The additive_pickup model
-is based on information from departed flights only and does not use the alpha
-parameter. The forecasting step can be performed at the leg or path level.
-However, if the forecast is at the leg level then detruncation can only be done
-at the leg level (will this generate an error?)
+or alpha parameter) and additive pickup model.  The exponential smoothing model
+does not (currently) incorporate trend or seasonality.
+
+The additive pickup model generates a forecast by considering the "pickup", or the
+number of new sales in a booking class, in each time period (DCP).  This model is additive
+in that the forecast of demand yet to come at given time is computed as the sum
+of forecast pickups in all future time periods.  This forecasting model does not
+consider the level of demand already accumulated, only the demand expected in the
+future.  The forecast is made considering the results from the prior 26 sample days.
+The additive pickup model ignores the value of the alpha parameter, and it should be
+omitted when using this algorithm.
+
+Either forecast algorithm can be performed based on data collected at either the
+leg or path level. However, if the forecast is at the leg level then detruncation
+must also have been performed at the same level.
 
 ## EMSR Optimization
 
