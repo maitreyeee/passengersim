@@ -243,6 +243,7 @@ rm_systems:
           name: hybrid_forecast
           algorithm: exp_smoothing
           alpha: 0.15
+          max_cap: 10.0
           kind: hybrid
         - step_type: aggregation
           name: aggregate
