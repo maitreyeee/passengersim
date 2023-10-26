@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pathlib
 import time
 from typing import Literal
@@ -11,6 +13,7 @@ class SnapshotInstruction:
         trigger: bool = False,
         filepath: pathlib.Path | None = None,
         why: str | None = None,
+        filter: SnapshotFilter | None = None,
     ):
         self.trigger = bool(trigger)
         """Has this snapshot been triggered."""
@@ -18,6 +21,8 @@ class SnapshotInstruction:
         """Explanation of why snapshot is (or is not) triggered."""
         self.filepath = filepath
         """Where to save snapshot content."""
+        self.filter = filter
+        """A reference to the filter that spawned this instruction."""
 
     def __bool__(self) -> bool:
         return self.trigger
@@ -29,13 +34,28 @@ class SnapshotInstruction:
                 f.write(self.why)
                 f.write("\n")
                 if isinstance(content, bytes):
-                    f.write(content.decode("utf-8"))
-                elif isinstance(content, str):
-                    f.write(content)
-                else:
-                    f.write(str(content))
+                    content = content.decode("utf-8")
+                elif not isinstance(content, str):
+                    content = str(content)
+                f.write(content)
+                if content[-1] != "\n":
+                    f.write("\n")
         else:
             print(self.why)
+            print(content)
+
+    def write_more(self, content: str = ""):
+        """Write additional snapshot content to a file, or just print it"""
+        if self.filepath:
+            with self.filepath.open(mode="a") as f:
+                if isinstance(content, bytes):
+                    content = content.decode("utf-8")
+                elif not isinstance(content, str):
+                    content = str(content)
+                f.write(content)
+                if content[-1] != "\n":
+                    f.write("\n")
+        else:
             print(content)
 
 
@@ -45,6 +65,7 @@ class SnapshotFilter(BaseModel, validate_assignment=True):
     ] = None
     title: str = ""
     airline: str = ""
+    trial: list[int] = []
     sample: list[int] = []
     dcp: list[int] = []
     orig: list[str] = []
@@ -53,7 +74,7 @@ class SnapshotFilter(BaseModel, validate_assignment=True):
     logger: str | None = None
     directory: pathlib.Path | None = None
 
-    @field_validator("sample", "dcp", "orig", "dest", "flt_no", mode="before")
+    @field_validator("trial", "sample", "dcp", "orig", "dest", "flt_no", mode="before")
     def _allow_singletons(cls, v):
         """Allow a singleton value that is converted to a list of one item."""
         if not isinstance(v, list | tuple):
@@ -79,6 +100,8 @@ class SnapshotFilter(BaseModel, validate_assignment=True):
             pth = pth.joinpath(f"fltno-{leg.flt_no}")
         elif path is not None:
             pth = pth.joinpath(f"fltno-{path.get_leg_fltno(0)}")
+        if sim.num_trials > 1:
+            pth = pth.joinpath(f"trial-{sim.trial}")
         pth = pth.joinpath(f"sample-{sim.sample}")
         pth.parent.mkdir(parents=True, exist_ok=True)
         return pth.with_suffix(".log")
@@ -88,6 +111,11 @@ class SnapshotFilter(BaseModel, validate_assignment=True):
     ) -> SnapshotInstruction:
         # Check the filter conditions
         info = ""
+
+        if len(self.trial) > 0 and sim.trial not in self.trial and sim.num_trials > 1:
+            return SnapshotInstruction(False, why=f"cause {sim.trial=}")
+        info += f"  trial={sim.trial}"
+
         if len(self.sample) > 0 and sim.sample not in self.sample:
             return SnapshotInstruction(False, why=f"cause {sim.sample=}")
         info += f"  sample={sim.sample}"
@@ -140,19 +168,20 @@ class SnapshotFilter(BaseModel, validate_assignment=True):
         self._last_run_info = info
 
         if self.type in ["leg_untruncation", "path_untruncation"]:
-            return SnapshotInstruction(True, snapshot_file, why=title)
+            return SnapshotInstruction(True, snapshot_file, why=title, filter=self)
         elif self.type == "forecast":
-            return SnapshotInstruction(True, snapshot_file, why=title)
+            return SnapshotInstruction(True, snapshot_file, why=title, filter=self)
         elif self.type == "rm":
             bucket_detail = leg.print_bucket_detail()
             snapshot_file = self.filepath(sim, leg, path)
             if snapshot_file:
                 with snapshot_file.open(mode="a") as f:
+                    f.write(title)
                     f.write(bucket_detail)
             else:
                 print(bucket_detail)
-            return SnapshotInstruction(True, snapshot_file, why=title)
+            return SnapshotInstruction(True, snapshot_file, why=title, filter=self)
         elif self.type == "pro_bp":
-            return SnapshotInstruction(True, snapshot_file, why=title)
+            return SnapshotInstruction(True, snapshot_file, why=title, filter=self)
 
         return SnapshotInstruction(False, why="cause unknown")

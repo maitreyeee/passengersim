@@ -71,6 +71,11 @@ class YamlConfig(PrettyModel):
             filenames = [filenames]
         raw_config = addicty.Dict()
         for filename in filenames:
+            if isinstance(filename, str) and "\n" in filename:
+                # explicit YAML content cannot have include statements
+                content = addicty.Dict.load(filename, freeze=False)
+                raw_config.update(content)
+                continue
             filename = pathlib.Path(filename)
             if filename.suffix in (".pem", ".crt", ".cert"):
                 # license certificate

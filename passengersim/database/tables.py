@@ -112,6 +112,8 @@ def create_table_leg_bucket_detail(cnx: Database, primary_key: bool = False):
         untruncated_demand     FLOAT,
         forecast_mean   FLOAT,
         forecast_stdev  FLOAT,
+        forecast_closed_in_tf FLOAT,
+        forecast_closed_in_future FLOAT,
         updated_at		DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         {primary_key}
     );
@@ -248,6 +250,8 @@ def create_table_path_class_detail(cnx: Database, primary_key: bool = False):
         sold			INT,
         forecast_mean   FLOAT,
         forecast_stdev  FLOAT,
+        forecast_closed_in_tf FLOAT,
+        forecast_closed_in_future FLOAT,
         updated_at		DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         {primary_key}
     );

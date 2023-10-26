@@ -1,3 +1,6 @@
+import warnings
+from collections.abc import Callable
+from functools import partial
 from typing import Literal
 
 import altair as alt
@@ -8,15 +11,54 @@ from .reporting import report_figure
 from .summary import SummaryTables
 
 
+class Contrast(dict):
+    def apply(
+        self, func: Callable, axis: int | Literal["index", "columns", "rows"] = 0
+    ) -> pd.DataFrame | pd.Series:
+        data = {}
+        for k, v in self.items():
+            if v is not None:
+                data[k] = func(v)
+        try:
+            return pd.concat(data, axis=axis, names=["source"])
+        except TypeError:
+            return pd.Series(data).rename_axis(index="source")
+
+    def __getattr__(self, attr):
+        if attr.startswith("fig_"):
+            g = globals()
+            if attr in g:
+                return partial(g[attr], self)
+                # return lambda *a, **k: g[attr](self, *a, **k)
+        raise AttributeError(attr)
+
+    def __dir__(self):
+        x = set(super().__dir__())
+        x |= {g for g in globals() if g.startswith("fig_")}
+        return sorted(x)
+
+
 def _assemble(summaries, base, **kwargs):
     summaries_ = {}
+    last_exception = RuntimeError("no summaries loaded")
     for k, v in summaries.items():
         if (fun := getattr(v, f"fig_{base}", None)) is not None:
-            summaries_[k] = fun(raw_df=True, **kwargs)
+            try:
+                summaries_[k] = fun(raw_df=True, **kwargs)
+            except Exception as err:
+                last_exception = err
+                warnings.warn(f"error in getting data from {k!r}: {err}", stacklevel=3)
         elif (raw := getattr(v, f"raw_{base}", None)) is not None:
-            summaries_[k] = raw
+            try:
+                summaries_[k] = raw
+            except Exception as err:
+                last_exception = err
+                warnings.warn(f"error in getting data from {k!r}: {err}", stacklevel=3)
         elif isinstance(v, pd.DataFrame | pd.Series):
             summaries_[k] = v
+    if len(summaries_) == 0:
+        # no data recovered, re-raise last exception
+        raise last_exception
     return pd.concat(summaries_, names=["source"]).reset_index(level="source")
 
 
@@ -374,32 +416,31 @@ def fig_fare_class_mix(summaries, raw_df=False, label_threshold=0.06):
     )
 
 
-def _fig_forecasts(df, facet_on=None, y="forecast_mean", y_title="Avg Demand Forecast"):
+def _fig_forecasts(
+    df,
+    facet_on=None,
+    y="forecast_mean",
+    y_title="Avg Demand Forecast",
+    color="booking_class:N",
+):
     import altair as alt
 
+    encoding = dict(
+        x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+        y=alt.Y(f"{y}:Q", title=y_title),
+        color="booking_class:N",
+        strokeDash=alt.StrokeDash("source:N", title="Source"),
+        strokeWidth=alt.StrokeWidth("source:N", title="Source"),
+    )
+    if color:
+        encoding["color"] = color
     if not facet_on:
-        return (
-            alt.Chart(df)
-            .mark_line()
-            .encode(
-                x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
-                y=alt.Y(f"{y}:Q", title=y_title),
-                color="booking_class:N",
-                strokeDash=alt.StrokeDash("source:N", title="Source"),
-                strokeWidth=alt.StrokeWidth("source:N", title="Source"),
-            )
-        )
+        return alt.Chart(df).mark_line().encode(**encoding)
     else:
         return (
             alt.Chart(df)
             .mark_line()
-            .encode(
-                x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
-                y=alt.Y(f"{y}:Q", title=y_title),
-                color="booking_class:N",
-                strokeDash=alt.StrokeDash("source:N", title="Source"),
-                strokeWidth=alt.Size("source:N", title="Source"),
-            )
+            .encode(**encoding)
             .facet(
                 facet=f"{facet_on}:N",
                 columns=3,
@@ -412,18 +453,37 @@ def fig_leg_forecasts(
     summaries,
     raw_df=False,
     by_flt_no=None,
+    by_class: bool | str = True,
     of: Literal["mu", "sigma"] | list[Literal["mu", "sigma"]] = "mu",
     agg_booking_classes: bool = False,
 ):
     if isinstance(of, list):
         if raw_df:
             raise NotImplementedError
-        fig = fig_leg_forecasts(summaries, by_flt_no=by_flt_no, of=of[0])
+        fig = fig_leg_forecasts(
+            summaries,
+            by_flt_no=by_flt_no,
+            by_class=by_class,
+            of=of[0],
+            agg_booking_classes=agg_booking_classes,
+        )
         for of_ in of[1:]:
-            fig |= fig_leg_forecasts(summaries, by_flt_no=by_flt_no, of=of_)
+            fig |= fig_leg_forecasts(
+                summaries,
+                by_flt_no=by_flt_no,
+                by_class=by_class,
+                of=of_,
+                agg_booking_classes=agg_booking_classes,
+            )
         return fig
-    df = _assemble(summaries, "leg_forecasts", by_flt_no=by_flt_no, of=of)
-    if agg_booking_classes:
+    df = _assemble(
+        summaries, "leg_forecasts", by_flt_no=by_flt_no, by_class=by_class, of=of
+    )
+    color = "booking_class:N"
+    if isinstance(by_class, str):
+        color = "source:N"
+    if agg_booking_classes or not by_class:
+        color = "source:N"
         if of == "mu":
             df = (
                 df.groupby(["source", "flt_no", "rrd"])
@@ -448,38 +508,8 @@ def fig_leg_forecasts(
         facet_on="flt_no" if not isinstance(by_flt_no, int) else None,
         y="forecast_mean" if of == "mu" else "forecast_stdev",
         y_title="Mean Demand Forecast" if of == "mu" else "Std Dev Demand Forecast",
+        color=color,
     )
-
-    # import altair as alt
-    #
-    # if isinstance(by_flt_no, int):
-    #     return (
-    #         alt.Chart(df)
-    #         .mark_line()
-    #         .encode(
-    #             x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
-    #             y=alt.Y("forecast_mean:Q", title="Avg Demand Forecast"),
-    #             color="booking_class:N",
-    #             strokeDash=alt.StrokeDash("source:N", title="Source"),
-    #             strokeWidth=alt.StrokeWidth("source:N", title="Source"),
-    #         )
-    #     )
-    # else:
-    #     return (
-    #         alt.Chart(df)
-    #         .mark_line()
-    #         .encode(
-    #             x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
-    #             y=alt.Y("forecast_mean:Q", title="Avg Demand Forecast"),
-    #             color="booking_class:N",
-    #             strokeDash=alt.StrokeDash("source:N", title="Source"),
-    #             strokeWidth=alt.Size("source:N", title="Source"),
-    #         )
-    #         .facet(
-    #             facet="flt_no:N",
-    #             columns=3,
-    #         )
-    #     )
 
 
 @report_figure
@@ -489,12 +519,37 @@ def fig_path_forecasts(
     by_path_id=None,
     path_names: dict | None = None,
     agg_booking_classes: bool = False,
-    of: Literal["mu", "sigma"] = "mu",
+    by_class: bool | str = True,
+    of: Literal["mu", "sigma", "closed"] = "mu",
 ):
-    df = _assemble(summaries, "path_forecasts", by_path_id=by_path_id, of=of)
+    if isinstance(of, list):
+        if raw_df:
+            raise NotImplementedError
+        fig = fig_path_forecasts(
+            summaries,
+            by_path_id=by_path_id,
+            path_names=path_names,
+            by_class=by_class,
+            of=of[0],
+        )
+        for of_ in of[1:]:
+            fig |= fig_path_forecasts(
+                summaries,
+                by_path_id=by_path_id,
+                path_names=path_names,
+                by_class=by_class,
+                of=of_,
+            )
+        return fig
+    df = _assemble(
+        summaries, "path_forecasts", by_path_id=by_path_id, of=of, by_class=by_class
+    )
     list(summaries.keys())
     if path_names is not None:
         df["path_id"] = df["path_id"].apply(lambda x: path_names.get(x, str(x)))
+    color = "booking_class:N"
+    if isinstance(by_class, str):
+        color = "source:N"
     if agg_booking_classes:
         if of == "mu":
             df = (
@@ -512,15 +567,143 @@ def fig_path_forecasts(
                 .forecast_stdev.apply(sum_sigma)
                 .reset_index()
             )
+        elif of == "closed":
+            df = (
+                df.groupby(["source", "path_id", "rrd"])
+                .forecast_closed_in_tf.mean()
+                .reset_index()
+            )
     if raw_df:
         if of == "mu":
             df.attrs["title"] = "Average Path Forecast Means"
         elif of == "sigma":
             df.attrs["title"] = "Average Path Forecast Standard Deviations"
+        elif of == "closed":
+            df.attrs["title"] = "Average Path Forecast Closed in Timeframe"
         return df
+    if of == "mu":
+        y = "forecast_mean"
+        y_title = "Mean Demand Forecast"
+    elif of == "sigma":
+        y = "forecast_stdev"
+        y_title = "Std Dev Demand Forecast"
+    elif of == "closed":
+        y = "forecast_closed_in_tf"
+        y_title = "Mean Time Frame Closed of Demand Forecast"
+    else:
+        raise NotImplementedError
     return _fig_forecasts(
         df,
         facet_on="path_id" if not isinstance(by_path_id, int) else None,
-        y="forecast_mean" if of == "mu" else "forecast_stdev",
-        y_title="Mean Demand Forecast" if of == "mu" else "Std Dev Demand Forecast",
+        y=y,
+        y_title=y_title,
+        color=color,
     )
+
+
+@report_figure
+def fig_bid_price_history(
+    summaries,
+    by_carrier: bool | str = True,
+    show_stdev: float | bool | None = None,
+    cap: Literal["some", "zero", None] = None,
+    raw_df=False,
+):
+    if cap is None:
+        bp_mean = "bid_price_mean"
+    elif cap == "some":
+        bp_mean = "some_cap_bid_price_mean"
+    elif cap == "zero":
+        bp_mean = "zero_cap_bid_price_mean"
+    else:
+        raise ValueError(f"cap={cap!r} not in ['some', 'zero', None]")
+
+    if not isinstance(by_carrier, str):
+        raise NotImplementedError(
+            "contrast.fig_bid_price_history requires looking at a single carrier (set `by_carrier`)"
+        )
+    df = _assemble(
+        summaries,
+        "bid_price_history",
+        by_carrier=by_carrier,
+        show_stdev=show_stdev,
+        cap=cap,
+    )
+    if raw_df:
+        return df
+
+    line_encoding = dict(
+        x=alt.X("rrd:Q").scale(reverse=True).title("Days from Departure"),
+        y=alt.Y(bp_mean, title="Bid Price"),
+        color="source:N",
+    )
+    chart = alt.Chart(df)
+    fig = chart.mark_line(interpolate="step-before").encode(**line_encoding)
+    if show_stdev:
+        area_encoding = dict(
+            x=alt.X("rrd:Q").scale(reverse=True).title("Days from Departure"),
+            y=alt.Y("bid_price_lower:Q", title="Bid Price"),
+            y2=alt.Y2("bid_price_upper:Q", title="Bid Price"),
+            color="source:N",
+        )
+        bound = chart.mark_area(
+            opacity=0.1,
+            interpolate="step-before",
+        ).encode(**area_encoding)
+        bound_line = chart.mark_line(
+            opacity=0.4, strokeDash=[5, 5], interpolate="step-before"
+        ).encode(
+            x=alt.X("rrd:Q").scale(reverse=True).title("Days from Departure"),
+            color="source:N",
+        )
+        top_line = bound_line.encode(y=alt.Y("bid_price_lower:Q", title="Bid Price"))
+        bottom_line = bound_line.encode(y=alt.Y("bid_price_upper:Q", title="Bid Price"))
+        fig = fig + bound + top_line + bottom_line
+    return fig
+
+
+@report_figure
+def fig_demand_to_come(
+    summaries: Contrast,
+    func: Literal["mean", "std"] = "mean",
+    raw_df=False,
+):
+    def dtc_seg(s):
+        if s is None:
+            return pd.DataFrame(columns=["segment"])
+        sum_on = []
+        if "orig" in s.index.names:
+            sum_on.append("orig")
+        if "dest" in s.index.names:
+            sum_on.append("dest")
+        if sum_on:
+            s = s.groupby(s.index.names.difference(sum_on)).sum()
+        return s
+
+    if func == "mean":
+        y_title = "Mean Demand to Come"
+        demand_to_come_by_segment = summaries.apply(
+            lambda s: dtc_seg(s.demand_to_come).groupby("segment").mean().stack(),
+            axis=1,
+        )
+        df = demand_to_come_by_segment.stack().rename("dtc").reset_index()
+    elif func == "std":
+        y_title = "Std Dev Demand to Come"
+        demand_to_come_by_segment = summaries.apply(
+            lambda s: dtc_seg(s.demand_to_come).groupby("segment").std().stack(), axis=1
+        )
+        df = demand_to_come_by_segment.stack().rename("dtc").reset_index()
+    else:
+        raise ValueError(f"func must be in [mean, std] not {func}")
+    if raw_df:
+        return df
+    return (
+        alt.Chart(df)
+        .mark_line()
+        .encode(
+            x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+            y=alt.Y("dtc:Q").title(y_title),
+            color="segment:N",
+            strokeDash="source:N",
+        )
+    )  # .properties(width=500, height=400)
