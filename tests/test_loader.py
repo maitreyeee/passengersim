@@ -18,7 +18,7 @@ def test_rm_systems():
           DCP:
           - step_type: untruncation
             name: foo
-            algorithm: bar
+            algorithm: em
           - step_type: forecast
             name: baz
             algorithm: exp_smoothing
@@ -49,7 +49,8 @@ def test_rm_systems():
     # there are several errors in demo2, the parser finds and reports them all with legible error message
     demo2 = """
     rm_systems:
-      - steps:
+      processes:
+        DCP:
         - step_type: untruncation_misspelled
           name: foo
           algorithm: bar
