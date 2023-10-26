@@ -6,13 +6,24 @@ scenario: 3MKT
 
 db:
   write_items:
-    - leg_final
+    - leg
     - fare_final
-    - demand_final
+    - demand
     - bookings
+    - bucket
   fast: true
   engine: sqlite
   filename: ":memory:"
+
+outputs:
+  reports:
+    - leg_forecasts
+    - fare_class_mix
+    - load_factors
+    - bookings_by_timeframe
+    - total_demand
+    - demand_to_come
+    - carrier_history
 
 simulation_controls:
   num_trials: 10
@@ -20,9 +31,11 @@ simulation_controls:
   random_seed: 42
   sys_k_factor: 0.1
   mkt_k_factor: 0.15
-  pax_type_k_factor: 0.2
+  pax_type_k_factor: 0.0  # now simple_k_factor
+  simple_k_factor: 0.2
   tf_k_factor: 0.1
-  tf_z_factor: 2.0
+  tf_z_factor: 1.0
+  tot_z_factor: 2.0
   prorate_revenue: true
   dwm_lite: false
   max_connect_time: 120
@@ -32,23 +45,8 @@ simulation_controls:
   timeframe_demand_allocation: pods
 
 rm_systems:
-  fcfs:
-    availability_control: leg
-    processes:
-      DCP:
-      - step_type: untruncation
-        name: untruncation
-        algorithm: none
-        kind: leg
-      - step_type: forecast
-        name: forecast
-        algorithm: additive_pickup
-        alpha: 0.15
-        kind: leg
-      - step_type: fcfs
-        name: optimization
   rm_no_detruncation:
-    availability_control: vn
+    availability_control: leg
     processes:
       DCP:
       - step_type: untruncation
@@ -70,7 +68,7 @@ rm_systems:
       DCP:
       - step_type: untruncation
         name: untruncation
-        algorithm: none
+        algorithm: em
         kind: leg
       - step_type: forecast
         name: forecast
@@ -179,6 +177,23 @@ booking_curves:
       3: 0.98
       1: 1.0
 
+places:
+  BOS:
+    label: Boston Logan International Airport
+    lat: 42.3656
+    lon: -71.0098
+    time_zone: America/New_York
+  ORD:
+    label: Chicago O'Hare International Airport
+    lat: 41.9802
+    lon: -87.9090
+    time_zone: America/Chicago
+  LAX:
+    label: Los Angeles International Airport
+    lat: 33.9438
+    lon: -118.4091
+    time_zone: America/Los_Angeles
+
 legs:
   - carrier: AL1
     fltno: 101
@@ -187,7 +202,6 @@ legs:
     dep_time: 08:00
     arr_time: '10:00'
     capacity: 100
-    distance: 864.0
   - carrier: AL1
     fltno: 102
     orig: BOS
@@ -195,7 +209,6 @@ legs:
     dep_time: '14:00'
     arr_time: '16:00'
     capacity: 100
-    distance: 864.0
   - carrier: AL2
     fltno: 201
     orig: BOS
@@ -203,7 +216,6 @@ legs:
     dep_time: 08:00
     arr_time: '10:00'
     capacity: 100
-    distance: 864.0
   - carrier: AL2
     fltno: 202
     orig: BOS
@@ -211,7 +223,6 @@ legs:
     dep_time: '14:00'
     arr_time: '16:00'
     capacity: 100
-    distance: 864.0
   - carrier: AL1
     fltno: 111
     orig: ORD
@@ -219,7 +230,6 @@ legs:
     dep_time: '11:00'
     arr_time: '13:00'
     capacity: 120
-    distance: 1741.0
   - carrier: AL1
     fltno: 112
     orig: ORD
@@ -227,7 +237,6 @@ legs:
     dep_time: '17:00'
     arr_time: '19:00'
     capacity: 120
-    distance: 1741.0
   - carrier: AL2
     fltno: 211
     orig: ORD
@@ -235,7 +244,6 @@ legs:
     dep_time: '11:00'
     arr_time: '13:00'
     capacity: 120
-    distance: 1741.0
   - carrier: AL2
     fltno: 212
     orig: ORD
@@ -243,7 +251,6 @@ legs:
     dep_time: '17:00'
     arr_time: '19:00'
     capacity: 120
-    distance: 1741.0
 
 demands:
   - orig: BOS

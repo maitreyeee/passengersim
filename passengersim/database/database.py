@@ -163,7 +163,9 @@ class Database:
             (
                 cfg.scenario,
                 str(__version__),
-                cfg.model_dump_json(exclude={"db": "dcp_write_hooks"}),
+                cfg.model_dump_json(
+                    exclude={"db": "dcp_write_hooks", "raw_license_certificate": True}
+                ),
             ),
         )
 
