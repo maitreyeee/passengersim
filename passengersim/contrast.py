@@ -683,14 +683,21 @@ def fig_demand_to_come(
     if func == "mean":
         y_title = "Mean Demand to Come"
         demand_to_come_by_segment = summaries.apply(
-            lambda s: dtc_seg(s.demand_to_come).groupby("segment").mean().stack(),
+            lambda s: dtc_seg(s.demand_to_come)
+            .groupby("segment", observed=False)
+            .mean()
+            .stack(),
             axis=1,
         )
         df = demand_to_come_by_segment.stack().rename("dtc").reset_index()
     elif func == "std":
         y_title = "Std Dev Demand to Come"
         demand_to_come_by_segment = summaries.apply(
-            lambda s: dtc_seg(s.demand_to_come).groupby("segment").std().stack(), axis=1
+            lambda s: dtc_seg(s.demand_to_come)
+            .groupby("segment", observed=False)
+            .std()
+            .stack(),
+            axis=1,
         )
         df = demand_to_come_by_segment.stack().rename("dtc").reset_index()
     else:
