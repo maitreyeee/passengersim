@@ -3,7 +3,7 @@ try:
     # load declarations of all the usual RmStep classes
     from passengersim_core import airline as rm  # noqa: F401
 except ImportError:
-    pass
+    raise
 
 from ._version import __version__, __version_tuple__
 from .cli.info import info  # noqa: F401
