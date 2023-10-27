@@ -41,7 +41,8 @@ class SnapshotInstruction:
                 if content[-1] != "\n":
                     f.write("\n")
         else:
-            print(self.why)
+            if self.why:
+                print(self.why)
             print(content)
 
     def write_more(self, content: str = ""):
