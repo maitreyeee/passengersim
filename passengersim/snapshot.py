@@ -1,17 +1,15 @@
 from __future__ import annotations
 
-from passengersim import Simulation
 from passengersim.config import SnapshotFilter, SnapshotInstruction  # noqa
-from passengersim.core import Leg, Path, SimulationEngine
 
 
 def get_snapshot_instruction(
-    sim: Simulation | SimulationEngine,
+    sim,
     filters: list[SnapshotFilter] | None = None,
     only_type: str | None = None,
-    break_on_first=True,
-    leg: Leg | None = None,
-    path: Path | None = None,
+    break_on_first: bool = True,
+    leg=None,
+    path=None,
     carrier: str | None = None,
     debug: bool = False,
 ) -> SnapshotInstruction:
@@ -51,9 +49,8 @@ def get_snapshot_instruction(
         return SnapshotInstruction(True)
 
     # resolve down from Simulation to SimulationEngine
-    if isinstance(sim, Simulation):
+    if hasattr(sim, "sim"):
         sim = sim.sim
-    assert isinstance(sim, SimulationEngine)
 
     # the default return value of this
     snapshot_instruction = SnapshotInstruction(False)
