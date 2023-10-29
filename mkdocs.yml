@@ -20,6 +20,7 @@ plugins:
   - mkdocs-jupyter:
       include: ["*.nbconvert.ipynb"]
       execute: false
+      no_input: True
       remove_tag_config:
         remove_input_tags:
           - hidden
