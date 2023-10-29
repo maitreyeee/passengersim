@@ -7,10 +7,11 @@ scenario: 3MKT
 db:
   write_items:
     - leg
-    - fare_final
+    - fare
     - demand
     - bookings
     - bucket
+    - pathclass
   fast: true
   engine: sqlite
   filename: ":memory:"
