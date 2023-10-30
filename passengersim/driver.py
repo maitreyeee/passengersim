@@ -970,6 +970,7 @@ class Simulation:
             avg_sold = cxr.gt_sold / num_samples
             avg_rev = cxr.gt_revenue / num_samples
             asm = airline_asm[cxr.name] / num_samples
+            rpm = airline_rpm[cxr.name] / num_samples
             # sys_lf = 100.0 * cxr.gt_revenue_passenger_miles / asm if asm > 0 else 0.0
             denom = airline_asm[cxr.name]
             sys_lf = (100.0 * airline_rpm[cxr.name] / denom) if denom > 0 else 0
@@ -988,8 +989,8 @@ class Simulation:
                     "avg_rev": int(round(avg_rev, 0)),
                     "avg_price": round(avg_rev / avg_sold, 2),
                     "asm": int(round(asm, 0)),
-                    "rpm": int(round(airline_rpm[cxr.name] / num_samples, 0)),
-                    "yield": np.nan if asm == 0 else round(avg_rev / asm, 4),
+                    "rpm": int(round(rpm, 0)),
+                    "yield": np.nan if rpm == 0 else round(avg_rev / rpm, 4),
                 }
             )
             # logger.info(f"ASM = {airline_asm[cxr.name]:.2f}, RPM = {airline_rpm[cxr.name]:.2f}, LF = {sys_lf:.2f}%")
