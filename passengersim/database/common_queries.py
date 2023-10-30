@@ -74,12 +74,12 @@ def od_fare_class_mix(
 def load_factors(cnx: Database, scenario: str, burn_samples: int = 100) -> pd.DataFrame:
     qry = """
     SELECT carrier,
-           ROUND(AVG(sold)) AS avg_sold,
-           ROUND(AVG(100.0 * sold / cap), 2) AS avg_lf,
+           ROUND(AVG(sold)) AS avg_legs_sold,
+           ROUND(AVG(100.0 * sold / cap), 2) AS avg_leg_lf,
            ROUND(AVG(100.0 * rpm / asm), 2) AS sys_lf,
            ROUND(AVG(revenue), 2) AS avg_rev,
            ROUND(AVG(revenue / asm), 3) AS yield,
-           ROUND(AVG(revenue) / AVG(sold)) AS avg_price,
+           ROUND(AVG(revenue) / AVG(sold)) AS avg_leg_price,
            COUNT(*) AS n_obs
     FROM (SELECT trial, sample, carrier,
                  SUM(sold) AS sold,

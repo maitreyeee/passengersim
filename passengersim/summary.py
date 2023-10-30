@@ -75,7 +75,6 @@ class SummaryTables:
         burn_samples: int,
         additional: Collection[str | tuple] = (
             "fare_class_mix",
-            "load_factors",
             "bookings_by_timeframe",
             "total_demand",
         ),
@@ -105,12 +104,6 @@ class SummaryTables:
                     db, orig, dest, scenario, burn_samples=burn_samples
                 )
 
-        if "load_factors" in additional and db.is_open:
-            logger.info("loading load_factors")
-            self.load_factors = database.common_queries.load_factors(
-                db, scenario, burn_samples=burn_samples
-            )
-
         if "bookings_by_timeframe" in additional and db.is_open:
             logger.info("loading bookings_by_timeframe")
             self.bookings_by_timeframe = database.common_queries.bookings_by_timeframe(
@@ -136,7 +129,7 @@ class SummaryTables:
             )
 
         if "demand_to_come" in additional and db.is_open:
-            logger.info("loading path_forecasts")
+            logger.info("loading demand_to_come")
             self.demand_to_come = database.common_queries.demand_to_come(db, scenario)
 
         if "carrier_history" in additional and db.is_open:
@@ -144,7 +137,7 @@ class SummaryTables:
             self.carrier_history = database.common_queries.carrier_history(db, scenario)
 
         if "bid_price_history" in additional and db.is_open:
-            logger.info("loading carrier_history")
+            logger.info("loading bid_price_history")
             self.bid_price_history = database.common_queries.bid_price_history(
                 db, scenario, burn_samples
             )
@@ -636,7 +629,7 @@ class SummaryTables:
         orient: Literal["h", "v"] = "h",
         title: str | None = None,
     ):
-        df = self.load_factors[["carrier", load_measure]]
+        df = self.carriers.reset_index()[["carrier", load_measure]]
         if raw_df:
             return df
         import altair as alt
@@ -697,7 +690,7 @@ class SummaryTables:
 
     @report_figure
     def fig_carrier_load_factors(
-        self, raw_df=False, load_measure: Literal["sys_lf", "avg_lf"] = "sys_lf"
+        self, raw_df=False, load_measure: Literal["sys_lf", "avg_leg_lf"] = "sys_lf"
     ):
         measure_name = (
             "System Load Factor" if load_measure == "sys_lf" else "Leg Load Factor"
@@ -713,6 +706,12 @@ class SummaryTables:
     def fig_carrier_revenues(self, raw_df=False):
         return self._fig_carrier_load_factors(
             raw_df, "avg_rev", "Average Revenue", "$.4s", title="Carrier Revenues"
+        )
+
+    @report_figure
+    def fig_carrier_yields(self, raw_df=False):
+        return self._fig_carrier_load_factors(
+            raw_df, "yield", "Average Yield", "$.4f", title="Carrier Yields"
         )
 
     def _fig_forecasts(

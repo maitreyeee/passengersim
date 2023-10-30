@@ -957,32 +957,41 @@ class Simulation:
 
         airline_asm = defaultdict(float)
         airline_rpm = defaultdict(float)
+        airline_leg_lf = defaultdict(float)
+        airline_leg_count = defaultdict(float)
         for leg in sim.legs:
             airline_asm[leg.carrier] += leg.distance * leg.capacity * num_samples
             airline_rpm[leg.carrier] += leg.distance * leg.gt_sold
+            airline_leg_lf[leg.carrier] += leg.gt_sold / (leg.capacity * num_samples)
+            airline_leg_count[leg.carrier] += 1
 
         for cxr in sim.airlines:
-            avg_sold = round(cxr.gt_sold / num_samples)
+            avg_sold = cxr.gt_sold / num_samples
             avg_rev = cxr.gt_revenue / num_samples
-            # asm = cxr.gt_available_seat_miles
-            # lf2 = 100.0 * cxr.gt_revenue_passenger_miles / asm if asm > 0 else 0.0
+            asm = airline_asm[cxr.name] / num_samples
+            # sys_lf = 100.0 * cxr.gt_revenue_passenger_miles / asm if asm > 0 else 0.0
             denom = airline_asm[cxr.name]
-            lf2 = (100.0 * airline_rpm[cxr.name] / denom) if denom > 0 else 0
+            sys_lf = (100.0 * airline_rpm[cxr.name] / denom) if denom > 0 else 0
             if to_log:
                 logger.info(
-                    f"Airline: {cxr.name}, AvgSold: {avg_sold}, LF {lf2:.2f}%,  AvgRev ${avg_rev:10,.2f}"
+                    f"Airline: {cxr.name}, AvgSold: {round(avg_sold, 2)}, LF {sys_lf:.2f}%,  AvgRev ${avg_rev:10,.2f}"
                 )
             carrier_df.append(
-                dict(
-                    name=cxr.name,
-                    avg_sold=avg_sold,
-                    load_factor=lf2,
-                    avg_rev=avg_rev,
-                    asm=airline_asm[cxr.name],
-                    rpm=airline_rpm[cxr.name],
-                )
+                {
+                    "carrier": cxr.name,
+                    "sold": round(avg_sold, 2),
+                    "sys_lf": round(sys_lf, 3),
+                    "avg_leg_lf": round(
+                        100 * airline_leg_lf[cxr.name] / airline_leg_count[cxr.name], 3
+                    ),
+                    "avg_rev": int(round(avg_rev, 0)),
+                    "avg_price": round(avg_rev / avg_sold, 2),
+                    "asm": int(round(asm, 0)),
+                    "rpm": int(round(airline_rpm[cxr.name] / num_samples, 0)),
+                    "yield": round(avg_rev / asm, 4),
+                }
             )
-            # logger.info(f"ASM = {airline_asm[cxr.name]:.2f}, RPM = {airline_rpm[cxr.name]:.2f}, LF = {lf2:.2f}%") #***
+            # logger.info(f"ASM = {airline_asm[cxr.name]:.2f}, RPM = {airline_rpm[cxr.name]:.2f}, LF = {sys_lf:.2f}%")
         carrier_df = pd.DataFrame(carrier_df)
         if to_db and to_db.is_open:
             to_db.save_dataframe("carrier_summary", carrier_df)
