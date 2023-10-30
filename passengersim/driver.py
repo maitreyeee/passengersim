@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from math import sqrt
 from typing import Any
 
+import numpy as np
 import pandas as pd
 
 import passengersim.config.rm_systems
@@ -988,7 +989,7 @@ class Simulation:
                     "avg_price": round(avg_rev / avg_sold, 2),
                     "asm": int(round(asm, 0)),
                     "rpm": int(round(airline_rpm[cxr.name] / num_samples, 0)),
-                    "yield": round(avg_rev / asm, 4),
+                    "yield": np.nan if asm == 0 else round(avg_rev / asm, 4),
                 }
             )
             # logger.info(f"ASM = {airline_asm[cxr.name]:.2f}, RPM = {airline_rpm[cxr.name]:.2f}, LF = {sys_lf:.2f}%")
