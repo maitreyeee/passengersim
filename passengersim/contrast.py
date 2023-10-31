@@ -339,16 +339,41 @@ def fig_carrier_revenues(
 
 
 @report_figure
-def fig_carrier_load_factors(
+def fig_carrier_yields(
     summaries,
     raw_df=False,
-    load_measure: Literal["sys_lf", "avg_lf"] = "sys_lf",
     orient: Literal["h", "v"] = "h",
     ratio: str | bool = True,
 ):
-    measure_name = {"sys_lf": "System Load Factor", "avg_lf": "Leg Load factor"}.get(
-        load_measure, "Load Factor"
+    df = _assemble(summaries, "carrier_yields")
+    source_order = list(summaries.keys())
+    if raw_df:
+        df.attrs["title"] = "Carrier Yields"
+        return df
+    return _fig_carrier_measure(
+        df,
+        source_order,
+        load_measure="yield",
+        measure_name="Yield ($)",
+        measure_format="$.4f",
+        orient=orient,
+        title="Carrier Yields",
+        ratio=ratio,
     )
+
+
+@report_figure
+def fig_carrier_load_factors(
+    summaries,
+    raw_df=False,
+    load_measure: Literal["sys_lf", "avg_leg_lf"] = "sys_lf",
+    orient: Literal["h", "v"] = "h",
+    ratio: str | bool = True,
+):
+    measure_name = {
+        "sys_lf": "System Load Factor",
+        "avg_leg_lf": "Leg Load factor",
+    }.get(load_measure, "Load Factor")
     df = _assemble(summaries, "carrier_load_factors", load_measure=load_measure)
     source_order = list(summaries.keys())
     if raw_df:
@@ -683,14 +708,21 @@ def fig_demand_to_come(
     if func == "mean":
         y_title = "Mean Demand to Come"
         demand_to_come_by_segment = summaries.apply(
-            lambda s: dtc_seg(s.demand_to_come).groupby("segment").mean().stack(),
+            lambda s: dtc_seg(s.demand_to_come)
+            .groupby("segment", observed=False)
+            .mean()
+            .stack(),
             axis=1,
         )
         df = demand_to_come_by_segment.stack().rename("dtc").reset_index()
     elif func == "std":
         y_title = "Std Dev Demand to Come"
         demand_to_come_by_segment = summaries.apply(
-            lambda s: dtc_seg(s.demand_to_come).groupby("segment").std().stack(), axis=1
+            lambda s: dtc_seg(s.demand_to_come)
+            .groupby("segment", observed=False)
+            .std()
+            .stack(),
+            axis=1,
         )
         df = demand_to_come_by_segment.stack().rename("dtc").reset_index()
     else:

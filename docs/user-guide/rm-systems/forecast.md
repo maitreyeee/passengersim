@@ -7,7 +7,7 @@ products being offered to maximize revenue.
 In PassengerSim, forecasting is included as a step within an RM system, typically
 within the DCP process, after untruncation and before any optimization.
 
-```yaml
+```yaml title="example.yaml" hl_lines="8-10"
 rm_systems:
   basic_emsr_b:
     processes:

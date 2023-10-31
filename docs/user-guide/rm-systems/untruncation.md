@@ -12,7 +12,7 @@ many customers were lost.
 In PassengerSim, untruncation is included as a step within an RM system, typically
 within the DCP process before any forecasting or optimization steps.
 
-```yaml title="example.yaml"
+```yaml title="example.yaml" hl_lines="5-7"
 rm_systems:
   basic_emsr_b: #(4)!
     processes:
