@@ -305,7 +305,7 @@ airlines:
     frat5: curve_A
   - name: AL2
     rm_system: rm_fare_adj
-    frat5: curve_G
+    frat5: curve_C
 
 classes:
   - Y0
