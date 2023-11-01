@@ -29,7 +29,7 @@ rm_systems:
     `bp` (bid price) availability controls.
 
 
-::: passengersim.rm.ProBPStep
+::: passengersim.rm.ProBpStep
     options:
       show_root_heading: true
       show_root_full_path: false
