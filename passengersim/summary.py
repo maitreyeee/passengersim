@@ -250,7 +250,8 @@ class SummaryTables:
             Also append this figure to the given report.
         """
         df = (
-            self.carriers.set_index("name")[["asm", "rpm"]]
+            self.carriers.reset_index()[["carrier", "asm", "rpm"]]
+            .set_index("carrier")
             .rename_axis(columns="measure")
             .unstack()
             .to_frame("value")
@@ -262,10 +263,10 @@ class SummaryTables:
 
         chart = alt.Chart(df, title="Carrier Loads")
         bars = chart.mark_bar().encode(
-            x=alt.X("name:N", title="Carrier"),
+            x=alt.X("carrier:N", title="Carrier"),
             y=alt.Y("value", stack=None, title="miles"),
             color="measure",
-            tooltip=["name", "measure", alt.Tooltip("value", format=".4s")],
+            tooltip=["carrier", "measure", alt.Tooltip("value", format=".4s")],
         )
         text = chart.mark_text(
             dx=0,
@@ -273,7 +274,7 @@ class SummaryTables:
             color="white",
             baseline="top",
         ).encode(
-            x=alt.X("name:N"),
+            x=alt.X("carrier:N"),
             y=alt.Y("value").stack(None),
             text=alt.Text("value:Q", format=".4s"),
         )
