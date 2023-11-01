@@ -352,6 +352,64 @@ class Config(YamlConfig, extra="forbid"):
                 i = curve.curve[dcp]
         return m
 
+    @model_validator(mode="after")
+    def _requested_summaries_have_data(cls, m: Config):
+        """Check that requested summary outputs will have the data needed."""
+        if "local_and_flow_yields" in m.outputs.reports:
+            if not m.db.write_items & {"pathclass_final", "pathclass"}:
+                raise ValueError(
+                    "the `local_and_flow_yields` report requires recording "
+                    "at least `pathclass_final` details in the database"
+                )
+        if "bid_price_history" in m.outputs.reports:
+            if "leg" not in m.db.write_items:
+                raise ValueError(
+                    "the `bid_price_history` report requires recording "
+                    "`leg` details in the database"
+                )
+            if not m.db.store_leg_bid_prices:
+                raise ValueError(
+                    "the `bid_price_history` report requires recording "
+                    "`store_leg_bid_prices` to be True"
+                )
+        if "demand_to_come" in m.outputs.reports:
+            if "demand" not in m.db.write_items:
+                raise ValueError(
+                    "the `demand_to_come` report requires recording "
+                    "`demand` details in the database"
+                )
+        if "path_forecasts" in m.outputs.reports:
+            if "pathclass" not in m.db.write_items:
+                raise ValueError(
+                    "the `path_forecasts` report requires recording "
+                    "`pathclass` details in the database"
+                )
+        if "leg_forecasts" in m.outputs.reports:
+            if "bucket" not in m.db.write_items:
+                raise ValueError(
+                    "the `leg_forecasts` report requires recording "
+                    "`bucket` details in the database"
+                )
+        if "bookings_by_timeframe" in m.outputs.reports:
+            if not m.db.write_items & {"bookings", "fare"}:
+                raise ValueError(
+                    "the `bookings_by_timeframe` report requires recording "
+                    "`fare` or `bookings` details in the database"
+                )
+        if "total_demand" in m.outputs.reports:
+            if not m.db.write_items & {"demand", "demand_final"}:
+                raise ValueError(
+                    "the `total_demand` report requires recording "
+                    "at least `demand_final` details in the database"
+                )
+        if "fare_class_mix" in m.outputs.reports:
+            if not m.db.write_items & {"fare", "fare_final"}:
+                raise ValueError(
+                    "the `fare_class_mix` report requires recording "
+                    "at least `fare_final` details in the database"
+                )
+        return m
+
     @classmethod
     def model_validate(
         cls,

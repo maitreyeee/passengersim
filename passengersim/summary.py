@@ -118,13 +118,13 @@ class SummaryTables:
 
         if "leg_forecasts" in additional and db.is_open:
             logger.info("loading leg_forecasts")
-            self.leg_forecasts = database.common_queries.avg_leg_forecasts(
+            self.leg_forecasts = database.common_queries.leg_forecasts(
                 db, scenario, burn_samples
             )
 
         if "path_forecasts" in additional and db.is_open:
             logger.info("loading path_forecasts")
-            self.path_forecasts = database.common_queries.avg_path_forecasts(
+            self.path_forecasts = database.common_queries.path_forecasts(
                 db, scenario, burn_samples
             )
 

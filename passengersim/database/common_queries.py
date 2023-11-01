@@ -172,7 +172,7 @@ def bookings_by_timeframe(
     return cnx.dataframe(qry_bookings, (scenario,))
 
 
-def avg_leg_forecasts(cnx: Database, scenario: str, burn_samples: int = 100):
+def leg_forecasts(cnx: Database, scenario: str, burn_samples: int = 100):
     qry = """
     SELECT
         carrier,
@@ -201,7 +201,7 @@ def avg_leg_forecasts(cnx: Database, scenario: str, burn_samples: int = 100):
     )
 
 
-def avg_path_forecasts(cnx: Database, scenario: str, burn_samples: int = 100):
+def path_forecasts(cnx: Database, scenario: str, burn_samples: int = 100):
     qry = """
     SELECT
         path_id,
@@ -292,6 +292,25 @@ def carrier_history(cnx: Database, scenario: str, burn_samples: int = 100):
 
 
 def bid_price_history(cnx: Database, scenario: str, burn_samples: int = 100):
+    """
+    Compute bid price history by leg.
+
+    This query requires that the simulation was run while recording leg
+    details (i.e. with the `leg` flag set on `Config.db.write_items`).
+
+    Parameters
+    ----------
+    cnx : Database
+    scenario : str
+    burn_samples : int, default 100
+        The bid prices will be computed ignoring this many samples from the
+        beginning of each trial.
+
+    Returns
+    -------
+    pandas.DataFrame
+    """
+
     qry = """
     SELECT
         carrier,
@@ -342,7 +361,28 @@ def bid_price_history(cnx: Database, scenario: str, burn_samples: int = 100):
     return bph
 
 
-def local_and_flow_yields(cnx: Database, scenario: str, burn_samples: int = 100):
+def local_and_flow_yields(
+    cnx: Database, scenario: str, burn_samples: int = 100
+) -> pd.DataFrame:
+    """
+    Compute yields for local (nonstop) and flow (connecting) passengers.
+
+    This query requires that the simulation was run while recording path class
+    details (i.e. with the `pathclass` or `pathclass_final` flags set on
+    `Config.db.write_items`).
+
+    Parameters
+    ----------
+    cnx : Database
+    scenario : str
+    burn_samples : int, default 100
+        The yields will be computed ignoring this many samples from the
+        beginning of each trial.
+
+    Returns
+    -------
+    pandas.DataFrame
+    """
     qry = """
     WITH path_yields AS (
         SELECT
