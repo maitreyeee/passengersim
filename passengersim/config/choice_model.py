@@ -38,14 +38,14 @@ class LogitChoiceModel(Named, extra="forbid"):
     """This is the parameter for the price of each alternative."""
 
     tod_sin2p: float = 0
-    """Schedule parameter.
+    r"""Schedule parameter.
 
     If $t$ is departure time (in minutes after midnight local time) divided
     by 1440, this parameter is multiplied by $sin( 2 \pi t)$ and the result is
     added to the utility of the particular alternative."""
 
     tod_sin4p: float = 0
-    """Schedule parameter.
+    r"""Schedule parameter.
 
     If $t$ is departure time (in minutes after midnight local time) divided
     by 1440, this parameter is multiplied by $sin( 4 \pi t)$ and the result is
