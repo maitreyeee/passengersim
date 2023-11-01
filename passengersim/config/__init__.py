@@ -11,6 +11,7 @@ from .demands import Demand
 from .fares import Fare
 from .frat5_curves import Frat5Curve
 from .legs import Leg
+from .load_factor_curves import LoadFactorCurve
 from .named import DictOfNamed
 from .paths import Path
 from .rm_systems import RmSystem

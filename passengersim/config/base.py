@@ -28,6 +28,7 @@ from .demands import Demand
 from .fares import Fare
 from .frat5_curves import Frat5Curve
 from .legs import Leg
+from .load_factor_curves import LoadFactorCurve
 from .named import DictOfNamed
 from .outputs import OutputConfig
 from .paths import Path
@@ -202,6 +203,9 @@ class Config(YamlConfig, extra="forbid"):
     """
 
     frat5_curves: DictOfNamed[Frat5Curve] = {}
+    """ FRAT5 curves are used to model sellup rates in Q-forecasting"""
+
+    load_factor_curves: DictOfNamed[LoadFactorCurve] = {}
     """ FRAT5 curves are used to model sellup rates in Q-forecasting"""
 
     choice_models: DictOfNamed[ChoiceModel] = {}

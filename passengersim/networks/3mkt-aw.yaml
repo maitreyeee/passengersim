@@ -148,10 +148,33 @@ frat5_curves:
       3: 1.47
       1: 1.5
 
+load_factor_curves:
+  - name: lf_curve1
+    algorithm: lf_target
+    min_accordion: 1.2
+    max_accordion: 1.8
+    target_load_factor: 0.8
+    convergence_constant: 0.75
+    curve:
+      Y0: 1.0
+      Y1: 0.9
+      Y2: 0.8
+      Y3: 0.7
+      Y4: 0.6
+      Y5: 0.5
+
 rm_systems:
   fcfs:
     availability_control: leg
     processes: {}
+  rm_lf:
+    availability_control: leg
+    processes:
+      DCP:
+        - step_type: lfthreshold
+          name: optimization
+          algorithm: lf_target
+          kind: leg
   rm_no_detruncation:
     availability_control: leg
     processes:
@@ -304,8 +327,9 @@ airlines:
     rm_system: rm_test1
     frat5: curve_A
   - name: AL2
-    rm_system: rm_fare_adj
+    rm_system: rm_lf
     frat5: curve_C
+    load_factor_curve: lf_curve1
 
 classes:
   - Y0

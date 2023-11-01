@@ -69,6 +69,7 @@ class Simulation:
         self.airports = []
         self.choice_models = {}
         self.frat5curves = {}
+        self.load_factor_curves = {}
         self.debug = False
         self.update_frequency = None
         self.random_generator = passengersim.core.Generator(42)
@@ -194,6 +195,9 @@ class Simulation:
             self.sim.add_frat5(f5)
             self.frat5curves[f5_name] = f5
 
+        for lf_name, lf_curve in config.load_factor_curves.items():
+            self.load_factor_curves[lf_name] = lf_curve
+
         for airline_name, airline_config in config.airlines.items():
             availability_control = self.rm_systems[
                 airline_config.rm_system
@@ -203,6 +207,9 @@ class Simulation:
             if airline_config.frat5 is not None and airline_config.frat5 != "":
                 f5 = self.frat5curves[airline_config.frat5]
                 airline.frat5 = f5
+            if airline_config.load_factor_curve is not None and airline_config.load_factor_curve != "":
+                lfc = self.load_factor_curves[airline_config.load_factor_curve]
+                airline.load_factor_curve = lfc
             self.sim.add_airline(airline)
 
         self.classes = config.classes
