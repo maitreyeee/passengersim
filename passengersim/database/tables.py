@@ -61,6 +61,51 @@ def create_table_legs(cnx: Database, legs: Iterable | None = None):
         )
 
 
+def create_table_path_defs(cnx: Database, paths: Iterable | None = None):
+    sql = """
+    CREATE TABLE IF NOT EXISTS path_defs
+    (
+        path_id INTEGER PRIMARY KEY,
+        carrier TEXT,
+        orig TEXT,
+        stop1 TEXT,
+        dest TEXT,
+        leg1 INTEGER,
+        leg2 INTEGER,
+        distance FLOAT
+    );
+    """
+    cnx.execute(sql)
+    for pth in paths:
+        connects = pth.num_legs() > 1
+        cnx.execute(
+            """
+            INSERT OR REPLACE INTO path_defs(
+                path_id,
+                carrier,
+                orig,
+                stop1,
+                dest,
+                leg1,
+                leg2,
+                distance
+            ) VALUES (
+                ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8
+            )
+            """,
+            (
+                pth.path_id,
+                pth.get_leg_carrier(0),
+                pth.orig,
+                pth.get_leg_dest(0) if connects else None,
+                pth.dest,
+                pth.get_leg_fltno(0),
+                pth.get_leg_fltno(1) if connects else None,
+                pth.get_total_distance(),
+            ),
+        )
+
+
 def create_table_leg_detail(cnx: Database, primary_key: bool = False):
     sql = """
     CREATE TABLE IF NOT EXISTS leg_detail
@@ -248,6 +293,7 @@ def create_table_path_class_detail(cnx: Database, primary_key: bool = False):
         path_id			INT NOT NULL,
         booking_class   VARCHAR(10) NOT NULL,
         sold			INT,
+        revenue         FLOAT,
         forecast_mean   FLOAT,
         forecast_stdev  FLOAT,
         forecast_closed_in_tf FLOAT,

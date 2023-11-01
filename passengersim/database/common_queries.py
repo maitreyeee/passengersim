@@ -228,7 +228,7 @@ def avg_path_forecasts(cnx: Database, scenario: str, burn_samples: int = 100):
     )
 
 
-def demand_to_come(cnx: Database, scenario: str):
+def demand_to_come(cnx: Database, scenario: str, burn_samples: int = 100):
     # Provides content roughly equivalent to PODS *.DHS output file.
     qry = """
     SELECT
@@ -238,8 +238,11 @@ def demand_to_come(cnx: Database, scenario: str):
         demand_detail
     WHERE
         scenario = ?1
+        AND sample >= ?2
     """
-    dmd = cnx.dataframe(qry, (scenario,), dtype={"future_demand": np.int32})
+    dmd = cnx.dataframe(
+        qry, (scenario, burn_samples), dtype={"future_demand": np.int32}
+    )
     # dmd["future_demand"] = dmd.sample_demand.round().astype(int) - dmd.sold - dmd.no_go
     dhs = (
         dmd.set_index(
@@ -251,7 +254,7 @@ def demand_to_come(cnx: Database, scenario: str):
     return dhs
 
 
-def carrier_history(cnx: Database, scenario: str):
+def carrier_history(cnx: Database, scenario: str, burn_samples: int = 100):
     # Provides content similar to PODS *.HST output file.
     max_rrd = int(
         cnx.dataframe(
@@ -268,10 +271,10 @@ def carrier_history(cnx: Database, scenario: str):
             sum(forecast_mean) as forecast_mean,
             sqrt(sum(forecast_stdev*forecast_stdev)) as forecast_stdev
         FROM leg_bucket_detail
-        WHERE rrd == ?2 AND scenario == ?1
+        WHERE rrd == ?2 AND scenario == ?1 AND sample >= ?3
         GROUP BY iteration, trial, sample, carrier
         """,
-        (scenario, max_rrd),
+        (scenario, max_rrd, burn_samples),
     ).set_index(["iteration", "trial", "sample", "carrier"])
     bd2 = cnx.dataframe(
         """
@@ -280,10 +283,10 @@ def carrier_history(cnx: Database, scenario: str):
             sum(sold) as sold,
             sum(revenue) as revenue
         FROM leg_bucket_detail
-        WHERE rrd == 0 AND scenario == ?1
+        WHERE rrd == 0 AND scenario == ?1 AND sample >= ?2
         GROUP BY iteration, trial, sample, carrier
         """,
-        (scenario,),
+        (scenario, burn_samples),
     ).set_index(["iteration", "trial", "sample", "carrier"])
     return pd.concat([bd1, bd2], axis=1).unstack("carrier")
 
@@ -337,3 +340,69 @@ def bid_price_history(cnx: Database, scenario: str, burn_samples: int = 100):
     bph = bph.set_index(["carrier", "rrd"]).join(bph_some_cap)
     bph = bph.sort_index(ascending=(True, False))
     return bph
+
+
+def local_and_flow_yields(cnx: Database, scenario: str, burn_samples: int = 100):
+    qry = """
+    WITH path_yields AS (
+        SELECT
+            iteration, trial, sample, path_id, leg1, leg2,
+            SUM(sold) as total_sold,
+            SUM(revenue) as total_revenue,
+            distance,
+            SUM(revenue) / (SUM(sold) * distance) AS yield,
+            leg2 IS NULL AS local
+        FROM
+            path_class_detail
+            LEFT JOIN path_defs USING (path_id)
+        WHERE
+            rrd == 0
+            AND scenario == ?1
+            AND sample >= ?2
+        GROUP BY
+            path_id
+    )
+    SELECT
+        flt_no, carrier, orig, dest, capacity, leg_defs.distance,
+        yield AS local_yield,
+        CAST(total_sold AS REAL) /
+            (total_sold + IFNULL(f1.flow_sold, 0) + IFNULL(f2.flow_sold, 0))
+            AS local_fraction,
+        (IFNULL(f1.flow_revenue, 0) + IFNULL(f2.flow_revenue, 0))
+            / (IFNULL(f1.flow_rpm, 0) + IFNULL(f2.flow_rpm, 0))
+            AS flow_yield
+    FROM
+        leg_defs
+        LEFT JOIN path_yields locals
+        ON locals.leg1 == flt_no AND locals.leg2 IS NULL
+        LEFT JOIN (
+            SELECT
+                leg1,
+                SUM(total_sold) AS flow_sold,
+                SUM(total_revenue) AS flow_revenue,
+                SUM(total_sold * distance) AS flow_rpm
+            FROM
+                path_yields
+            WHERE
+                leg2 IS NOT NULL
+            GROUP BY leg1
+        ) f1 ON f1.leg1 == leg_defs.flt_no
+        LEFT JOIN (
+            SELECT
+                leg2,
+                SUM(total_sold) AS flow_sold,
+                SUM(total_revenue) AS flow_revenue,
+                SUM(total_sold * distance) AS flow_rpm
+            FROM
+                path_yields
+            GROUP BY leg2
+        ) f2 ON f2.leg2 == leg_defs.flt_no
+    """
+    df = cnx.dataframe(
+        qry,
+        (
+            scenario,
+            burn_samples,
+        ),
+    )
+    return df

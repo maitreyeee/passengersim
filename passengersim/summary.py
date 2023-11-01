@@ -142,6 +142,12 @@ class SummaryTables:
                 db, scenario, burn_samples
             )
 
+        if "local_and_flow_yields" in additional and db.is_open:
+            logger.info("loading local_and_flow_yields")
+            self.local_and_flow_yields = database.common_queries.local_and_flow_yields(
+                db, scenario, burn_samples
+            )
+
     def __init__(
         self,
         demands: pd.DataFrame | None = None,
@@ -160,6 +166,7 @@ class SummaryTables:
         carrier_history: pd.DataFrame | None = None,
         demand_to_come: pd.DataFrame | None = None,
         bid_price_history: pd.DataFrame | None = None,
+        local_and_flow_yields: pd.DataFrame | None = None,
     ):
         self.demands = demands
         self.fares = fares
@@ -177,6 +184,7 @@ class SummaryTables:
         self.carrier_history = carrier_history
         self.demand_to_come = demand_to_come
         self.bid_price_history = bid_price_history
+        self.local_and_flow_yields = local_and_flow_yields
 
     def to_records(self):
         return {k: v.to_dict(orient="records") for (k, v) in self.__dict__.items()}
@@ -215,7 +223,7 @@ class SummaryTables:
         groupbys = ["trial", "sample"]
         if by_segment:
             groupbys.append("segment")
-        return self.demand_to_come.iloc[:, 0].groupby(groupbys).sum()
+        return self.demand_to_come.iloc[:, 0].groupby(groupbys, observed=False).sum()
 
     def demand_in_tf(self) -> pd.DataFrame | None:
         """History of demand arriving in each timeframe.

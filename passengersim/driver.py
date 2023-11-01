@@ -83,6 +83,7 @@ class Simulation:
         )
         if self.cnx.is_open:
             database.tables.create_table_legs(self.cnx._connection, self.sim.legs)
+            database.tables.create_table_path_defs(self.cnx._connection, self.sim.paths)
             if config.db != ":memory:":
                 self.cnx.save_configs(config)
 
@@ -342,6 +343,8 @@ class Simulation:
         self.cnx.delete_experiment(self.sim.name)
         logger.debug("building connections")
         num_paths = self.sim.build_connections()
+        if num_paths and self.cnx.is_open:
+            database.tables.create_table_path_defs(self.cnx._connection, self.sim.paths)
         logger.debug(f"Connections done, num_paths = {num_paths}")
         self.vn_initial_mapping()
 
