@@ -170,6 +170,11 @@ rm_systems:
   rm_lf:
     availability_control: leg
     processes:
+      DAILY:
+        - step_type: lfthreshold
+          name: optimization
+          algorithm: lf_target
+          kind: leg
       DCP:
         - step_type: lfthreshold
           name: optimization
