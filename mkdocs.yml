@@ -86,6 +86,9 @@ nav:
       - user-guide/rm-systems/index.md
       - user-guide/rm-systems/untruncation.md
       - user-guide/rm-systems/forecast.md
+      - user-guide/rm-systems/fcfs.md
+      - user-guide/rm-systems/emsr.md
+      - user-guide/rm-systems/probp.md
     - Writing Configs: user-guide/writing-configs.md
   - Tutorials:
     - Tutorials/index.md
