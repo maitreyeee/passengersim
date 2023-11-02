@@ -27,6 +27,8 @@ dependencies = [
 
 [project.optional-dependencies]
 test = [
+    "altair>=5.0",
+    "xmle",
     "pytest-regressions ~=2.4",
 ]
 reporting = [
