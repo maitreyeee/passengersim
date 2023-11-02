@@ -208,7 +208,10 @@ class Simulation:
             if airline_config.frat5 is not None and airline_config.frat5 != "":
                 f5 = self.frat5curves[airline_config.frat5]
                 airline.frat5 = f5
-            if airline_config.load_factor_curve is not None and airline_config.load_factor_curve != "":
+            if (
+                airline_config.load_factor_curve is not None
+                and airline_config.load_factor_curve != ""
+            ):
                 lfc = self.load_factor_curves[airline_config.load_factor_curve]
                 airline.load_factor_curve = lfc
             self.sim.add_airline(airline)
@@ -996,10 +999,10 @@ class Simulation:
                     "avg_leg_lf": round(
                         100 * airline_leg_lf[cxr.name] / airline_leg_count[cxr.name], 3
                     ),
-                    "avg_rev": int(round(avg_rev, 0)),
+                    "avg_rev": (round(avg_rev, 0)),
                     "avg_price": round(avg_rev / avg_sold, 2),
-                    "asm": int(round(asm, 0)),
-                    "rpm": int(round(rpm, 0)),
+                    "asm": (round(asm, 0)),
+                    "rpm": (round(rpm, 0)),
                     "yield": np.nan if rpm == 0 else round(avg_rev / rpm, 4),
                 }
             )
