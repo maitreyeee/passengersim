@@ -469,9 +469,13 @@ class Simulation:
         # This will change once we have "dcp" and "daily" portions of an RM system in the YAML input file
         for airline in self.sim.airlines:
             if event_type.lower() in {"dcp", "done"}:
-                airline.rm_system.run(self.sim, airline.name, dcp_index, recording_day)
+                airline.rm_system.run(
+                    self.sim, airline.name, dcp_index, recording_day, event_type="dcp"
+                )
             elif event_type.lower() == "daily":
-                pass
+                airline.rm_system.run(
+                    self.sim, airline.name, dcp_index, recording_day, event_type="daily"
+                )
 
         if event_type.lower() in {"dcp", "done"}:
             if self.cnx.is_open:
