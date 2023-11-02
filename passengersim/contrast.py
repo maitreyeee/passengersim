@@ -549,7 +549,18 @@ def fig_path_forecasts(
 ):
     if isinstance(of, list):
         if raw_df:
-            raise NotImplementedError
+            df = {
+                _of: fig_path_forecasts(
+                    summaries,
+                    by_path_id=by_path_id,
+                    path_names=path_names,
+                    by_class=by_class,
+                    of=of[0],
+                    raw_df=raw_df,
+                )
+                for _of in of
+            }
+            return pd.concat(df, axis=0, names=["measurement"]).reset_index(0)
         fig = fig_path_forecasts(
             summaries,
             by_path_id=by_path_id,

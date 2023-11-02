@@ -1,6 +1,8 @@
 import altair as alt
+import pandas as pd
 
 from passengersim.driver import Simulation
+from passengersim.reporting import write_trace
 
 
 def fig_forecasts_and_bid_prices(
@@ -8,6 +10,9 @@ def fig_forecasts_and_bid_prices(
     trial: int = 0,
     rrd: int = 63,
     flt_no: int = 101,
+    joint_scale: bool = False,
+    *,
+    trace: pd.ExcelWriter | None = None,
 ):
     burn = sim.sim.config.simulation_controls.burn_samples
 
@@ -43,24 +48,26 @@ def fig_forecasts_and_bid_prices(
     lg_df = lg_df.join(bp_df.groupby("sample").forecast_mean.sum(), on="sample")
 
     chart = alt.Chart(bp_df, height=40)
-    forecast = (
-        chart.mark_line()
-        .encode(
-            x="sample:Q",
-            y=alt.Y(
-                "forecast_mean:Q",
-                scale=alt.Scale(zero=False),
-                axis=alt.Axis(title=None),
-            ),
-            color="booking_class:N",
-            row=alt.Row("booking_class:N", spacing=0)
-            .title(None)
-            .header(labelAngle=0, labelAlign="left", labelPadding=5, labelFont="bold"),
-        )
-        .resolve_scale(y="independent")
+    if trace is not None:
+        write_trace(trace, bp_df, basesheetname="forecasts")
+    forecast = chart.mark_area().encode(
+        x="sample:Q",
+        y=alt.Y(
+            "forecast_mean:Q",
+            scale=alt.Scale(zero=joint_scale),
+            axis=alt.Axis(title=None),
+        ),
+        color="booking_class:N",
+        row=alt.Row("booking_class:N", spacing=0)
+        .title(None)
+        .header(labelAngle=0, labelAlign="left", labelPadding=5, labelFont="bold"),
     )
+    if not joint_scale:
+        forecast = forecast.resolve_scale(y="independent")
 
     chart2 = alt.Chart(lg_df, height=80)
+    if trace is not None:
+        write_trace(trace, lg_df, basesheetname="bid_prices")
     bidprice = chart2.mark_line(color="#00cf37").encode(
         x="sample:Q",
         y=alt.Y(
