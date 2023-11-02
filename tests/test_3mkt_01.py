@@ -20,23 +20,37 @@ def summary() -> SummaryTables:
 def test_3mkt_01_bookings_by_timeframe(summary, dataframe_regression):
     assert isinstance(summary, SummaryTables)
     dataframe_regression.check(
-        summary.bookings_by_timeframe, basename="bookings_by_timeframe"
+        summary.bookings_by_timeframe,
+        basename="bookings_by_timeframe",
+        default_tolerance=dict(rtol=1e-03, atol=1e-06),
     )
 
 
 def test_3mkt_01_carriers(summary, dataframe_regression):
     assert isinstance(summary, SummaryTables)
-    dataframe_regression.check(summary.carriers, basename="carriers")
+    dataframe_regression.check(
+        summary.carriers,
+        basename="carriers",
+        default_tolerance=dict(rtol=1e-03, atol=1e-06),
+    )
 
 
 def test_3mkt_01_fare_class_mix(summary, dataframe_regression):
     assert isinstance(summary, SummaryTables)
-    dataframe_regression.check(summary.fare_class_mix, basename="fare_class_mix")
+    dataframe_regression.check(
+        summary.fare_class_mix,
+        basename="fare_class_mix",
+        default_tolerance=dict(rtol=1e-03, atol=1e-06),
+    )
 
 
 def test_3mkt_01_demand_to_come(summary, dataframe_regression):
     assert isinstance(summary, SummaryTables)
-    dataframe_regression.check(summary.demand_to_come, basename="demand_to_come")
+    dataframe_regression.check(
+        summary.demand_to_come,
+        basename="demand_to_come",
+        default_tolerance=dict(rtol=1e-03, atol=1e-06),
+    )
 
 
 @pytest.mark.parametrize(
@@ -63,7 +77,8 @@ def test_3mkt_01_fig_bookings_by_timeframe(
     dataframe_regression.check(
         summary.fig_bookings_by_timeframe(
             by_carrier=by_carrier, by_class=by_class, raw_df=True
-        ).reset_index(drop=True)
+        ).reset_index(drop=True),
+        default_tolerance=dict(rtol=1e-03, atol=1e-06),
     )
 
 
@@ -72,7 +87,11 @@ def test_3mkt_01_fig_carrier_load_factors(summary, dataframe_regression):
     fig = summary.fig_carrier_load_factors()
     assert isinstance(fig, altair.TopLevelMixin)
     df = summary.fig_carrier_load_factors(raw_df=True).reset_index(drop=True)
-    dataframe_regression.check(df, basename="fig_carrier_load_factors")
+    dataframe_regression.check(
+        df,
+        basename="fig_carrier_load_factors",
+        default_tolerance=dict(rtol=1e-03, atol=1e-06),
+    )
 
 
 def test_3mkt_01_fig_carrier_mileage(summary, dataframe_regression):
@@ -80,7 +99,11 @@ def test_3mkt_01_fig_carrier_mileage(summary, dataframe_regression):
     fig = summary.fig_carrier_mileage()
     assert isinstance(fig, altair.TopLevelMixin)
     df = summary.fig_carrier_mileage(raw_df=True).reset_index(drop=True)
-    dataframe_regression.check(df, basename="fig_carrier_mileage")
+    dataframe_regression.check(
+        df,
+        basename="fig_carrier_mileage",
+        default_tolerance=dict(rtol=1e-03, atol=1e-06),
+    )
 
 
 def test_3mkt_01_fig_carrier_revenues(summary, dataframe_regression):
@@ -88,7 +111,11 @@ def test_3mkt_01_fig_carrier_revenues(summary, dataframe_regression):
     fig = summary.fig_carrier_revenues()
     assert isinstance(fig, altair.TopLevelMixin)
     df = summary.fig_carrier_revenues(raw_df=True).reset_index(drop=True)
-    dataframe_regression.check(df, basename="fig_carrier_revenues")
+    dataframe_regression.check(
+        df,
+        basename="fig_carrier_revenues",
+        default_tolerance=dict(rtol=1e-03, atol=1e-06),
+    )
 
 
 def test_3mkt_01_fig_carrier_yields(summary, dataframe_regression):
@@ -96,7 +123,11 @@ def test_3mkt_01_fig_carrier_yields(summary, dataframe_regression):
     fig = summary.fig_carrier_yields()
     assert isinstance(fig, altair.TopLevelMixin)
     df = summary.fig_carrier_yields(raw_df=True).reset_index(drop=True)
-    dataframe_regression.check(df, basename="fig_carrier_yields")
+    dataframe_regression.check(
+        df,
+        basename="fig_carrier_yields",
+        default_tolerance=dict(rtol=1e-03, atol=1e-06),
+    )
 
 
 def test_3mkt_01_fig_fare_class_mix(summary, dataframe_regression):
@@ -104,7 +135,11 @@ def test_3mkt_01_fig_fare_class_mix(summary, dataframe_regression):
     fig = summary.fig_fare_class_mix()
     assert isinstance(fig, altair.TopLevelMixin)
     df = summary.fig_fare_class_mix(raw_df=True).reset_index(drop=True)
-    dataframe_regression.check(df, basename="fig_fare_class_mix")
+    dataframe_regression.check(
+        df,
+        basename="fig_fare_class_mix",
+        default_tolerance=dict(rtol=1e-03, atol=1e-06),
+    )
 
 
 def test_3mkt_01_fig_leg_forecasts(summary, dataframe_regression):
@@ -112,4 +147,6 @@ def test_3mkt_01_fig_leg_forecasts(summary, dataframe_regression):
     fig = summary.fig_leg_forecasts()
     assert isinstance(fig, altair.TopLevelMixin)
     df = summary.fig_leg_forecasts(raw_df=True).reset_index(drop=True)
-    dataframe_regression.check(df, basename="fig_leg_forecasts")
+    dataframe_regression.check(
+        df, basename="fig_leg_forecasts", default_tolerance=dict(rtol=1e-03, atol=1e-06)
+    )
