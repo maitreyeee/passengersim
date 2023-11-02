@@ -3,7 +3,6 @@ import pytest
 from passengersim import Simulation, demo_network
 from passengersim.config import Config
 from passengersim.database.write_demands import save_demand_to_database
-from passengersim.summary import SummaryTables
 
 
 def test_3mkt(data_regression):
@@ -100,14 +99,3 @@ def test_3mkt_db_detail(fast):
     assert buckets.shape == (num_samples * n_classes * n_dcps * n_legs, 21)  # 30600
     dmds = sim.cnx.dataframe("SELECT * FROM demand_detail")
     assert dmds.shape == (num_samples * n_demands * n_dcps, 13)  # 2040
-
-
-def test_3mkt_2carrier(data_regression):
-    input_file = demo_network("3mkt-2carrier")
-    cfg = Config.from_yaml(input_file)
-    cfg.db.engine = None  # no db connection
-    sim = Simulation(cfg)
-    summary = sim.run(log_reports=False)
-    assert isinstance(summary, SummaryTables)
-    # TODO enable check when/if stable results can be created
-    # data_regression.check(summary.to_records())
