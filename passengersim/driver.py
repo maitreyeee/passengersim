@@ -477,7 +477,19 @@ class Simulation:
                     self.sim, airline.name, dcp_index, recording_day, event_type="daily"
                 )
 
-        if event_type.lower() in {"dcp", "done"}:
+        if event_type.lower() == "daily":
+            if (
+                self.cnx.is_open
+                and self.sim.save_timeframe_details
+                and recording_day > 0
+            ):
+                self.sim.write_to_sqlite(
+                    self.cnx._connection,
+                    recording_day,
+                    store_bid_prices=self.sim.config.db.store_leg_bid_prices,
+                    intermediate_day=True,
+                )
+        elif event_type.lower() in {"dcp", "done"}:
             if self.cnx.is_open:
                 self.cnx.save_details(self.sim, recording_day)
             if self.file_writer is not None:

@@ -36,6 +36,7 @@ class DatabaseConfig(PrettyModel, extra="forbid", validate_assignment=True):
             "bucket",
             "fare",
             "demand",
+            "leg_daily",
             "leg_final",
             "bucket_final",
             "fare_final",
