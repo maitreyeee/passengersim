@@ -24,14 +24,17 @@ def run_task(progress, task_id, job_name: str, config_files: list[str | pathlib.
     log_file_name = job_name.replace(" ", "-") + ".log"
     # with open(log_file_name, 'w') as sys.stdout:
     _logger = log_to_file(log_file_name)
-    cfg = Config.from_yaml(config_files)
-    cfg.simulation_controls.show_progress_bar = False
-    sim = Simulation(cfg)
-    sim.sample_done_callback = callback
-    callback(
-        0, cfg.simulation_controls.num_trials * cfg.simulation_controls.num_samples
-    )
-    sim.run(log_reports=False)
+    try:
+        cfg = Config.from_yaml(config_files)
+        cfg.simulation_controls.show_progress_bar = False
+        sim = Simulation(cfg)
+        sim.sample_done_callback = callback
+        callback(
+            0, cfg.simulation_controls.num_trials * cfg.simulation_controls.num_samples
+        )
+        sim.run(log_reports=False)
+    except Exception:
+        _logger.exception(f"Error in TASK {task_id}")
 
 
 class MultiplexConfig(YamlConfig, extra="forbid"):
