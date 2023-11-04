@@ -14,6 +14,7 @@ class SnapshotInstruction:
         filepath: pathlib.Path | None = None,
         why: str | None = None,
         filter: SnapshotFilter | None = None,
+        mode: Literal["w", "a"] = "w",
     ):
         self.trigger = bool(trigger)
         """Has this snapshot been triggered."""
@@ -23,14 +24,18 @@ class SnapshotInstruction:
         """Where to save snapshot content."""
         self.filter = filter
         """A reference to the filter that spawned this instruction."""
+        self.mode = mode
+        """Write mode for new content, `w` overwrites existing file, `a` appends."""
 
     def __bool__(self) -> bool:
         return self.trigger
 
     def write(self, content: str = ""):
         """Write snapshot content to a file, or just print it"""
+        if not content:
+            return
         if self.filepath:
-            with self.filepath.open(mode="w") as f:
+            with self.filepath.open(mode=self.mode) as f:
                 f.write(self.why)
                 f.write("\n")
                 if isinstance(content, bytes):
@@ -47,6 +52,8 @@ class SnapshotInstruction:
 
     def write_more(self, content: str = ""):
         """Write additional snapshot content to a file, or just print it"""
+        if not content:
+            return
         if self.filepath:
             with self.filepath.open(mode="a") as f:
                 if isinstance(content, bytes):
@@ -62,7 +69,13 @@ class SnapshotInstruction:
 
 class SnapshotFilter(BaseModel, validate_assignment=True):
     type: Literal[
-        "forecast", "leg_untruncation", "path_untruncation", "rm", "pro_bp", None
+        "forecast",
+        "leg_untruncation",
+        "path_untruncation",
+        "rm",
+        "pro_bp",
+        "forecast_adj",
+        None,
     ] = None
     title: str = ""
     airline: str = ""
@@ -170,7 +183,7 @@ class SnapshotFilter(BaseModel, validate_assignment=True):
 
         if self.type in ["leg_untruncation", "path_untruncation"]:
             return SnapshotInstruction(True, snapshot_file, why=title, filter=self)
-        elif self.type == "forecast":
+        elif self.type in ("forecast", "forecast_adj"):
             return SnapshotInstruction(True, snapshot_file, why=title, filter=self)
         elif self.type == "rm":
             bucket_detail = leg.print_bucket_detail()
@@ -185,4 +198,5 @@ class SnapshotFilter(BaseModel, validate_assignment=True):
         elif self.type == "pro_bp":
             return SnapshotInstruction(True, snapshot_file, why=title, filter=self)
 
-        return SnapshotInstruction(False, why="cause unknown")
+        raise ValueError("unknown snapshot filter type")
+        # return SnapshotInstruction(False, why="cause unknown")

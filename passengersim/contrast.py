@@ -447,11 +447,12 @@ def _fig_forecasts(
     y="forecast_mean",
     y_title="Avg Demand Forecast",
     color="booking_class:N",
+    rrd_ntype: Literal["O", "Q"] = "O",
 ):
     import altair as alt
 
     encoding = dict(
-        x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+        x=alt.X(f"rrd:{rrd_ntype}").scale(reverse=True).title("Days from Departure"),
         y=alt.Y(f"{y}:Q", title=y_title),
         color="booking_class:N",
         strokeDash=alt.StrokeDash("source:N", title="Source"),
@@ -628,12 +629,18 @@ def fig_path_forecasts(
         y_title = "Mean Time Frame Closed of Demand Forecast"
     else:
         raise NotImplementedError
+
+    # use ordinal data type for DCP labels unless the underlying data is daily, then use Q
+    rrd_ntype = "O"
+    if len(df["rrd"].value_counts()) > 30:
+        rrd_ntype = "Q"
     return _fig_forecasts(
         df,
         facet_on="path_id" if not isinstance(by_path_id, int) else None,
         y=y,
         y_title=y_title,
         color=color,
+        rrd_ntype=rrd_ntype,
     )
 
 

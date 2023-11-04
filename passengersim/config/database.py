@@ -43,6 +43,7 @@ class DatabaseConfig(PrettyModel, extra="forbid", validate_assignment=True):
             "demand_final",
             "bookings",
             "pathclass",
+            "pathclass_daily",
             "pathclass_final",
         ]
     ] = {"leg_final", "fare_final", "demand_final", "bookings"}
