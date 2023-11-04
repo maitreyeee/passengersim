@@ -55,7 +55,11 @@ markdown_extensions:
       pygments_lang_class: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - attr_list
   - md_in_html
   - pymdownx.tabbed:
@@ -67,6 +71,7 @@ markdown_extensions:
       generic: true
   - admonition
   - pymdownx.details
+  - footnotes
 
 repo_url: https://github.com/PassengerSim/passengersim
 repo_name: PassengerSim/passengersim
@@ -90,6 +95,10 @@ nav:
       - user-guide/rm-systems/emsr.md
       - user-guide/rm-systems/probp.md
     - Writing Configs: user-guide/writing-configs.md
+    - Database:
+      - user-guide/database/index.md
+      - user-guide/database/leg_defs.md
+      - user-guide/database/leg_detail.md
   - Tutorials:
     - Tutorials/index.md
     - Tutorials/3MKT/3mkt-01.nbconvert.ipynb
@@ -105,6 +114,8 @@ nav:
     - Tutorials/3MKT/3mkt-98.nbconvert.ipynb
   - API:
     - API/index.md
+    - Simulation:
+      - API/simulation.md
     - Config:
       - API/config/00-configs.md
       - API/config/01-simulation-controls.md
@@ -124,6 +135,10 @@ nav:
       - API/config/rm_steps.md
       - API/config/rm_systems.md
       - API/config/snapshot_filter.md
+    - Database:
+      - API/database/index.md
+      - API/database/tables.md
+      - API/database/common-queries.md
     - API/summary.md
     - API/contrast.md
     - Core:

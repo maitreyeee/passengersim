@@ -106,7 +106,15 @@ def create_table_path_defs(cnx: Database, paths: Iterable | None = None):
         )
 
 
-def create_table_leg_detail(cnx: Database, primary_key: bool = False):
+def create_table_leg_detail(cnx: Database, primary_key: bool = False) -> None:
+    """
+    Create the `leg_detail` table in the database.
+
+    Parameters
+    ----------
+    cnx : Database
+    primary_key : bool, default False
+    """
     sql = """
     CREATE TABLE IF NOT EXISTS leg_detail
     (
