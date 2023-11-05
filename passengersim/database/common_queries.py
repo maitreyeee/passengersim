@@ -11,12 +11,37 @@ logger = logging.getLogger("passengersim.database")
 def fare_class_mix(
     cnx: Database, scenario: str, burn_samples: int = 100
 ) -> pd.DataFrame:
+    """
+    Fare class mix by carrier.
+
+    This query requires that the simulation was run while recording final fare
+    details (i.e. with the `fare` or `fare_final` flags set on `Config.db.write_items`).
+
+    Parameters
+    ----------
+    cnx : Database
+    scenario : str
+    burn_samples : int, default 100
+        The average total demand will be computed ignoring this many samples from the
+        beginning of each trial.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The resulting dataframe is indexed by `carrier` and `booking_class`, and
+        has these columns:
+
+        - `avg_sold`: Average number of sales in this booking class.
+        - `avg_revenue`: Average total revenue earned from customers booking in
+            this booking class.
+        - `avg_price`: Average price per ticket from customers booking in this
+            booking class.
+    """
     qry = """
     SELECT carrier, booking_class,
            (AVG(sold)) AS avg_sold,
            (AVG(revenue)) AS avg_revenue,
-           (AVG(revenue) / AVG(sold)) AS avg_price,
-           SUM(nobs) AS nobs
+           (AVG(revenue) / AVG(sold)) AS avg_price
     FROM (
             SELECT
                 trial, scenario, carrier, booking_class,
@@ -35,19 +60,48 @@ def fare_class_mix(
     GROUP BY carrier, booking_class
     ORDER BY carrier, booking_class;
     """
-    return cnx.dataframe(qry, (scenario, burn_samples))
+    return cnx.dataframe(qry, (scenario, burn_samples)).set_index(
+        ["carrier", "booking_class"]
+    )
 
 
 def od_fare_class_mix(
     cnx: Database, orig: str, dest: str, scenario: str, burn_samples: int = 100
 ) -> pd.DataFrame:
-    """Get the fare class mix for a particular market."""
+    """
+    Fare class mix by carrier for a particular origin-destination market.
+
+    This query requires that the simulation was run while recording final fare
+    details (i.e. with the `fare` or `fare_final` flags set on `Config.db.write_items`).
+
+    Parameters
+    ----------
+    cnx : Database
+    orig, dest : str
+        Origin and destination to query.
+    scenario : str
+    burn_samples : int, default 100
+        The average total demand will be computed ignoring this many samples from the
+        beginning of each trial.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The resulting dataframe is indexed by `carrier` and `booking_class`, and
+        has these columns:
+
+        - `avg_sold`: Average number of sales in this booking class.
+        - `avg_revenue`: Average total revenue earned from customers booking in
+            this booking class.
+        - `avg_price`: Average price per ticket from customers booking in this
+            booking class.
+    """
+
     qry = """
     SELECT carrier, booking_class,
            (AVG(sold)) AS avg_sold,
            (AVG(revenue)) AS avg_revenue,
-           (AVG(revenue) / AVG(sold)) AS avg_price,
-           SUM(nobs) AS nobs
+           (AVG(revenue) / AVG(sold)) AS avg_price
     FROM (
             SELECT
                 trial, scenario, carrier, booking_class,
@@ -68,7 +122,9 @@ def od_fare_class_mix(
     GROUP BY carrier, booking_class
     ORDER BY carrier, booking_class;
     """
-    return cnx.dataframe(qry, (scenario, burn_samples, orig, dest))
+    return cnx.dataframe(qry, (scenario, burn_samples, orig, dest)).set_index(
+        ["carrier", "booking_class"]
+    )
 
 
 def load_factors(cnx: Database, scenario: str, burn_samples: int = 100) -> pd.DataFrame:
@@ -100,6 +156,24 @@ def load_factors(cnx: Database, scenario: str, burn_samples: int = 100) -> pd.Da
 
 
 def total_demand(cnx: Database, scenario: str, burn_samples: int = 100) -> float:
+    """
+    Average total demand.
+
+    This query requires that the simulation was run while recording final demand
+    details (i.e. with the `demand` or `demand_final` flags set on `Config.db.write_items`).
+
+    Parameters
+    ----------
+    cnx : Database
+    scenario : str
+    burn_samples : int, default 100
+        The average total demand will be computed ignoring this many samples from the
+        beginning of each trial.
+
+    Returns
+    -------
+    float
+    """
     qry = """
     SELECT AVG(sample_demand)
     FROM (
@@ -121,8 +195,43 @@ def bookings_by_timeframe(
     cnx: Database,
     scenario: str,
     from_fare_detail: bool = False,
-    burn_samples=100,
+    burn_samples: int = 100,
 ) -> pd.DataFrame:
+    """
+    Average bookings and revenue by carrier, booking class, and timeframe.
+
+    This query requires that the simulation was run while recording supporting
+    details (i.e. with the `bookings` or `fare` flags set on `Config.db.write_items`).
+
+    Parameters
+    ----------
+    cnx : Database
+    scenario : str
+    from_fare_detail : bool, default False
+        Reconstruct this table from the `fare_detail` table.  This is generally
+        slower than accessing the `bookings` table directly, and also requires
+        substantially more data to have been saved into the database by setting
+        the `fare` flag on `Config.db.write_items`
+    burn_samples : int, default 100
+        The bookings will be computed ignoring this many samples from the
+        beginning of each trial. This argument is nominally ignored by this query
+        unless `from_fare_detail` is true, although the simulator will have already
+        ignored the burned samples when storing the data in the bookings table.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The resulting dataframe is indexed by `trial`, `carrier`, `class`,
+        and `rrd`, and has these columns:
+
+        - `avg_sold`: Average number of sales.
+        - `avg_business`: Average number of sales to passengers in the business segment.
+        - `avg_leisure`: Average number of sales to leisure passengers.
+        - `avg_revenue`: Average total revenue earned from customers booking in this booking
+            class in this time period.
+        - `avg_price`: Average price per ticket from customers booking in this booking
+            class in this time period
+    """
     qry_fare = """
     SELECT trial, carrier, booking_class AS class, rrd,
            (AVG(sold)) AS avg_sold,
@@ -146,7 +255,9 @@ def bookings_by_timeframe(
     """
 
     if from_fare_detail:
-        return cnx.dataframe(qry_fare, (scenario, burn_samples))
+        return cnx.dataframe(qry_fare, (scenario, burn_samples)).set_index(
+            ["trial", "carrier", "class", "rrd"]
+        )
 
     qry_bookings = """
     SELECT
@@ -168,8 +279,9 @@ def bookings_by_timeframe(
     ORDER BY
         carrier, booking_class, rrd, trial;
     """
-
-    return cnx.dataframe(qry_bookings, (scenario,))
+    return cnx.dataframe(qry_bookings, (scenario,)).set_index(
+        ["trial", "carrier", "class", "rrd"]
+    )
 
 
 def leg_forecasts(
@@ -186,7 +298,7 @@ def leg_forecasts(
     cnx : Database
     scenario : str
     burn_samples : int, default 100
-        The bid prices will be analyzed ignoring this many samples from the
+        The forecasts will be analyzed ignoring this many samples from the
         beginning of each trial.
 
     Returns
@@ -244,7 +356,7 @@ def path_forecasts(
     cnx : Database
     scenario : str
     burn_samples : int, default 100
-        The bid prices will be analyzed ignoring this many samples from the
+        The forecasts will be analyzed ignoring this many samples from the
         beginning of each trial.
 
     Returns
@@ -302,7 +414,7 @@ def demand_to_come(
     cnx : Database
     scenario : str
     burn_samples : int, default 100
-        The bid prices will be analyzed ignoring this many samples from the
+        The demand will be returned ignoring this many samples from the
         beginning of each trial.
 
     Returns
@@ -353,7 +465,7 @@ def carrier_history(
     cnx : Database
     scenario : str
     burn_samples : int, default 100
-        The bid prices will be analyzed ignoring this many samples from the
+        The history will be returned ignoring this many samples from the
         beginning of each trial.
 
     Returns
