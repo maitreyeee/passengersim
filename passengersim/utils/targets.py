@@ -24,7 +24,7 @@ def computed_targets(cfg: Config):
     td = pd.DataFrame(target_demand_by_timeframe(cfg))
     td.loc[0, :] = 0
     td = td.cumsum().shift(1).fillna(0).add_prefix("avg_")
-    td = td.assign(**{"carrier": "TGT", "class": "XX"})
+    td = td.assign(**{"carrier": "TGT", "booking_class": "XX"})
     td = td.rename_axis(index="rrd").reset_index()
     return SummaryTables(
         bookings_by_timeframe=td,

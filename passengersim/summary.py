@@ -407,12 +407,12 @@ class SummaryTables:
                 x = x.assign(trial=0)
             if by_class:
                 y = (
-                    x.groupby(["trial", "carrier", "class", "rrd"])[f"avg_{c}"]
+                    x.groupby(["trial", "carrier", "booking_class", "rrd"])[f"avg_{c}"]
                     .sum()
-                    .unstack(["trial", "carrier", "class"])
+                    .unstack(["trial", "carrier", "booking_class"])
                     .sort_index(ascending=False)
                     .apply(differs)
-                    .stack(["carrier", "class"])
+                    .stack(["carrier", "booking_class"])
                     .aggregate(["mean", "sem"], axis=1)
                     .assign(
                         ci0=lambda x: np.maximum(x["mean"] - 1.96 * x["sem"], 0),
@@ -451,7 +451,7 @@ class SummaryTables:
         if not by_carrier:
             g = ["rrd", "paxtype"]
             if by_class:
-                g += ["class"]
+                g += ["booking_class"]
             df = df.groupby(g)[["sold", "ci0", "ci1"]].sum().reset_index()
         if isinstance(by_carrier, str):
             df = df[df["carrier"] == by_carrier]
@@ -459,8 +459,8 @@ class SummaryTables:
             title_annot.append(by_carrier)
             by_carrier = False
         if isinstance(by_class, str):
-            df = df[df["class"] == by_class]
-            df = df.drop(columns=["class"])
+            df = df[df["booking_class"] == by_class]
+            df = df.drop(columns=["booking_class"])
             title_annot.append(f"Class {by_class}")
             by_class = False
         if title_annot:

@@ -233,7 +233,7 @@ def bookings_by_timeframe(
             class in this time period
     """
     qry_fare = """
-    SELECT trial, carrier, booking_class AS class, rrd,
+    SELECT trial, carrier, booking_class, rrd,
            (AVG(sold)) AS avg_sold,
            (AVG(sold_business)) AS avg_business,
            (AVG(sold_leisure)) AS avg_leisure,
@@ -256,14 +256,14 @@ def bookings_by_timeframe(
 
     if from_fare_detail:
         return cnx.dataframe(qry_fare, (scenario, burn_samples)).set_index(
-            ["trial", "carrier", "class", "rrd"]
+            ["trial", "carrier", "booking_class", "rrd"]
         )
 
     qry_bookings = """
     SELECT
         trial,
         carrier,
-        booking_class AS class,
+        booking_class,
         rrd,
         avg_sold,
         avg_business,
@@ -280,7 +280,7 @@ def bookings_by_timeframe(
         carrier, booking_class, rrd, trial;
     """
     return cnx.dataframe(qry_bookings, (scenario,)).set_index(
-        ["trial", "carrier", "class", "rrd"]
+        ["trial", "carrier", "booking_class", "rrd"]
     )
 
 
