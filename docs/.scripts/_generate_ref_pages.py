@@ -59,7 +59,12 @@ for path in sorted(sw_path.joinpath("passengersim/config").rglob("*.py")):
         print("      filters:", file=fd)
         print('        - "!^debug.*"', file=fd)
         print('        - "!^_[^_]"', file=fd)
+        print('        - "!^logger$"', file=fd)
+        print('        - "!^TConfig$"', file=fd)
+        print('        - "!^web_opener$"', file=fd)
+        print('        - "!^create_timestamp$"', file=fd)
+        print('        - "!^T$"', file=fd)
 
     mkdocs_gen_files.set_edit_path(full_doc_path, path)
 
-    print(">>>>>>", full_doc_path )
+    print(">>>>>>", full_doc_path)
