@@ -255,6 +255,33 @@ def demand_to_come(cnx: Database, scenario: str, burn_samples: int = 100):
 
 
 def carrier_history(cnx: Database, scenario: str, burn_samples: int = 100):
+    """
+    Sample-level details of carrier-level measures.
+
+    Parameters
+    ----------
+    cnx : Database
+    scenario : str
+    burn_samples : int, default 100
+        The bid prices will be analyzed ignoring this many samples from the
+        beginning of each trial.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The resulting dataframe is indexed by `iteration`, `trial` and `sample`,
+        and columns defined with a two-level MultiIndex.  The second level of
+        the columns MultiIndex represents the carriers, while the top level
+        includes these columns:
+
+        - `forecast_mean`: Forecast mean (mu) at the beginning of the booking
+            curve, summed over all this carrier's legs in this sample.
+        - `forecast_stdev`: Forecast standard deviation (sigma) at the beginning
+            of the booking curve, aggregated over all this carrier's legs in this
+            sample.
+        - `sold`: Total bookings accepted by this carrier in this sample.
+        - `revenue`: Total revenue for this carrier in this sample.
+    """
     # Provides content similar to PODS *.HST output file.
     max_rrd = int(
         cnx.dataframe(
