@@ -15,7 +15,9 @@ RmProcess = list[RmStep]
 class RmSystem(Named, extra="forbid"):
     processes: dict[str, RmProcess]
 
-    availability_control: Literal["infer", "leg", "theft", "bp", "vn", "none"] = "infer"
+    availability_control: Literal[
+        "infer", "leg", "theft", "bp", "bp_loose", "vn", "none"
+    ] = "infer"
     """Fare class availability algorithm for carriers using this RmSystem.
 
     The default value will infer the appropriate control based on the steps in the DCP process
@@ -23,7 +25,8 @@ class RmSystem(Named, extra="forbid"):
 
     Allowed values include:
     - "leg" (default): Uses leg-based controls.
-    - "bp": Bid price controls.
+    - "bp": Bid price controls with strict resolution (fare must be strictly greater than bid price).
+    - "bp_loose": Bid price controls with non-strict resolution (fare must be greater than *or equal to* bid price).
     - "vn": Virtual nesting.
     - "none": No controls.
     """
