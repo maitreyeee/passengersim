@@ -14,6 +14,7 @@ def summary() -> SummaryTables:
     cfg = Config.from_yaml(input_file)
     cfg.simulation_controls.num_trials = 1
     cfg.simulation_controls.num_samples = 500
+    cfg.outputs.reports.add(("od_fare_class_mix", "BOS", "ORD"))
     sim = Simulation(cfg)
     summary = sim.run()
     return summary
@@ -150,6 +151,20 @@ def test_3mkt_01_fig_fare_class_mix(summary, dataframe_regression):
     dataframe_regression.check(
         df,
         basename="fig_fare_class_mix",
+        default_tolerance=DEFAULT_TOLERANCE,
+    )
+
+
+def test_3mkt_01_fig_od_fare_class_mix(summary, dataframe_regression):
+    assert isinstance(summary, SummaryTables)
+    fig = summary.fig_od_fare_class_mix(orig="BOS", dest="ORD")
+    assert isinstance(fig, altair.TopLevelMixin)
+    df = summary.fig_od_fare_class_mix(orig="BOS", dest="ORD", raw_df=True).reset_index(
+        drop=True
+    )
+    dataframe_regression.check(
+        df,
+        basename="fig_od_fare_class_mix",
         default_tolerance=DEFAULT_TOLERANCE,
     )
 

@@ -349,7 +349,7 @@ class SummaryTables:
 
     @report_figure
     def fig_fare_class_mix(self, raw_df=False, label_threshold=0.06):
-        df = self.fare_class_mix[["carrier", "booking_class", "avg_sold"]]
+        df = self.fare_class_mix.reset_index()[["carrier", "booking_class", "avg_sold"]]
         if raw_df:
             return df
         return self._fig_fare_class_mix(
@@ -362,7 +362,7 @@ class SummaryTables:
     def fig_od_fare_class_mix(
         self, orig: str, dest: str, raw_df=False, label_threshold=0.06
     ):
-        df = self.od_fare_class_mix[orig, dest][
+        df = self.od_fare_class_mix[orig, dest].reset_index()[
             ["carrier", "booking_class", "avg_sold"]
         ]
         if raw_df:
@@ -435,8 +435,9 @@ class SummaryTables:
                 )
             return pd.concat({c: y}, names=["paxtype"])
 
-        df0 = _summarize(self.bookings_by_timeframe, "business")
-        df1 = _summarize(self.bookings_by_timeframe, "leisure")
+        bookings_by_timeframe = self.bookings_by_timeframe.reset_index()
+        df0 = _summarize(bookings_by_timeframe, "business")
+        df1 = _summarize(bookings_by_timeframe, "leisure")
         df = (
             pd.concat([df0, df1], axis=0)
             .rename(columns={"mean": "sold"})
@@ -547,7 +548,7 @@ class SummaryTables:
         def differs(x):
             return x.shift(-1, fill_value=0) - x
 
-        b = self.bookings_by_timeframe
+        b = self.bookings_by_timeframe.reset_index()
 
         def _summarize(x, c):
             y = (
