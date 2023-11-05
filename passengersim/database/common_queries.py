@@ -320,22 +320,40 @@ def carrier_history(cnx: Database, scenario: str, burn_samples: int = 100):
 
 def bid_price_history(cnx: Database, scenario: str, burn_samples: int = 100):
     """
-    Compute bid price history by leg.
+    Compute average bid price history over all legs for each carrier.
 
     This query requires that the simulation was run while recording leg
-    details (i.e. with the `leg` flag set on `Config.db.write_items`).
+    details (i.e. with the `leg` flag set on `Config.db.write_items`),
+    including bid prices.
 
     Parameters
     ----------
     cnx : Database
     scenario : str
     burn_samples : int, default 100
-        The bid prices will be computed ignoring this many samples from the
+        The bid prices will be analyzed ignoring this many samples from the
         beginning of each trial.
 
     Returns
     -------
     pandas.DataFrame
+        The resulting dataframe is indexed by `carrier` and `rrd`, and has
+        these columns:
+
+        - `bid_price_mean`: Average bid price across all samples and all legs
+        - `bid_price_stdev`: Sample standard deviation of bid prices across all
+            samples and all legs
+        - `fraction_some_cap`: Fraction of all legs across all samples that have
+            non-zero capacity available for sale.
+        - `fraction_zero_cap`: Fraction of all legs across all samples that have
+            zero capacity available for sale.  Bid prices are computed for these
+            legs but are not really meaningful.
+        - `some_cap_bid_price_mean`: Average bid price across all samples and
+            all legs conditional on the leg having non-zero capacity.
+        - `some_cap_bid_price_stdev`: Sample standard deviation of bid prices
+            across all samples and all legs conditional on the leg having
+            non-zero capacity.
+
     """
 
     qry = """
