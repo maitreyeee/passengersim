@@ -172,7 +172,36 @@ def bookings_by_timeframe(
     return cnx.dataframe(qry_bookings, (scenario,))
 
 
-def leg_forecasts(cnx: Database, scenario: str, burn_samples: int = 100):
+def leg_forecasts(
+    cnx: Database, scenario: str, burn_samples: int = 100
+) -> pd.DataFrame:
+    """
+    Average forecasts of demand by leg, bucket, and days to departure.
+
+    This query requires that the simulation was run while recording path-class
+    details (i.e. with the `pathclass` flag set on `Config.db.write_items`).
+
+    Parameters
+    ----------
+    cnx : Database
+    scenario : str
+    burn_samples : int, default 100
+        The bid prices will be analyzed ignoring this many samples from the
+        beginning of each trial.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The resulting dataframe is indexed by `carrier`, `flt_no`,
+        `bucket_number`, `booking_class` and `rrd`, and has these columns:
+
+        - `forecast_mean`: Average forecast mean (mu).
+        - `forecast_stdev`: Average forecast standard deviation (sigma).
+        - `forecast_closed_in_tf`: Average fraction of time the timeframe was
+            closed in the data used to make a forecast.
+        - `forecast_closed_in_tf`: Average fraction of time any future timeframe
+            was closed in the data used to make a forecast.
+    """
     qry = """
     SELECT
         carrier,
@@ -198,10 +227,39 @@ def leg_forecasts(cnx: Database, scenario: str, burn_samples: int = 100):
             scenario,
             burn_samples,
         ),
-    )
+    ).set_index(["carrier", "flt_no", "bucket_number", "booking_class", "rrd"])
 
 
-def path_forecasts(cnx: Database, scenario: str, burn_samples: int = 100):
+def path_forecasts(
+    cnx: Database, scenario: str, burn_samples: int = 100
+) -> pd.DataFrame:
+    """
+    Average forecasts of demand by path, class, and days to departure.
+
+    This query requires that the simulation was run while recording path-class
+    details (i.e. with the `pathclass` flag set on `Config.db.write_items`).
+
+    Parameters
+    ----------
+    cnx : Database
+    scenario : str
+    burn_samples : int, default 100
+        The bid prices will be analyzed ignoring this many samples from the
+        beginning of each trial.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The resulting dataframe is indexed by `path_id`, `booking_class` and
+        `rrd`, and has these columns:
+
+        - `forecast_mean`: Average forecast mean (mu).
+        - `forecast_stdev`: Average forecast standard deviation (sigma).
+        - `forecast_closed_in_tf`: Average fraction of time the timeframe was
+            closed in the data used to make a forecast.
+        - `forecast_closed_in_tf`: Average fraction of time any future timeframe
+            was closed in the data used to make a forecast.
+    """
     qry = """
     SELECT
         path_id,
@@ -225,11 +283,36 @@ def path_forecasts(cnx: Database, scenario: str, burn_samples: int = 100):
             scenario,
             burn_samples,
         ),
-    )
+    ).set_index(["path_id", "booking_class", "rrd"])
 
 
-def demand_to_come(cnx: Database, scenario: str, burn_samples: int = 100):
-    # Provides content roughly equivalent to PODS *.DHS output file.
+def demand_to_come(
+    cnx: Database, scenario: str, burn_samples: int = 100
+) -> pd.DataFrame:
+    """
+    Demand by market and timeframe across each sample.
+
+    This query delivers sample-by-sample timeframe demand results for the
+    various markets (origin, destination, passenger type) in the simulation.
+    It requires that the simulation was run while recording demand details
+    (i.e. with the `demand` flag set on `Config.db.write_items`).
+
+    Parameters
+    ----------
+    cnx : Database
+    scenario : str
+    burn_samples : int, default 100
+        The bid prices will be analyzed ignoring this many samples from the
+        beginning of each trial.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The resulting dataframe is indexed by `iteration`, `trial`, `sample`,
+        `segment`, `orig`, and `dest`; and has columns defined by the DCPs.
+        The values stored are the total remaining demand to come at each DCP.
+    """
+    # Provides content similar to PODS *.DHS output file, but with market level detail
     qry = """
     SELECT
         iteration, trial, sample, segment, orig, dest, rrd, sold, no_go,
@@ -254,9 +337,16 @@ def demand_to_come(cnx: Database, scenario: str, burn_samples: int = 100):
     return dhs
 
 
-def carrier_history(cnx: Database, scenario: str, burn_samples: int = 100):
+def carrier_history(
+    cnx: Database, scenario: str, burn_samples: int = 100
+) -> pd.DataFrame:
     """
     Sample-level details of carrier-level measures.
+
+    This query delivers sample-by-sample aggregated summary results for the
+    various carriers in the simulation. It requires that the simulation was
+    run while recording leg bucket details (i.e. with the `bucket` flag set
+    on `Config.db.write_items`).
 
     Parameters
     ----------
@@ -318,7 +408,9 @@ def carrier_history(cnx: Database, scenario: str, burn_samples: int = 100):
     return pd.concat([bd1, bd2], axis=1).unstack("carrier")
 
 
-def bid_price_history(cnx: Database, scenario: str, burn_samples: int = 100):
+def bid_price_history(
+    cnx: Database, scenario: str, burn_samples: int = 100
+) -> pd.DataFrame:
     """
     Compute average bid price history over all legs for each carrier.
 
@@ -355,7 +447,6 @@ def bid_price_history(cnx: Database, scenario: str, burn_samples: int = 100):
             non-zero capacity.
 
     """
-
     qry = """
     SELECT
         carrier,

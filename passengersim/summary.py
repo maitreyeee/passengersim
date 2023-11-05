@@ -765,7 +765,7 @@ class SummaryTables:
         ]
         if self.leg_forecasts is None:
             raise ValueError("the leg_forecasts summary table is not available")
-        df = self.leg_forecasts[columns].reset_index()
+        df = self.leg_forecasts.reset_index()[columns]
         color = "booking_class:N"
         if isinstance(by_flt_no, int) and by_flt_no is not True:
             df = df[df.flt_no == by_flt_no]
@@ -796,7 +796,7 @@ class SummaryTables:
             "rrd",
             y,
         ]
-        df = self.path_forecasts[columns].reset_index()
+        df = self.path_forecasts.reset_index()[columns]
         color = "booking_class:N"
         if isinstance(by_path_id, int) and by_path_id is not True:
             df = df[df.path_id == by_path_id]
