@@ -132,7 +132,7 @@ def fig_bookings_by_timeframe(
             )
             tooltips = ()
         else:
-            color = alt.Color("class:N").title("Booking Class")
+            color = alt.Color("booking_class:N").title("Booking Class")
             tooltips = (alt.Tooltip("booking_class", title="Booking Class"),)
         chart = alt.Chart(df.sort_values("source", ascending=False))
         chart_1 = chart.mark_bar().encode(
