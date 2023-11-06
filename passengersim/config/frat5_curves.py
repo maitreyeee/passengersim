@@ -1,7 +1,7 @@
 # TITLE: Frat5 Curves
 from __future__ import annotations
 
-from pydantic import FieldValidationInfo, field_validator
+from pydantic import ValidationInfo, field_validator
 
 from .named import Named
 
@@ -43,11 +43,13 @@ class Frat5Curve(Named, extra="forbid"):
     """
 
     @field_validator("curve")
-    def _frat5_curves_accumulate(cls, v: dict[int, float], info: FieldValidationInfo):
+    def _frat5_curves_accumulate(cls, v: dict[int, float], info: ValidationInfo):
         """Check that all curve values do not decrease as DCP keys decrease."""
         sorted_dcps = reversed(sorted(v.keys()))
         i = 0
         for dcp in sorted_dcps:
-            assert (v[dcp] >= i), f"frat5 curve {info.data['name']} moves backwards at dcp {dcp}"
+            assert (
+                v[dcp] >= i
+            ), f"frat5 curve {info.data['name']} moves backwards at dcp {dcp}"
             i = v[dcp]
         return v

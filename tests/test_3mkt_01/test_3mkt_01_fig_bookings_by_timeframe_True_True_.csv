@@ -1,4 +1,4 @@
-,paxtype,rrd,carrier,class,sold,sem,ci0,ci1
+,paxtype,rrd,carrier,booking_class,sold,sem,ci0,ci1
 0,business,63,AL1,Y5,8.8224999999999998,,,
 1,business,63,AL2,Y5,8.8175000000000008,,,
 2,business,56,AL1,Y5,7.3525000000000009,,,

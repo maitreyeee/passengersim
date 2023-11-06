@@ -1,7 +1,7 @@
 # TITLE: Booking Curves
 from __future__ import annotations
 
-from pydantic import FieldValidationInfo, field_validator
+from pydantic import ValidationInfo, field_validator
 
 from .named import Named
 
@@ -49,7 +49,7 @@ class BookingCurve(Named, extra="forbid"):
     """
 
     @field_validator("curve")
-    def _booking_curves_accumulate(cls, v: dict[int, float], info: FieldValidationInfo):
+    def _booking_curves_accumulate(cls, v: dict[int, float], info: ValidationInfo):
         """Check that all curve values do not decrease as DCP keys decrease."""
         sorted_dcps = reversed(sorted(v.keys()))
         i = 0

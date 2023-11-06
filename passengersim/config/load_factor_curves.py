@@ -1,6 +1,6 @@
 # TITLE: Load Factor Curves
 from __future__ import annotations
-from pydantic import FieldValidationInfo, field_validator
+
 from .named import Named
 
 
@@ -9,6 +9,7 @@ class LoadFactorCurve(Named, extra="forbid"):
     LF Curve specifies the load factor at which to close a booking class.
     This is designed to simulate a naive LCC that really doesn't have automated RM
     """
+
     algorithm: str
     min_accordion: float
     max_accordion: float

@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 from datetime import datetime, timedelta
 
-from pydantic import BaseModel, FieldValidationInfo, field_validator
+from pydantic import BaseModel, ValidationInfo, field_validator
 
 
 def create_timestamp(base_date, offset, hh, mm) -> int:
@@ -57,7 +57,7 @@ class Leg(BaseModel, extra="forbid"):
         return v
 
     @field_validator("dep_time", "arr_time", mode="before")
-    def _timestring_to_int(cls, v, info: FieldValidationInfo):
+    def _timestring_to_int(cls, v, info: ValidationInfo):
         if isinstance(v, str) and ":" in v:
             dep_time_str = v.split(":")
             hh, mm = int(dep_time_str[0]), int(dep_time_str[1])

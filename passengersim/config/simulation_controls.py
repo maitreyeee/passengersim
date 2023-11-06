@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import FieldValidationInfo, confloat, conint, field_validator
+from pydantic import ValidationInfo, confloat, conint, field_validator
 
 from passengersim.utils import iso_to_unix
 
@@ -51,7 +51,7 @@ class SimulationSettings(PrettyModel, extra="allow", validate_assignment=True):
 
     @field_validator("double_capacity_until")
     @classmethod
-    def _avoid_capacity_pollution(cls, v: int | None, info: FieldValidationInfo):
+    def _avoid_capacity_pollution(cls, v: int | None, info: ValidationInfo):
         if v and v >= info.data["burn_samples"] - 25:
             raise ValueError("doubled capacity will pollute results")
         return v
