@@ -290,8 +290,8 @@ def leg_forecasts(
     """
     Average forecasts of demand by leg, bucket, and days to departure.
 
-    This query requires that the simulation was run while recording path-class
-    details (i.e. with the `pathclass` flag set on `Config.db.write_items`).
+    This query requires that the simulation was run while recording leg bucket
+    details (i.e. with the `bucket` flag set on `Config.db.write_items`).
 
     Parameters
     ----------
