@@ -258,7 +258,7 @@ rm_systems:
       DAILY:
         - step_type: forecastadjustment
           name: adjust
-          algorithm: days_to_departure
+          algorithm: timeframe
           kind: path
         - step_type: probp
           name: optimization
@@ -329,7 +329,7 @@ choice_models:
 
 airlines:
   - name: AL1
-    rm_system: rm_lf
+    rm_system: rm_bid_price
     frat5: curve_A
     load_factor_curve: lf_curve1
   - name: AL2
