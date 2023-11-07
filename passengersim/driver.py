@@ -143,6 +143,13 @@ class Simulation:
             print(f"extra simulation setting: {pname} = ", float(pvalue))
             self.sim.set_parm(pname, float(pvalue))
 
+        # There is a default array of DCPs, we'll override it with the data from the input file (if available)
+        if len(config.dcps) > 0:
+            self.dcps = []
+            for dcp_index, days_prior in enumerate(config.dcps):
+                self.sim.add_dcp(dcp_index, days_prior)
+                self.dcps.append(days_prior)
+
         self.rm_systems = {}
         from passengersim_core.airline.rm_system import Rm_System
 
