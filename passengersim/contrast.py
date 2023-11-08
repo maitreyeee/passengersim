@@ -661,9 +661,9 @@ def fig_bid_price_history(
     else:
         raise ValueError(f"cap={cap!r} not in ['some', 'zero', None]")
 
-    if not isinstance(by_carrier, str):
+    if not isinstance(by_carrier, str) and show_stdev:
         raise NotImplementedError(
-            "contrast.fig_bid_price_history requires looking at a single carrier (set `by_carrier`)"
+            "contrast.fig_bid_price_history with show_stdev requires looking at a single carrier (set `by_carrier`)"
         )
     df = _assemble(
         summaries,
@@ -702,6 +702,8 @@ def fig_bid_price_history(
         top_line = bound_line.encode(y=alt.Y("bid_price_lower:Q", title="Bid Price"))
         bottom_line = bound_line.encode(y=alt.Y("bid_price_upper:Q", title="Bid Price"))
         fig = fig + bound + top_line + bottom_line
+    if not isinstance(by_carrier, str):
+        return fig.properties(height=125, width=225).facet(facet="carrier:N", columns=2)
     return fig
 
 

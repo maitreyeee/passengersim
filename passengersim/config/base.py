@@ -38,6 +38,9 @@ from .rm_systems import RmSystem
 from .simulation_controls import SimulationSettings
 from .snapshot_filter import SnapshotFilter
 
+if typing.TYPE_CHECKING:
+    from pydantic.main import IncEx
+
 logger = logging.getLogger("passengersim.config")
 
 
@@ -126,7 +129,17 @@ class YamlConfig(PrettyModel):
         raw_config = cls._load_unformatted_yaml(filenames)
         return cls.model_validate(raw_config.to_dict())
 
-    def to_yaml(self, stream: os.PathLike | io.FileIO | None = None) -> None | bytes:
+    def to_yaml(
+        self,
+        stream: os.PathLike | io.FileIO | None = None,
+        *,
+        include: IncEx = None,
+        exclude: IncEx = None,
+        exclude_unset: bool = False,
+        exclude_defaults: bool = False,
+        exclude_none: bool = False,
+        warnings: bool = True,
+    ) -> None | bytes:
         """
         Write a config to YAML format.
 
@@ -135,6 +148,18 @@ class YamlConfig(PrettyModel):
         stream : Path-like or File-like, optional
             Write the results here.  If given as a path, a new file is written
             at this location, or give a File-like object open for writing.
+        include : list[int | str]
+            A list of fields to include in the output.
+        exclude : list[int | str]
+            A list of fields to exclude from the output.
+        exclude_unset : bool, default False
+            Whether to exclude fields that are unset or None from the output.
+        exclude_defaults : bool, default False
+            Whether to exclude fields that are set to their default value from the output.
+        exclude_none : bool, default False
+            Whether to exclude fields that have a value of `None` from the output.
+        warnings : bool, default True
+            Whether to log warnings when invalid fields are encountered.
 
         Returns
         -------
@@ -155,7 +180,16 @@ class YamlConfig(PrettyModel):
             else:
                 return x
 
-        y = path_to_str(self.model_dump())
+        y = path_to_str(
+            self.model_dump(
+                include=include,
+                exclude=exclude,
+                exclude_unset=exclude_unset,
+                exclude_defaults=exclude_defaults,
+                exclude_none=exclude_none,
+                warnings=warnings,
+            )
+        )
         b = yaml.dump(y, encoding="utf8", Dumper=yaml.SafeDumper)
         if isinstance(stream, str):
             stream = pathlib.Path(stream)
