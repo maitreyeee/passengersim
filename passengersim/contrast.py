@@ -69,6 +69,7 @@ def fig_bookings_by_timeframe(
     by_class: bool | str = False,
     raw_df=False,
     source_labels: bool = False,
+    ratio: str | bool = False,
 ) -> alt.Chart | pd.DataFrame:
     """
     Generate a figure contrasting bookings by timeframe for one or more runs.
@@ -93,6 +94,8 @@ def fig_bookings_by_timeframe(
         Write source labels above the columns of the figure. Source labels are also
         available as tool tips, but if the figure is being shared as an image without
         tooltips, the source labels may make it easier to interpret.
+    ratio : str or bool, default False
+        Compute ratios against a reference point and display them in tooltips.
 
     Other Parameters
     ----------------
@@ -121,6 +124,20 @@ def fig_bookings_by_timeframe(
     if title_annot:
         title = f"{title} ({', '.join(title_annot)})"
 
+    against = source_order[0]
+    ratio_tooltips = ()
+    if ratio:
+        if isinstance(ratio, str):
+            against = ratio
+        idx = list(
+            {"source", "carrier", "paxtype", "rrd", "booking_class"} & set(df.columns)
+        )
+        df_ = df.set_index(idx)
+        ratios = df_.div(df_.query(f"source == '{against}'").droplevel("source")) - 1.0
+        ratios.columns = ["ratio"]
+        df = df.join(ratios, on=idx)
+        ratio_tooltips = (alt.Tooltip("ratio:Q", title=f"vs {against}", format=".3%"),)
+
     if raw_df:
         df.attrs["title"] = title
         return df
@@ -146,6 +163,7 @@ def fig_bookings_by_timeframe(
                 *tooltips,
                 alt.Tooltip("rrd", title="DfD"),
                 alt.Tooltip("sold", format=".2f"),
+                *ratio_tooltips,
             ],
         )
         chart_2 = chart.mark_text(
@@ -189,6 +207,7 @@ def fig_bookings_by_timeframe(
                     alt.Tooltip("carrier", title="Carrier"),
                     alt.Tooltip("rrd", title="DfD"),
                     alt.Tooltip("sold", format=".2f"),
+                    *ratio_tooltips,
                 ],
             )
             .properties(
@@ -218,6 +237,7 @@ def fig_bookings_by_timeframe(
                     alt.Tooltip("paxtype", title="Passenger Type"),
                     alt.Tooltip("rrd", title="DfD"),
                     alt.Tooltip("sold", format=".2f"),
+                    *ratio_tooltips,
                 ],
             )
             .properties(

@@ -46,10 +46,9 @@ def fare_class_mix(
             SELECT
                 trial, scenario, carrier, booking_class,
                 SUM(sold) AS sold,
-                SUM(sold * price) AS revenue,
-                COUNT(*) AS nobs
+                SUM(sold * price) AS revenue
             FROM
-                fare_detail
+                fare_detail LEFT JOIN fare_defs USING (fare_id)
             WHERE
                 rrd = 0
                 AND sample >= ?2
@@ -109,7 +108,7 @@ def od_fare_class_mix(
                 SUM(sold * price) AS revenue,
                 COUNT(*) AS nobs
             FROM
-                fare_detail
+                fare_detail LEFT JOIN fare_defs USING (fare_id)
             WHERE
                 rrd = 0
                 AND sample >= ?2
@@ -245,7 +244,7 @@ def bookings_by_timeframe(
                  SUM(sold_business) AS sold_business,
                  SUM(sold - sold_business) AS sold_leisure,
                  SUM(sold * price) AS revenue
-          FROM fare_detail
+          FROM fare_detail LEFT JOIN fare_defs USING (fare_id)
           WHERE
                 sample >= ?2
                 AND scenario = ?1

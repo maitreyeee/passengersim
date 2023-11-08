@@ -82,7 +82,8 @@ class Simulation:
             commit_count_delay=config.db.commit_count_delay,
         )
         if self.cnx.is_open:
-            database.tables.create_table_legs(self.cnx._connection, self.sim.legs)
+            database.tables.create_table_leg_defs(self.cnx._connection, self.sim.legs)
+            database.tables.create_table_fare_defs(self.cnx._connection, self.sim.fares)
             database.tables.create_table_path_defs(self.cnx._connection, self.sim.paths)
             if config.db != ":memory:":
                 self.cnx.save_configs(config)

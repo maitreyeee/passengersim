@@ -1,3 +1,5 @@
+import pathlib
+
 import pytest
 
 from passengersim import Simulation, demo_network
@@ -11,6 +13,10 @@ def test_3mkt(data_regression):
     config.simulation_controls.num_trials = 1
     config.simulation_controls.num_samples = 10
     config.simulation_controls.burn_samples = 9
+    print(config.db.filename)
+    if config.db.filename:
+        f = pathlib.Path(config.db.filename)
+        f.unlink(missing_ok=True)
     sim = Simulation(config, output_dir=None)
     _summary = sim.run(log_reports=False)
     # data_regression.check(_summary.to_records())
@@ -66,7 +72,7 @@ def test_3mkt_db_detail(fast):
     summary = sim.run(log_reports=False)
     assert summary.demands.shape == (6, 9)
     fares = sim.cnx.dataframe("SELECT * FROM fare_detail")
-    assert fares.shape == (num_samples * n_fares * n_dcps, 13)  # 40800
+    assert fares.shape == (num_samples * n_fares * n_dcps, 9)  # 40800
     legs = sim.cnx.dataframe("SELECT * FROM leg_detail")
     assert legs.shape == (num_samples * n_dcps * n_legs, 13)  # 3060
     buckets = sim.cnx.dataframe("SELECT * FROM leg_bucket_detail")

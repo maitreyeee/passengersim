@@ -2,10 +2,10 @@
 
 The `leg_defs` database table stores static details about the legs in the
 simulation.  Simulation results at the leg level are stored in the
-[`leg_details`](leg_details.md) table instead.
+[`leg_details`](leg_detail.md) table instead.
 
 The `leg_defs` table is created by the
-[create_table_legs][passengersim.database.tables.create_table_legs] function,
+[create_table_leg_defs][passengersim.database.tables.create_table_leg_defs] function,
 which is called in the [Simulation][passengersim.Simulation] initialization
 step, so it should be available and populated for every simulation run.
 
