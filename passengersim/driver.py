@@ -747,6 +747,7 @@ class Simulation:
             carriers=carrier_df,
         )
         summary.load_additional_tables(self.cnx, sim.name, sim.burn_samples, additional)
+        summary.cnx = self.cnx
         return summary
 
     def compute_demand_report(
