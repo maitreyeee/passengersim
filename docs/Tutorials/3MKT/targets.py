@@ -15,6 +15,8 @@ def load(experiment_n: int, config: Config):
         8: "./pods-outputs/ZF2-1/08_EMSR.SOT",
         9: "./pods-outputs/ZF2-1/09_EMSRhi.SOT",
         10: "./pods-outputs/ZF2-1/08_ProBPnoreoptnok",
+        11: "./pods-outputs/ZF2-1/08_ProBPdailyreoptnok",
+        "10-ZF2": "./3MKT/pods-outputs/ZF2-2/08_ProBPnoreopt",
     }
     target = vt.pods(files[experiment_n], config)
     return target
