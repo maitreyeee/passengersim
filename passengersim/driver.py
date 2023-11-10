@@ -550,14 +550,17 @@ class Simulation:
 
         # Now add the events for daily reoptimization
         max_days_prior = max(self.dcp_list)
-        for days_prior in range(max_days_prior):
+        dcp_idx = 0
+        for days_prior in reversed(range(max_days_prior)):
             if days_prior not in self.dcp_list:
-                info = ("daily", days_prior, 0)
+                info = ("daily", days_prior, dcp_idx)
                 event_time = int(
                     self.sim.base_time - days_prior * 86400 + 3600 * dcp_hour
                 )
                 rm_event = Event(info, event_time)
                 self.sim.add_event(rm_event)
+            else:
+                dcp_idx += 1
 
     def generate_demands(self, system_rn=None, debug=False):
         """Generate demands, following the procedure used in PODS
