@@ -19,7 +19,7 @@ class SummaryTables:
     @classmethod
     def from_sqlite(
         cls,
-        filename: str,
+        filename: str | pathlib.Path,
         make_indexes: bool = False,
         additional: Collection[str | tuple] | str | None = None,
     ):
