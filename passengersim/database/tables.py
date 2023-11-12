@@ -17,7 +17,7 @@ def create_table_configs(cnx: Database):
     cnx.execute(sql)
 
 
-def create_table_legs(cnx: Database, legs: Iterable | None = None):
+def create_table_leg_defs(cnx: Database, legs: Iterable | None = None):
     sql = """
     CREATE TABLE IF NOT EXISTS leg_defs
     (
@@ -57,6 +57,67 @@ def create_table_legs(cnx: Database, legs: Iterable | None = None):
                 leg.arr_time,
                 leg.capacity,
                 leg.distance,
+            ),
+        )
+
+
+def create_table_fare_defs(cnx: Database, fares: Iterable | None = None) -> None:
+    """
+    Create and populate a static database table of fares.
+
+    The contents of this table is static input data, used but not mutated
+    by the simulator.
+
+    Parameters
+    ----------
+    cnx : Database
+    fares : Iterable[Fare]
+        The fares to store in the database.
+    """
+    sql = """
+    CREATE TABLE IF NOT EXISTS fare_defs
+    (
+        fare_id       INTEGER PRIMARY KEY,
+        carrier       VARCHAR(10) NOT NULL,
+        orig          VARCHAR(10) NOT NULL,
+        dest          VARCHAR(10) NOT NULL,
+        booking_class VARCHAR(10) NOT NULL,
+        price         FLOAT NOT NULL,
+        restrictions  VARCHAR(20) NOT NULL,
+        category      VARCHAR(20)
+    );
+    """
+    cnx.execute(sql)
+    for fare in fares:
+        cnx.execute(
+            """
+            INSERT OR REPLACE INTO fare_defs(
+                fare_id,
+                carrier,
+                orig,
+                dest,
+                booking_class,
+                price,
+                restrictions,
+                category
+            ) VALUES (
+                ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8
+            )
+            """,
+            (
+                fare.fare_id,
+                fare.carrier,
+                fare.orig,
+                fare.dest,
+                fare.booking_class,
+                fare.price,
+                ",".join(
+                    [
+                        fare.get_restriction(pos)
+                        for pos in range(fare.num_restrictions())
+                    ]
+                ),
+                fare.category,
             ),
         )
 
@@ -219,13 +280,9 @@ def create_table_fare_detail(cnx: Database, primary_key: bool = False):
         trial	    	INT NOT NULL,
         sample  		INT NOT NULL,
         rrd       		INT NOT NULL,
-        carrier			VARCHAR(10) NOT NULL,
-        orig			VARCHAR(10) NOT NULL,
-        dest			VARCHAR(10) NOT NULL,
-        booking_class   VARCHAR(10) NOT NULL,
+        fare_id         INT NOT NULL,
         sold			INT,
         sold_business	INT,
-        price           FLOAT,
         updated_at		DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         {primary_key}
     );

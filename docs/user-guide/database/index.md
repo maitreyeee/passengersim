@@ -9,6 +9,7 @@ The following tables are created when running a simulation:
 
 | Table                                             | Description                                                                   |
 |:--------------------------------------------------|:------------------------------------------------------------------------------|
+| [carrier_summary](carrier_summary.md)             | Aggregate summary information on carrier performance.                         |
 | [leg_defs](leg_defs.md)                           | Static data about network legs                                                |
 | [leg_detail](leg_detail.md)                       | Simulation data at the leg level                                              |
 | [leg_bucket_detail](leg_bucket_detail.md)         | Simulation data at the leg-bucket level                                       |

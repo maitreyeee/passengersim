@@ -82,7 +82,8 @@ class Simulation:
             commit_count_delay=config.db.commit_count_delay,
         )
         if self.cnx.is_open:
-            database.tables.create_table_legs(self.cnx._connection, self.sim.legs)
+            database.tables.create_table_leg_defs(self.cnx._connection, self.sim.legs)
+            database.tables.create_table_fare_defs(self.cnx._connection, self.sim.fares)
             database.tables.create_table_path_defs(self.cnx._connection, self.sim.paths)
             if config.db != ":memory:":
                 self.cnx.save_configs(config)
@@ -549,14 +550,17 @@ class Simulation:
 
         # Now add the events for daily reoptimization
         max_days_prior = max(self.dcp_list)
-        for days_prior in range(max_days_prior):
+        dcp_idx = 0
+        for days_prior in reversed(range(max_days_prior)):
             if days_prior not in self.dcp_list:
-                info = ("daily", days_prior, 0)
+                info = ("daily", days_prior, dcp_idx)
                 event_time = int(
                     self.sim.base_time - days_prior * 86400 + 3600 * dcp_hour
                 )
                 rm_event = Event(info, event_time)
                 self.sim.add_event(rm_event)
+            else:
+                dcp_idx += 1
 
     def generate_demands(self, system_rn=None, debug=False):
         """Generate demands, following the procedure used in PODS
@@ -746,6 +750,7 @@ class Simulation:
             carriers=carrier_df,
         )
         summary.load_additional_tables(self.cnx, sim.name, sim.burn_samples, additional)
+        summary.cnx = self.cnx
         return summary
 
     def compute_demand_report(
