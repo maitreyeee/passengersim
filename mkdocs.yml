@@ -97,6 +97,8 @@ nav:
     - Writing Configs: user-guide/writing-configs.md
     - Database:
       - user-guide/database/index.md
+      - user-guide/database/carrier_summary.md
+      - user-guide/database/leg_summary.md
       - user-guide/database/leg_defs.md
       - user-guide/database/leg_detail.md
       - user-guide/database/leg_bucket_detail.md
