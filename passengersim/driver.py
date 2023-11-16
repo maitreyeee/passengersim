@@ -462,9 +462,7 @@ class Simulation:
 
     def run_airline_models(self, info: Any = None, departed: bool = False, debug=False):
         event_type = info[0]
-        recording_day = info[
-            1
-        ]  # could in theory also be non-integer for fractional days
+        recording_day = info[1]  # could in theory also be non-integer for fractional days
         dcp_index = info[2]
         if dcp_index == -1:
             dcp_index = len(self.dcp_list) - 1

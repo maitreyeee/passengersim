@@ -214,6 +214,7 @@ def create_table_fare_detail(cnx: Database, primary_key: bool = False):
     sql = """
     CREATE TABLE IF NOT EXISTS fare_detail
     (
+        fare_id         INT NOT NULL DEFAULT 0,
         scenario		VARCHAR(20) NOT NULL,
         iteration		INT NOT NULL,
         trial	    	INT NOT NULL,
