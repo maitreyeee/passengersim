@@ -33,6 +33,18 @@ class Simulation:
         filenames: pathlib.Path | list[pathlib.Path],
         output_dir: pathlib.Path | None = None,
     ):
+        """
+        Create a Simulation object from a YAML file.
+
+        Parameters
+        ----------
+        filenames : pathlib.Path | list[pathlib.Path]
+        output_dir : pathlib.Path | None, optional
+
+        Returns
+        -------
+        Simulation
+        """
         config = passengersim.config.Config.from_yaml(filenames)
         return cls(config, output_dir)
 
@@ -90,6 +102,9 @@ class Simulation:
 
     @property
     def base_time(self) -> int:
+        """
+        The base time for the simulation, in seconds since the epoch.
+        """
         return self.sim.base_time
 
     @property

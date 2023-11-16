@@ -341,6 +341,20 @@ def fig_carrier_revenues(
     orient: Literal["h", "v"] = "h",
     ratio: str | bool = True,
 ):
+    """
+    Generate a figure contrasting carrier revenues for one or more runs.
+
+    Parameters
+    ----------
+    summaries : dict[str, SummaryTables]
+    raw_df : bool, default False
+    orient : {'h', 'v'}, default 'h'
+    ratio : bool or str, default True
+
+    Returns
+    -------
+    alt.Chart or pd.DataFrame
+    """
     df = _assemble(summaries, "carrier_revenues")
     source_order = list(summaries.keys())
     if raw_df:
@@ -365,6 +379,21 @@ def fig_carrier_yields(
     orient: Literal["h", "v"] = "h",
     ratio: str | bool = True,
 ):
+    """
+    Generate a figure contrasting carrier yields for one or more runs.
+
+    Parameters
+    ----------
+    summaries : dict[str, SummaryTables]
+    raw_df : bool, default False
+    orient : {'h', 'v'}, default 'h'
+    ratio : bool or str, default True
+
+    Returns
+    -------
+    alt.Chart or pd.DataFrame
+    """
+
     df = _assemble(summaries, "carrier_yields")
     source_order = list(summaries.keys())
     if raw_df:
@@ -384,12 +413,27 @@ def fig_carrier_yields(
 
 @report_figure
 def fig_carrier_load_factors(
-    summaries,
-    raw_df=False,
+    summaries: dict[str, SummaryTables],
+    raw_df: bool = False,
     load_measure: Literal["sys_lf", "avg_leg_lf"] = "sys_lf",
     orient: Literal["h", "v"] = "h",
     ratio: str | bool = True,
 ):
+    """
+    Generate a figure contrasting carrier load factors for one or more runs.
+
+    Parameters
+    ----------
+    summaries : dict[str, SummaryTables]
+    raw_df : bool, default False
+    load_measure : {'sys_lf', 'avg_leg_lf'}, default 'sys_lf'
+    orient : {'h', 'v'}, default 'h'
+    ratio : bool or str, default True
+
+    Returns
+    -------
+    alt.Chart or pd.DataFrame
+    """
     measure_name = {
         "sys_lf": "System Load Factor",
         "avg_leg_lf": "Leg Load factor",

@@ -228,7 +228,8 @@ class SummaryTables:
         self.bid_price_history = bid_price_history
         self.local_and_flow_yields = local_and_flow_yields
 
-    def to_records(self):
+    def to_records(self) -> dict[str, list[dict]]:
+        """Convert all summary tables to a dictionary of records."""
         return {k: v.to_dict(orient="records") for (k, v) in self.__dict__.items()}
 
     def to_xlsx(self, filename: str | pathlib.Path) -> None:

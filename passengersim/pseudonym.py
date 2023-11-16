@@ -74,5 +74,13 @@ noun = [
 ]
 
 
-def random_label():
+def random_label() -> str:
+    """
+    Generate a random label for a model run.
+
+    Returns
+    -------
+    str
+        A random label.
+    """
     return f"{random.choice(adjective)} {random.choice(noun)}"
