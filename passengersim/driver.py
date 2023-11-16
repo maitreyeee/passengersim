@@ -231,8 +231,8 @@ class Simulation:
         for curve_name, curve_config in config.booking_curves.items():
             bc = passengersim.core.BookingCurve(curve_name)
             bc.random_generator = self.random_generator
-            for dcp, pct in curve_config.curve.items():
-                bc.add_dcp(dcp, pct)
+            for days_prior, pct in curve_config.curve.items():
+                bc.add_dcp(days_prior, pct)
             self.curves[curve_name] = bc
 
         self.legs = {}
