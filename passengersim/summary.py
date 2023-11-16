@@ -19,14 +19,9 @@ class SummaryTables:
     @classmethod
     def from_sqlite(
         cls,
-        filename: str,
+        filename: str | pathlib.Path,
         make_indexes: bool = False,
-        additional: Collection[str | tuple] = (
-            "fare_class_mix",
-            "load_factors",
-            "bookings_by_timeframe",
-            "total_demand",
-        ),
+        additional: Collection[str | tuple] | str | None = None,
     ):
         if not os.path.isfile(filename):
             raise FileNotFoundError(filename)
@@ -73,12 +68,59 @@ class SummaryTables:
         db: database.Database,
         scenario: str,
         burn_samples: int,
-        additional: Collection[str | tuple] = (
+        additional: Collection[str | tuple]
+        | str
+        | None = (
             "fare_class_mix",
             "bookings_by_timeframe",
             "total_demand",
         ),
     ) -> None:
+        """
+        Load additional summary tables based on common queries.
+
+        Parameters
+        ----------
+        db : Database
+        scenario : str
+        burn_samples : int
+            The number of samples in the burn period.  The data from these samples
+            is ignored in most common queries.
+        additional : Collection[str | tuple] | str
+            One or more additional tables to load.  If "*", then this will load
+            all common queries supported by the configuration used during the
+            simulation.
+        """
+        if isinstance(additional, str):
+            if additional == "*":
+                additional = set()
+                cfg = db.load_configs(scenario)
+                if "fare" in cfg.db.write_items:
+                    additional.add("fare_class_mix")
+                if "fare_final" in cfg.db.write_items:
+                    additional.add("fare_class_mix")
+                if "bookings" in cfg.db.write_items:
+                    additional.add("bookings_by_timeframe")
+                if "demand" in cfg.db.write_items:
+                    additional.add("total_demand")
+                    additional.add("demand_to_come")
+                if "demand_final" in cfg.db.write_items:
+                    additional.add("total_demand")
+                if "bucket" in cfg.db.write_items:
+                    additional.add("leg_forecasts")
+                    additional.add("carrier_history")
+                if "pathclass" in cfg.db.write_items:
+                    additional.add("path_forecasts")
+                    additional.add("local_and_flow_yields")
+                if "pathclass_final" in cfg.db.write_items:
+                    additional.add("local_and_flow_yields")
+                if "leg" in cfg.db.write_items and cfg.db.store_leg_bid_prices:
+                    additional.add("bid_price_history")
+            else:
+                additional = [additional]
+        elif additional is None:
+            additional = []
+
         if "fare_class_mix" in additional and db.is_open:
             logger.info("loading fare_class_mix")
             self.fare_class_mix = database.common_queries.fare_class_mix(

@@ -13,7 +13,7 @@ class DatabaseConfig(PrettyModel, extra="forbid", validate_assignment=True):
 
     Currently only `sqlite` is fully implemented."""
 
-    filename: pathlib.Path | None = "airsim-output.sqlite"
+    filename: pathlib.Path | None = "passengersim-output.sqlite"
     """Name of file for SQLite output."""
 
     fast: bool = False

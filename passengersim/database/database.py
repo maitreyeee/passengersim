@@ -225,6 +225,17 @@ class Database:
 
         return pd.read_sql_query(query, self._connection, params=params, dtype=dtype)
 
+    def schema(self, name: str):
+        """Get a table schema from the SQLite database."""
+        if not self.is_open:
+            raise ValueError("database is not open")
+        try:
+            return next(
+                self.execute("SELECT sql FROM sqlite_master WHERE name = ?1", (name,))
+            )[0]
+        except Exception:
+            raise
+
     def save_dataframe(
         self,
         name: str,
@@ -457,21 +468,17 @@ def save_fare_multi(cnx: Database, sim: SimulationEngine, dcp) -> string:
                 sim.trial,
                 sim.sample,
                 dcp,
-                fare.carrier,
-                fare.orig,
-                fare.dest,
-                fare.booking_class,
                 fare.sold,
                 fare.sold_business,
-                fare.price,
+                fare.fare_id,
             )
         )
     try:
         cursor = cnx.cursor()
         sql = f"""INSERT INTO fare_detail
-                (scenario, iteration, trial, sample, rrd, carrier,
-                 orig, dest, booking_class, sold, sold_business, price)
-                VALUES ({sql_placeholders(cnx, 12)})"""
+                (scenario, iteration, trial, sample, rrd,
+                 sold, sold_business, fare_id)
+                VALUES ({sql_placeholders(cnx, 8)})"""
         cursor.executemany(sql, data_list)
         return True
     except Exception as err:
