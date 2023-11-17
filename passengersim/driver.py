@@ -788,6 +788,7 @@ class Simulation:
         fare_df = []
         for f in sim.fares:
             for dcp_index in range(16):
+                days_prior = self.dcp_list[dcp_index]
                 fare_df.append(
                     dict(
                         carrier=f.carrier,
@@ -796,7 +797,7 @@ class Simulation:
                         booking_class=f.booking_class,
                         dcp_index=dcp_index,
                         price=f.price,
-                        sold=f.sold,
+                        sold=f.get_sales_by_dcp(days_prior),
                         gt_sold=f.gt_sold,
                         avg_adjusted_price=f.get_adjusted_by_dcp(dcp_index),
                     )
