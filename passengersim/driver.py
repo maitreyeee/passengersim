@@ -373,6 +373,34 @@ class Simulation:
                     pc.set_indexes(index, index)
                     path.add_path_class(pc)
 
+    def end_sample(self):
+        # Commit data to the database
+        if self.cnx:
+            try:
+                self.cnx.commit()
+            except AttributeError:
+                pass
+
+        # Market share computation (MIDT-lite), might move to C++ in a future version
+        alpha = 0.15
+        for m in self.sim.markets:
+            sold = float(m.sold)
+            for a in self.sim.airlines:
+                try:
+                    airline_sold = m.get_airline_sold(a.name)
+                except Exception as e:
+                    print(e)
+                share = airline_sold / sold if sold > 0 else 0
+                if self.sim.sample > 1:
+                    old_share = m.get_airline_share(a.name)
+                    new_share = alpha * share + (1.0 - alpha) * old_share
+                    m.set_airline_share(a.name, new_share)
+                    # print(f"Set share, sample={self.sim.sample}, key={a.name}: {m.orig}-{m.dest}"
+                    #      f", sold={sold}, al_sold={airline_sold}, old={old_share:6.3f}, shr= {new_share:6.3f}")
+                else:
+                    m.set_airline_share(a.name, share)
+
+
     def _run_sim(self):
         update_freq = self.update_frequency
         logger.debug(
@@ -450,14 +478,11 @@ class Simulation:
                                 self.sim.num_events() == 0
                             ), f"Event queue still has {self.sim.num_events()} events"
                             break
-                    if self.cnx:
-                        try:
-                            self.cnx.commit()
-                        except AttributeError:
-                            pass
 
                     n_samples_done += 1
                     self.sample_done_callback(n_samples_done, n_samples_total)
+                    self.end_sample()
+
                 if self.cnx.is_open:
                     self.cnx.save_final(self.sim)
 
