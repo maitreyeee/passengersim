@@ -66,6 +66,7 @@ class Simulation:
         self.fare_details_revenue = defaultdict(float)
         self.output_dir = output_dir
         self.demand_multiplier = 1.0
+        self.capacity_multiplier = 1.0
         self.airports = []
         self.choice_models = {}
         self.frat5curves = {}
@@ -118,6 +119,8 @@ class Simulation:
         for pname, pvalue in config.simulation_controls:
             if pname == "demand_multiplier":
                 self.demand_multiplier = pvalue
+            elif pname == "capacity_multiplier":
+                self.capacity_multiplier = pvalue
             elif pname == "write_raw_files":
                 self.write_raw_files = pvalue
             elif pname == "random_seed":
@@ -238,12 +241,13 @@ class Simulation:
 
         self.legs = {}
         for leg_config in config.legs:
+            cap = int(leg_config.capacity * self.capacity_multiplier)
             leg = passengersim.core.Leg(
                 leg_config.carrier,
                 leg_config.fltno,
                 leg_config.orig,
                 leg_config.dest,
-                capacity=leg_config.capacity,
+                capacity=cap,
             )
             leg.dep_time = leg_config.dep_time
             leg.arr_time = leg_config.arr_time

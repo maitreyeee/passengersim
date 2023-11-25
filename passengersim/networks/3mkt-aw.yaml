@@ -4,7 +4,7 @@
 
 scenario: AW_test
 simulation_controls:
-  num_trials: 3
+  num_trials: 15
   num_samples: 600
   sys_k_factor: 0.1
   mkt_k_factor: 0.15
@@ -16,6 +16,7 @@ simulation_controls:
   max_connect_time: 120
   disable_ap: false
   demand_multiplier: 1.0
+  capacity_multiplier: 1.0
   manual_paths: false
   debug_orders: false
   timeframe_demand_allocation: pods
@@ -214,6 +215,40 @@ rm_systems:
           name: optimization
           algorithm: emsrb
           kind: leg
+  rm_emsrg:
+    availability_control: leg
+    processes:
+      DCP:
+        - step_type: untruncation
+          name: untruncation
+          algorithm: em
+          kind: leg
+        - step_type: forecast
+          name: forecast
+          algorithm: exp_smoothing
+          alpha: 0.15
+          kind: leg
+        - step_type: emsr
+          name: optimization
+          algorithm: emsrg
+          kind: leg
+  rm_mfem:
+    availability_control: leg
+    processes:
+      DCP:
+        - step_type: untruncation
+          name: untruncation
+          algorithm: mfem
+          kind: leg
+        - step_type: forecast
+          name: forecast
+          algorithm: exp_smoothing
+          alpha: 0.15
+          kind: leg
+        - step_type: emsr
+          name: optimization
+          algorithm: emsrb
+          kind: leg
   rm_test2:
     availability_control: leg
     processes:
@@ -333,7 +368,7 @@ airlines:
     frat5: curve_A
     load_factor_curve: lf_curve1
   - name: AL2
-    rm_system: rm_test1
+    rm_system: rm_emsrg
     frat5: curve_C
     load_factor_curve: lf_curve1
 

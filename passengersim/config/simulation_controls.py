@@ -161,6 +161,15 @@ class SimulationSettings(PrettyModel, extra="allow", validate_assignment=True):
     demand_multiplier = 0.8), or "high demand" scenarios (e.g., demand multiplier = 1.1).
     """
 
+    capacity_multiplier: confloat(gt=0) = 1.0
+    """
+    Scale all capacities by this value.
+
+    Setting to a value other than 1.0 will increase or decrease all capacity inputs
+    uniformly by the same multiplicative amount.
+    Business class and/or first class can be quickly simulated with this option
+    """
+
     manual_paths: bool = True
     """
     The user has provided explicit paths and connections.
