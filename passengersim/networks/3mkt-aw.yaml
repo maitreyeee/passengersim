@@ -4,7 +4,7 @@
 
 scenario: AW_test
 simulation_controls:
-  num_trials: 15
+  num_trials: 5
   num_samples: 600
   sys_k_factor: 0.1
   mkt_k_factor: 0.15
@@ -15,8 +15,8 @@ simulation_controls:
   dwm_lite: false
   max_connect_time: 120
   disable_ap: false
-  demand_multiplier: 1.0
-  capacity_multiplier: 1.0
+  demand_multiplier: 0.2
+  capacity_multiplier: 0.2
   manual_paths: false
   debug_orders: false
   timeframe_demand_allocation: pods
