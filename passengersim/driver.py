@@ -12,6 +12,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from scipy.stats import gamma
 
 import passengersim.config.rm_systems
 import passengersim.core
@@ -404,7 +405,6 @@ class Simulation:
                 else:
                     m.set_airline_share(a.name, share)
 
-
     def _run_sim(self):
         update_freq = self.update_frequency
         logger.debug(
@@ -468,6 +468,7 @@ class Simulation:
                     if self.sim.trial > 0 or self.sim.sample > 0:
                         self.sim.reset_counters()
                     self.generate_demands()
+                    # self.generate_demands_gamma()
 
                     # Loop on passengers
                     while True:
@@ -671,6 +672,27 @@ class Simulation:
                     f"Generate demand function, num_pax={num_pax}, num_events={num_events}"
                 )
 
+        return total_events
+
+    def generate_demands_gamma(self, system_rn=None, debug=False):
+        """Using this as a quick test"""
+        self.generate_dcp_rm_events()
+        end_time = self.base_time
+        cv100 = 0.3
+        for dmd in self.sim.demands:
+            mu = dmd.base_demand
+            std_dev = cv100 * sqrt(mu) * 10.0
+            # std_dev = mu * 0.3
+            var = std_dev ** 2
+            shape_a = mu ** 2 / var
+            scale_b = var / mu
+            loc = 0.0
+            r = gamma.rvs(shape_a, loc, scale_b, size=1)
+            num_pax = int(r[0] + 0.5)
+            dmd.scenario_demand = num_pax
+            self.sim.allocate_demand_to_tf_pods(
+                dmd, num_pax, self.sim.tf_k_factor, int(end_time))
+        total_events = 0
         return total_events
 
     # def data_by_timeframe(self):
