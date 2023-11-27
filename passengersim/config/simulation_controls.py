@@ -225,6 +225,11 @@ class SimulationSettings(PrettyModel, extra="allow", validate_assignment=True):
     delay the recalculation into later in the night (or the next day).
     """
 
+    capture_choice_set: bool = False
+    """
+    Turns on the capturing of the choice set
+    """
+
     show_progress_bar: bool = True
     """
     Show a progress bar while running.
