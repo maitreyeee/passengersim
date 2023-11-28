@@ -4,8 +4,8 @@
 
 scenario: AW_test
 simulation_controls:
-  num_trials: 5
-  num_samples: 600
+  num_trials: 2
+  num_samples: 200
   sys_k_factor: 0.1
   mkt_k_factor: 0.15
   pax_type_k_factor: 0.2
@@ -20,6 +20,7 @@ simulation_controls:
   manual_paths: false
   debug_orders: false
   timeframe_demand_allocation: pods
+  capture_choice_set: true
 
 frat5_curves:
   - name: curve_A
