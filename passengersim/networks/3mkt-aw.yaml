@@ -20,7 +20,7 @@ simulation_controls:
   manual_paths: false
   debug_orders: false
   timeframe_demand_allocation: pods
-  capture_choice_set: false
+  capture_choice_set: true
 
 frat5_curves:
   - name: curve_A
