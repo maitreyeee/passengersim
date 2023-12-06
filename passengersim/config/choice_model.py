@@ -29,6 +29,14 @@ class PodsChoiceModel(Named, extra="forbid"):
 class LogitChoiceModel(Named, extra="forbid"):
     kind: Literal["logit"]
 
+    emult: float | None = None
+    """Using for WTP, a bit of a quick and dirty until we have a better approach"""
+
+    r1: float | None = None
+    r2: float | None = None
+    r3: float | None = None
+    r4: float | None = None
+
     intercept: float = 0
     """This is the alternative specific constant for the no-purchase alternative."""
 
