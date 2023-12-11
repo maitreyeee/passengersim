@@ -1072,16 +1072,14 @@ class Simulation:
             carrier_df.append(
                 {
                     "carrier": cxr.name,
-                    "sold": round(avg_sold, 2),
-                    "sys_lf": round(sys_lf, 3),
-                    "avg_leg_lf": round(
-                        100 * airline_leg_lf[cxr.name] / airline_leg_count[cxr.name], 3
-                    ),
-                    "avg_rev": (round(avg_rev, 0)),
-                    "avg_price": round(avg_rev / avg_sold, 2),
-                    "asm": (round(asm, 0)),
-                    "rpm": (round(rpm, 0)),
-                    "yield": np.nan if rpm == 0 else round(avg_rev / rpm, 4),
+                    "sold": avg_sold,
+                    "sys_lf": sys_lf,
+                    "avg_leg_lf": 100 * airline_leg_lf[cxr.name] / airline_leg_count[cxr.name],
+                    "avg_rev": avg_rev,
+                    "avg_price": avg_rev / avg_sold,
+                    "asm": asm,
+                    "rpm": rpm,
+                    "yield": np.nan if rpm == 0 else avg_rev / rpm
                 }
             )
             # logger.info(f"ASM = {airline_asm[cxr.name]:.2f}, RPM = {airline_rpm[cxr.name]:.2f}, LF = {sys_lf:.2f}%")
