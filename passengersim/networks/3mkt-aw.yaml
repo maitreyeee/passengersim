@@ -359,7 +359,10 @@ rm_systems:
           name: optimization
           kind: path
           max_iter: 100
-          max_viol: 0.5
+          step_size: 0.3
+          max_viol: 1.0
+          min_lambda: 1.0
+          use_gamma: True
       DAILY:
         - step_type: forecastadjustment
           name: adjust
@@ -369,7 +372,10 @@ rm_systems:
           name: optimization
           kind: path
           max_iter: 100
-          max_viol: 0.5
+          step_size: 0.3
+          max_viol: 1.0
+          min_lambda: 1.0
+          use_gamma: True
 
 choice_models:
   business:
