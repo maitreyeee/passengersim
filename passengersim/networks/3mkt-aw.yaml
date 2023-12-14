@@ -4,7 +4,7 @@
 
 scenario: AW_test
 simulation_controls:
-  num_trials: 5
+  num_trials: 35
   num_samples: 600
   sys_k_factor: 0.1
   mkt_k_factor: 0.15
@@ -251,8 +251,8 @@ rm_systems:
           algorithm: emsrb
           kind: leg
 
-  rm_test2:
-    availability_control: leg
+  rm_davn:
+    availability_control: vn
     processes:
       DCP:
         - step_type: untruncation
@@ -265,7 +265,20 @@ rm_systems:
           alpha: 0.15
           kind: path
         - step_type: probp
+          name: displacement
+        - step_type: aggregation
+          name: aggregate
+        - step_type: emsr
           name: optimization
+          algorithm: emsrb
+          kind: leg
+      DAILY:
+        - step_type: forecastadjustment
+          name: adjust
+          algorithm: timeframe
+          kind: path
+        - step_type: probp
+          name: displacement
         - step_type: aggregation
           name: aggregate
         - step_type: emsr
@@ -317,7 +330,7 @@ rm_systems:
           algorithm: emsrb
           kind: leg
 
-  rm_fare_adj:
+  rm_fare_adj_leg:
     availability_control: leg
     processes:
       DCP:
@@ -341,6 +354,40 @@ rm_systems:
           name: optimization
           algorithm: emsrb
           kind: leg
+
+  rm_fare_adj_bp:
+    availability_control: bp
+    processes:
+      DCP:
+        - step_type: untruncation
+          name: untruncation
+          algorithm: em
+          kind: path
+        - step_type: forecast
+          name: path_forecast
+          algorithm: exp_smoothing
+          alpha: 0.15
+          kind: path
+        - step_type: fareadjustment
+          name: adj
+          algorithm: mr
+          kind: path
+          frat5: curve_C
+        - step_type: probp
+          name: optimization
+      DAILY:
+        - step_type: forecastadjustment
+          name: adjust
+          algorithm: timeframe
+          kind: path
+        - step_type: fareadjustment
+          name: adj
+          algorithm: mr
+          kind: path
+          frat5: curve_C
+        - step_type: probp
+          name: optimization
+
 
   rm_subgradient:
     availability_control: bp
@@ -402,11 +449,11 @@ choice_models:
 
 airlines:
   - name: AL1
-    rm_system: rm_test1
+    rm_system: rm_bid_price
     frat5: curve_A
     load_factor_curve: lf_curve1
   - name: AL2
-    rm_system: rm_subgradient
+    rm_system: rm_davn
     frat5: curve_C
     load_factor_curve: lf_curve1
 
