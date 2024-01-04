@@ -16,13 +16,14 @@ class BookingCurve(Named, extra="forbid"):
 
     For a given customer type, the booking curve gives the cumulative fraction
     of those customers who are expected to have already "arrived" at any given
-    data collection point (DCP).  An "arriving" customer is one who is interested
+    data collection point (DCP / days_prior to departure).  
+    An "arriving" customer is one who is interested
     in booking, but may or may not actually purchase a travel product from one
     of the carriers, depending on the availability of products at the time of their
     arrival.
 
     The values (cumulative fraction of customers arriving) should increase
-    monotonically as the keys (DCPs, e.g. days to departure) decrease.
+    monotonically as the keys (days_prior, e.g. days to departure) decrease.
 
     Example
     -------
@@ -51,11 +52,11 @@ class BookingCurve(Named, extra="forbid"):
     @field_validator("curve")
     def _booking_curves_accumulate(cls, v: dict[int, float], info: ValidationInfo):
         """Check that all curve values do not decrease as DCP keys decrease."""
-        sorted_dcps = reversed(sorted(v.keys()))
+        sorted_days_prior = reversed(sorted(v.keys()))
         i = 0
-        for dcp in sorted_dcps:
+        for days_prior in sorted_days_prior:
             assert (
-                v[dcp] >= i
-            ), f"booking curve {info.data['name']} moves backwards at dcp {dcp}"
-            i = v[dcp]
+                v[days_prior] >= i
+            ), f"booking curve {info.data['name']} moves backwards at dcp {days_prior}"
+            i = v[days_prior]
         return v

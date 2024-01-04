@@ -169,19 +169,6 @@ rm_systems:
   fcfs:
     availability_control: leg
     processes: {}
-  rm_lf:
-    availability_control: leg
-    processes:
-      DAILY:
-        - step_type: lfthreshold
-          name: optimization
-          algorithm: lf_target
-          kind: leg
-      DCP:
-        - step_type: lfthreshold
-          name: optimization
-          algorithm: lf_target
-          kind: leg
   rm_no_detruncation:
     availability_control: leg
     processes:
@@ -216,212 +203,6 @@ rm_systems:
           name: optimization
           algorithm: emsrb
           kind: leg
-  rm_emsrg:
-    availability_control: leg
-    processes:
-      DCP:
-        - step_type: untruncation
-          name: untruncation
-          algorithm: em
-          kind: leg
-        - step_type: forecast
-          name: forecast
-          algorithm: exp_smoothing
-          alpha: 0.15
-          kind: leg
-        - step_type: emsr
-          name: optimization
-          algorithm: emsrg
-          kind: leg
-  rm_mfem:
-    availability_control: leg
-    processes:
-      DCP:
-        - step_type: untruncation
-          name: untruncation
-          algorithm: mfem
-          kind: leg
-        - step_type: forecast
-          name: forecast
-          algorithm: exp_smoothing
-          alpha: 0.15
-          kind: leg
-        - step_type: emsr
-          name: optimization
-          algorithm: emsrb
-          kind: leg
-
-  rm_davn:
-    availability_control: vn
-    processes:
-      DCP:
-        - step_type: untruncation
-          name: untruncation
-          algorithm: em
-          kind: path
-        - step_type: forecast
-          name: path_forecast
-          algorithm: exp_smoothing
-          alpha: 0.15
-          kind: path
-        - step_type: probp
-          name: displacement
-        - step_type: aggregation
-          name: aggregate
-        - step_type: emsr
-          name: optimization
-          algorithm: emsrb
-          kind: leg
-      DAILY:
-        - step_type: forecastadjustment
-          name: adjust
-          algorithm: timeframe
-          kind: path
-        - step_type: probp
-          name: displacement
-        - step_type: aggregation
-          name: aggregate
-        - step_type: emsr
-          name: optimization
-          algorithm: emsrb
-          kind: leg
-
-  rm_bid_price:
-    availability_control: bp
-    processes:
-      DCP:
-        - step_type: untruncation
-          name: untruncation
-          algorithm: em
-          kind: path
-        - step_type: forecast
-          name: path_forecast
-          algorithm: exp_smoothing
-          alpha: 0.15
-          kind: path
-#        - step_type: fareadjustment
-#          name: adjust_fares
-#          algorithm: mr
-#          kind: path
-        - step_type: probp
-          name: optimization
-      DAILY:
-        - step_type: forecastadjustment
-          name: adjust
-          algorithm: timeframe
-          kind: path
-        - step_type: probp
-          name: optimization
-
-  rm_hybrid:
-    availability_control: leg
-    processes:
-      DCP:
-        - step_type: forecast
-          name: hybrid_forecast
-          algorithm: exp_smoothing
-          alpha: 0.15
-          max_cap: 10.0
-          kind: hybrid
-        - step_type: aggregation
-          name: aggregate
-        - step_type: emsr
-          name: optimization
-          algorithm: emsrb
-          kind: leg
-
-  rm_fare_adj_leg:
-    availability_control: leg
-    processes:
-      DCP:
-        - step_type: untruncation
-          name: untruncation
-          algorithm: em
-          kind: path
-        - step_type: forecast
-          name: path_forecast
-          algorithm: exp_smoothing
-          alpha: 0.15
-          kind: path
-        - step_type: fareadjustment
-          name: aggregate
-          algorithm: mr
-          kind: path
-          frat5: curve_C
-        - step_type: aggregation
-          name: aggregate
-        - step_type: emsr
-          name: optimization
-          algorithm: emsrb
-          kind: leg
-
-  rm_fare_adj_bp:
-    availability_control: bp
-    processes:
-      DCP:
-        - step_type: untruncation
-          name: untruncation
-          algorithm: em
-          kind: path
-        - step_type: forecast
-          name: path_forecast
-          algorithm: exp_smoothing
-          alpha: 0.15
-          kind: path
-        - step_type: fareadjustment
-          name: adj
-          algorithm: mr
-          kind: path
-          frat5: curve_C
-        - step_type: probp
-          name: optimization
-      DAILY:
-        - step_type: forecastadjustment
-          name: adjust
-          algorithm: timeframe
-          kind: path
-        - step_type: fareadjustment
-          name: adj
-          algorithm: mr
-          kind: path
-          frat5: curve_C
-        - step_type: probp
-          name: optimization
-
-  rm_subgradient:
-    availability_control: bp
-    processes:
-      DCP:
-        - step_type: untruncation
-          name: untruncation
-          algorithm: em
-          kind: path
-        - step_type: forecast
-          name: path_forecast
-          algorithm: exp_smoothing
-          alpha: 0.15
-          kind: path
-        - step_type: subgradient
-          name: optimization
-          kind: path
-          max_iter: 100
-          step_size: 0.3
-          max_viol: 1.0
-          min_lambda: 1.0
-          use_gamma: True
-      DAILY:
-        - step_type: forecastadjustment
-          name: adjust
-          algorithm: timeframe
-          kind: path
-        - step_type: subgradient
-          name: optimization
-          kind: path
-          max_iter: 100
-          step_size: 0.3
-          max_viol: 1.0
-          min_lambda: 1.0
-          use_gamma: True
 
 choice_models:
   business:
@@ -445,6 +226,25 @@ choice_models:
     r2: 0.35
     r3: 0.35
 
+  mnl_business:
+    kind: logit
+    emult:  2.99
+    price: -0.004
+    duration: -0.006
+    nonstop: 2.7
+    r1: -2.0
+    r2: -1.35
+    r3: -1.50
+
+  mnl_leisure:
+    kind: logit
+    emult: 1.9
+    price: -0.006
+    duration: -0.004
+    nonstop: 2.0
+    r1: -1.30
+    r2: -0.35
+    r3: -0.35
 
 airlines:
   - name: AL1
@@ -452,7 +252,7 @@ airlines:
     frat5: curve_A
     load_factor_curve: lf_curve1
   - name: AL2
-    rm_system: rm_bid_price
+    rm_system: rm_test1
     frat5: curve_C
     load_factor_curve: lf_curve1
 
@@ -602,7 +402,7 @@ demands:
     segment: business
     base_demand: 70.0
     reference_fare: 250.0
-    choice_model: business
+    choice_model: mnl_business
     curve: c1
     distance: 864.0
   - orig: BOS
@@ -610,7 +410,7 @@ demands:
     segment: leisure
     base_demand: 90.0
     reference_fare: 100.0
-    choice_model: leisure
+    choice_model: mnl_leisure
     curve: c2
     distance: 864.0
   - orig: ORD
@@ -618,28 +418,28 @@ demands:
     segment: business
     base_demand: 120.0
     reference_fare: 375.0
-    choice_model: business
+    choice_model: mnl_business
     curve: c1
   - orig: ORD
     dest: LAX
     segment: leisure
     base_demand: 150.0
     reference_fare: 150.0
-    choice_model: leisure
+    choice_model: mnl_leisure
     curve: c2
   - orig: BOS
     dest: LAX
     segment: business
     base_demand: 100.0
     reference_fare: 500.0
-    choice_model: business
+    choice_model: mnl_business
     curve: c1
   - orig: BOS
     dest: LAX
     segment: leisure
     base_demand: 140.0
     reference_fare: 200.0
-    choice_model: leisure
+    choice_model: mnl_leisure
     curve: c2
 
 fares:
@@ -951,16 +751,16 @@ fares:
       - R3
 
 snapshot_filters:
-#  - type: path_untruncation
-#    title: Snapshot of path untruncation
-#    sample: 35
-#    dcp: 0
-#    flt_no: 202
-#  - type: forecast
-#    title: Snapshot of forecasting
-#    sample: 35
-#    dcp: [14]
-#    flt_no: 211
+  #  - type: path_untruncation
+  #    title: Snapshot of path untruncation
+  #    sample: 35
+  #    dcp: 0
+  #    flt_no: 202
+  #  - type: forecast
+  #    title: Snapshot of forecasting
+  #    sample: 35
+  #    dcp: [14]
+  #    flt_no: 211
   - type: rm
     title: RM Snapshot, EMSRb leg optimization
     sample: [35]

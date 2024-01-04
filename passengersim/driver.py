@@ -12,6 +12,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from scipy.stats import gamma
 
 import passengersim.config.rm_systems
 import passengersim.core
@@ -78,6 +79,7 @@ class Simulation:
         self.fare_details_revenue = defaultdict(float)
         self.output_dir = output_dir
         self.demand_multiplier = 1.0
+        self.capacity_multiplier = 1.0
         self.airports = []
         self.choice_models = {}
         self.frat5curves = {}
@@ -133,6 +135,8 @@ class Simulation:
         for pname, pvalue in config.simulation_controls:
             if pname == "demand_multiplier":
                 self.demand_multiplier = pvalue
+            elif pname == "capacity_multiplier":
+                self.capacity_multiplier = pvalue
             elif pname == "write_raw_files":
                 self.write_raw_files = pvalue
             elif pname == "random_seed":
@@ -247,18 +251,19 @@ class Simulation:
         for curve_name, curve_config in config.booking_curves.items():
             bc = passengersim.core.BookingCurve(curve_name)
             bc.random_generator = self.random_generator
-            for dcp, pct in curve_config.curve.items():
-                bc.add_dcp(dcp, pct)
+            for days_prior, pct in curve_config.curve.items():
+                bc.add_dcp(days_prior, pct)
             self.curves[curve_name] = bc
 
         self.legs = {}
         for leg_config in config.legs:
+            cap = int(leg_config.capacity * self.capacity_multiplier)
             leg = passengersim.core.Leg(
                 leg_config.carrier,
                 leg_config.fltno,
                 leg_config.orig,
                 leg_config.dest,
-                capacity=leg_config.capacity,
+                capacity=cap,
             )
             leg.dep_time = leg_config.dep_time
             leg.arr_time = leg_config.arr_time
@@ -388,6 +393,33 @@ class Simulation:
                     pc.set_indexes(index, index)
                     path.add_path_class(pc)
 
+    def end_sample(self):
+        # Commit data to the database
+        if self.cnx:
+            try:
+                self.cnx.commit()
+            except AttributeError:
+                pass
+
+        # Market share computation (MIDT-lite), might move to C++ in a future version
+        alpha = 0.15
+        for m in self.sim.markets:
+            sold = float(m.sold)
+            for a in self.sim.airlines:
+                try:
+                    airline_sold = m.get_airline_sold(a.name)
+                except Exception as e:
+                    print(e)
+                share = airline_sold / sold if sold > 0 else 0
+                if self.sim.sample > 1:
+                    old_share = m.get_airline_share(a.name)
+                    new_share = alpha * share + (1.0 - alpha) * old_share
+                    m.set_airline_share(a.name, new_share)
+                    # print(f"Set share, sample={self.sim.sample}, key={a.name}: {m.orig}-{m.dest}"
+                    #      f", sold={sold}, al_sold={airline_sold}, old={old_share:6.3f}, shr= {new_share:6.3f}")
+                else:
+                    m.set_airline_share(a.name, share)
+
     def _run_sim(self):
         update_freq = self.update_frequency
         logger.debug(
@@ -451,6 +483,7 @@ class Simulation:
                     if self.sim.trial > 0 or self.sim.sample > 0:
                         self.sim.reset_counters()
                     self.generate_demands()
+                    # self.generate_demands_gamma()
 
                     # Loop on passengers
                     while True:
@@ -465,14 +498,11 @@ class Simulation:
                                 self.sim.num_events() == 0
                             ), f"Event queue still has {self.sim.num_events()} events"
                             break
-                    if self.cnx:
-                        try:
-                            self.cnx.commit()
-                        except AttributeError:
-                            pass
 
                     n_samples_done += 1
                     self.sample_done_callback(n_samples_done, n_samples_total)
+                    self.end_sample()
+
                 if self.cnx.is_open:
                     self.cnx.save_final(self.sim)
 
@@ -661,6 +691,28 @@ class Simulation:
 
         return total_events
 
+    def generate_demands_gamma(self, system_rn=None, debug=False):
+        """Using this as a quick test"""
+        self.generate_dcp_rm_events()
+        end_time = self.base_time
+        cv100 = 0.3
+        for dmd in self.sim.demands:
+            mu = dmd.base_demand
+            std_dev = cv100 * sqrt(mu) * 10.0
+            # std_dev = mu * 0.3
+            var = std_dev**2
+            shape_a = mu**2 / var
+            scale_b = var / mu
+            loc = 0.0
+            r = gamma.rvs(shape_a, loc, scale_b, size=1)
+            num_pax = int(r[0] + 0.5)
+            dmd.scenario_demand = num_pax
+            self.sim.allocate_demand_to_tf_pods(
+                dmd, num_pax, self.sim.tf_k_factor, int(end_time)
+            )
+        total_events = 0
+        return total_events
+
     # def data_by_timeframe(self):
     #     logger.info("----- Demand By DCP -----")
     #     dmd_by_tf = defaultdict(float)
@@ -805,6 +857,7 @@ class Simulation:
         fare_df = []
         for f in sim.fares:
             for dcp_index in range(16):
+                days_prior = self.dcp_list[dcp_index]
                 fare_df.append(
                     dict(
                         carrier=f.carrier,
@@ -813,7 +866,7 @@ class Simulation:
                         booking_class=f.booking_class,
                         dcp_index=dcp_index,
                         price=f.price,
-                        sold=f.sold,
+                        sold=f.get_sales_by_dcp(days_prior),
                         gt_sold=f.gt_sold,
                         avg_adjusted_price=f.get_adjusted_by_dcp(dcp_index),
                     )
@@ -1037,16 +1090,16 @@ class Simulation:
             carrier_df.append(
                 {
                     "carrier": cxr.name,
-                    "sold": round(avg_sold, 2),
-                    "sys_lf": round(sys_lf, 3),
-                    "avg_leg_lf": round(
-                        100 * airline_leg_lf[cxr.name] / airline_leg_count[cxr.name], 3
-                    ),
-                    "avg_rev": (round(avg_rev, 0)),
-                    "avg_price": round(avg_rev / avg_sold, 2),
-                    "asm": (round(asm, 0)),
-                    "rpm": (round(rpm, 0)),
-                    "yield": np.nan if rpm == 0 else round(avg_rev / rpm, 4),
+                    "sold": avg_sold,
+                    "sys_lf": sys_lf,
+                    "avg_leg_lf": 100
+                    * airline_leg_lf[cxr.name]
+                    / airline_leg_count[cxr.name],
+                    "avg_rev": avg_rev,
+                    "avg_price": avg_rev / avg_sold,
+                    "asm": asm,
+                    "rpm": rpm,
+                    "yield": np.nan if rpm == 0 else avg_rev / rpm,
                 }
             )
             # logger.info(f"ASM = {airline_asm[cxr.name]:.2f}, RPM = {airline_rpm[cxr.name]:.2f}, LF = {sys_lf:.2f}%")
