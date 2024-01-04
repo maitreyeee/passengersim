@@ -20,7 +20,7 @@ flags must be set on [`Config.db.write_items`][passengersim.config.DatabaseConfi
 | iteration                 | INT NOT NULL         |                                                                 |
 | trial                     | INT NOT NULL         |                                                                 |
 | sample  	                 | INT NOT NULL         | Sample number within trial                                      |
-| rrd                       | INT NOT NULL         | Days before departure                                           |
+| days_prior                | INT NOT NULL         | Days before departure                                           |
 | path_id                   | INT NOT NULL         | Unique identifier for a given path                              |
 | booking_class             | VARCHAR(10) NOT NULL | Booking class name                                              |
 | sold	                     | INT                  | Number of seats sold at this point in time                      |

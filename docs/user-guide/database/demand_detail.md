@@ -14,21 +14,21 @@ flags must be set on [`Config.db.write_items`][passengersim.config.DatabaseConfi
 
 ## Table Schema
 
-| Column                    | Data Type            | Description                                                    |
-|:--------------------------|:---------------------|:---------------------------------------------------------------|
-| scenario                  | VARCHAR(20) NOT NULL | Scenario name [^1]                                             |
-| iteration                 | INT NOT NULL         |                                                                |
-| trial                     | INT NOT NULL         |                                                                |
-| sample  	                 | INT NOT NULL         | Sample number within trial                                     |
-| rrd                       | INT NOT NULL         | Days before departure                                          |
-| segment                   | VARCHAR(10) NOT NULL | Customer segment, typically business or leisure                |
-| orig                      | VARCHAR(10) NOT NULL | Origin (typically an airport code or similar)                  |
-| dest                      | VARCHAR(10) NOT NULL | Destination (typically an airport code or similar)             |
-| updated_at                | DATETIME NOT NULL    | Time each row was written to the database                      |
-| sample_demand             | FLOAT                |                                                                |
-| sold	                     | INT                  | Number of customers in this demand bucket who bought something |
-| no_go                     | INT                  | Number of customers in this demand bucket who bought nothing   |
-| revenue                   | FLOAT                | Revenue attributable to these customers                        |
+| Column        | Data Type            | Description                                                    |
+|:--------------|:---------------------|:---------------------------------------------------------------|
+| scenario      | VARCHAR(20) NOT NULL | Scenario name [^1]                                             |
+| iteration     | INT NOT NULL         |                                                                |
+| trial         | INT NOT NULL         |                                                                |
+| sample  	     | INT NOT NULL         | Sample number within trial                                     |
+| days_prior    | INT NOT NULL         | Days before departure                                          |
+| segment       | VARCHAR(10) NOT NULL | Customer segment, typically business or leisure                |
+| orig          | VARCHAR(10) NOT NULL | Origin (typically an airport code or similar)                  |
+| dest          | VARCHAR(10) NOT NULL | Destination (typically an airport code or similar)             |
+| updated_at    | DATETIME NOT NULL    | Time each row was written to the database                      |
+| sample_demand | FLOAT                |                                                                |
+| sold	         | INT                  | Number of customers in this demand bucket who bought something |
+| no_go         | INT                  | Number of customers in this demand bucket who bought nothing   |
+| revenue       | FLOAT                | Revenue attributable to these customers                        |
 
 
 [^1]:

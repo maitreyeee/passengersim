@@ -325,7 +325,7 @@ def leg_forecasts(
         AVG(forecast_closed_in_tf) as forecast_closed_in_tf,
         AVG(forecast_closed_in_future) as forecast_closed_in_future
     FROM
-        leg_bucket_detail
+        leg_bucket_detail LEFT JOIN leg_defs USING (flt_no)
     WHERE
         scenario = ?1
         AND sample >= ?2
@@ -498,7 +498,7 @@ def carrier_history(
             iteration, trial, sample, carrier,
             sum(forecast_mean) as forecast_mean,
             sqrt(sum(forecast_stdev*forecast_stdev)) as forecast_stdev
-        FROM leg_bucket_detail
+        FROM leg_bucket_detail LEFT JOIN leg_defs USING (flt_no)
         WHERE days_prior == ?2 AND scenario == ?1 AND sample >= ?3
         GROUP BY iteration, trial, sample, carrier
         """,
@@ -510,7 +510,7 @@ def carrier_history(
             iteration, trial, sample, carrier,
             sum(sold) as sold,
             sum(revenue) as revenue
-        FROM leg_bucket_detail
+        FROM leg_bucket_detail LEFT JOIN leg_defs USING (flt_no)
         WHERE days_prior == 0 AND scenario == ?1 AND sample >= ?2
         GROUP BY iteration, trial, sample, carrier
         """,
@@ -684,6 +684,85 @@ def local_and_flow_yields(
                 path_yields
             GROUP BY leg2
         ) f2 ON f2.leg2 == leg_defs.flt_no
+    """
+    df = cnx.dataframe(
+        qry,
+        (
+            scenario,
+            burn_samples,
+        ),
+    )
+    return df
+
+
+def leg_local_and_flow_by_class(
+    cnx: Database, scenario: str, burn_samples: int = 100
+) -> pd.DataFrame:
+    cnx.execute(
+        """
+        CREATE TEMP TABLE IF NOT EXISTS pthcls AS
+        SELECT
+            sold, leg1, booking_class, iteration, trial, sample
+        FROM
+            path_class_detail LEFT JOIN path_defs USING(path_id)
+        WHERE
+            days_prior == 0
+            AND leg2 IS NULL
+            AND scenario == ?1
+            AND sample >= ?2
+        """,
+        (
+            scenario,
+            burn_samples,
+        ),
+    )
+
+    cnx.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_pthcls_1 ON pthcls (
+            iteration, trial, sample, leg1, booking_class
+        );
+        """
+    )
+
+    # WITH pathclass AS (
+    #     SELECT
+    #         *
+    #     FROM
+    #         path_class_detail LEFT JOIN path_defs USING(path_id)
+    #     WHERE
+    #         days_prior == 0
+    #         AND leg2 IS NULL
+    # )
+
+    qry = """
+    SELECT
+        flt_no,
+        leg_defs.carrier,
+        leg_defs.orig,
+        leg_defs.dest,
+        bucket_number,
+        AVG(leg_bucket_detail.sold) AS total_sold,
+        IFNULL(AVG(pthcls.sold), 0) AS local_sold
+    FROM
+        leg_bucket_detail
+        LEFT JOIN leg_defs USING (flt_no)
+        LEFT JOIN pthcls ON
+            flt_no == pthcls.leg1
+            AND leg_bucket_detail.name == pthcls.booking_class
+            AND leg_bucket_detail.iteration == pthcls.iteration
+            AND leg_bucket_detail.trial == pthcls.trial
+            AND leg_bucket_detail.sample == pthcls.sample
+    WHERE
+        leg_bucket_detail.scenario == ?1
+        AND leg_bucket_detail.sample >= ?2
+        AND days_prior == 0
+    GROUP BY
+        flt_no,
+        leg_defs.carrier,
+        leg_defs.orig,
+        leg_defs.dest,
+        bucket_number
     """
     df = cnx.dataframe(
         qry,

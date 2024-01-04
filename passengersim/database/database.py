@@ -378,8 +378,6 @@ leg_bucket_sql = {}
 def save_leg_bucket_multi(
     cnx: Database, sim: SimulationEngine, leg, dcp, commit=False
 ) -> string:
-    dep_time = datetime.utcfromtimestamp(leg.dep_time).strftime("%Y-%m-%d %H:%M:%S")
-    # print("dep_time = ", dep_time)
     try:
         cursor = cnx.cursor()
         cnx_type = type(cnx).__name__
@@ -387,9 +385,9 @@ def save_leg_bucket_multi(
             sql = leg_bucket_sql[
                 cnx_type
             ] = f"""INSERT INTO leg_bucket_detail
-                (scenario, iteration, trial, sample, days_prior, carrier, orig, dest, flt_no,
-                dep_date, bucket_number, name, auth, revenue, sold, untruncated_demand,
-                forecast_mean) VALUES ({sql_placeholders(cnx, 17)})"""
+                (scenario, iteration, trial, sample, days_prior, flt_no,
+                bucket_number, name, auth, revenue, sold, untruncated_demand,
+                forecast_mean) VALUES ({sql_placeholders(cnx, 13)})"""
         else:
             sql = leg_bucket_sql.get(cnx_type)
         data_list = []
@@ -400,11 +398,7 @@ def save_leg_bucket_multi(
                 sim.trial,
                 sim.sample,
                 dcp,
-                leg.carrier,
-                leg.orig,
-                leg.dest,
                 leg.flt_no,
-                dep_time,
                 n,
                 bkt.name,
                 bkt.alloc,
