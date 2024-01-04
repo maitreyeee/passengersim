@@ -1,4 +1,4 @@
-,index,carrier,flt_no,booking_class,rrd,forecast_mean
+,index,carrier,flt_no,booking_class,days_prior,forecast_mean
 0,0,AL1,101,Y0,0,0
 1,1,AL1,101,Y0,1,0
 2,2,AL1,101,Y0,3,0

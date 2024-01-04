@@ -1,4 +1,4 @@
-,paxtype,rrd,carrier,sold,sem,ci0,ci1
+,paxtype,days_prior,carrier,sold,sem,ci0,ci1
 0,business,63,AL1,8.8224999999999998,,,
 1,business,63,AL2,8.8175000000000008,,,
 2,business,56,AL1,7.3525000000000009,,,

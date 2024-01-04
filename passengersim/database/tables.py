@@ -183,7 +183,7 @@ def create_table_leg_detail(cnx: Database, primary_key: bool = False) -> None:
         iteration	    	INT NOT NULL,
         trial	        	INT NOT NULL,
         sample  	    	INT NOT NULL,
-        rrd             	INT NOT NULL,
+        days_prior       	INT NOT NULL,
         flt_no		    	INT NOT NULL,
         updated_at	    	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         sold	    		INT,
@@ -197,7 +197,8 @@ def create_table_leg_detail(cnx: Database, primary_key: bool = False) -> None:
     """
     if primary_key is True:
         sql = sql.format(
-            primary_key=", PRIMARY KEY(scenario, iteration, trial, sample, carrier, orig, dest, flt_no, rrd, dep_date)"
+            primary_key=", PRIMARY KEY(scenario, iteration, trial, sample, "
+            "carrier, orig, dest, flt_no, days_prior, dep_date)"
         )
     else:
         sql = sql.format(primary_key="")
@@ -212,7 +213,7 @@ def create_table_leg_bucket_detail(cnx: Database, primary_key: bool = False):
         iteration		INT NOT NULL,
         trial	    	INT NOT NULL,
         sample  		INT NOT NULL,
-        rrd         	INT NOT NULL,
+        days_prior   	INT NOT NULL,
         carrier			VARCHAR(10) NOT NULL,
         orig			VARCHAR(10) NOT NULL,
         dest			VARCHAR(10) NOT NULL,
@@ -234,7 +235,7 @@ def create_table_leg_bucket_detail(cnx: Database, primary_key: bool = False):
     """
     if primary_key is True:
         sql = sql.format(
-            primary_key=", PRIMARY KEY(scenario, iteration, trial, sample, rrd, "
+            primary_key=", PRIMARY KEY(scenario, iteration, trial, sample, days_prior, "
             "carrier, orig, dest, flt_no, dep_date, bucket_number)"
         )
     else:
@@ -250,7 +251,7 @@ def create_table_demand_detail(cnx: Database, primary_key: bool = False):
         iteration		INT NOT NULL,
         trial	    	INT NOT NULL,
         sample  		INT NOT NULL,
-        rrd     	    INT NOT NULL,
+        days_prior	    INT NOT NULL,
         segment			VARCHAR(10) NOT NULL,
         orig			VARCHAR(10) NOT NULL,
         dest			VARCHAR(10) NOT NULL,
@@ -264,7 +265,7 @@ def create_table_demand_detail(cnx: Database, primary_key: bool = False):
     """
     if primary_key is True:
         sql = sql.format(
-            primary_key=", PRIMARY KEY(scenario, iteration, trial, sample, rrd, segment, orig, dest)"
+            primary_key=", PRIMARY KEY(scenario, iteration, trial, sample, days_prior, segment, orig, dest)"
         )
     else:
         sql = sql.format(primary_key="")
@@ -279,7 +280,7 @@ def create_table_fare_detail(cnx: Database, primary_key: bool = False):
         iteration		INT NOT NULL,
         trial	    	INT NOT NULL,
         sample  		INT NOT NULL,
-        rrd       		INT NOT NULL,
+        days_prior 		INT NOT NULL,
         fare_id         INT NOT NULL,
         sold			INT,
         sold_business	INT,
@@ -289,7 +290,8 @@ def create_table_fare_detail(cnx: Database, primary_key: bool = False):
     """
     if primary_key is True:
         sql = sql.format(
-            primary_key=", PRIMARY KEY(scenario, iteration, trial, sample, rrd, carrier, orig, dest, booking_class)"
+            primary_key=", PRIMARY KEY(scenario, iteration, trial, sample, "
+            "days_prior, carrier, orig, dest, booking_class)"
         )
     else:
         sql = sql.format(primary_key="")
@@ -304,7 +306,7 @@ def create_table_bookings_by_timeframe(cnx: Database, primary_key: bool = False)
         trial       	INT NOT NULL,
         carrier			VARCHAR(10) NOT NULL,
         booking_class   VARCHAR(10) NOT NULL,
-        rrd       		INT NOT NULL,
+        days_prior		INT NOT NULL,
         tot_sold		FLOAT,
         avg_sold		FLOAT,
         avg_business	FLOAT,
@@ -317,7 +319,7 @@ def create_table_bookings_by_timeframe(cnx: Database, primary_key: bool = False)
     """
     if primary_key is True:
         sql = sql.format(
-            primary_key=", PRIMARY KEY(scenario, carrier, booking_class, rrd)"
+            primary_key=", PRIMARY KEY(scenario, carrier, booking_class, days_prior)"
         )
     else:
         sql = sql.format(primary_key="")
@@ -332,14 +334,14 @@ def create_table_booking_curve(cnx: Database, primary_key: bool = True):
         orig			VARCHAR(10) NOT NULL,
         dest			VARCHAR(10) NOT NULL,
         flt_no			INT NOT NULL,
-        rrd         	INT NOT NULL,
+        days_prior  	INT NOT NULL,
         ratio           FLOAT NOT NULL
         {primary_key}
     );
     """
     if primary_key is True:
         sql = sql.format(
-            primary_key=", PRIMARY KEY(scenario, carrier, orig, dest, flt_no, rrd)"
+            primary_key=", PRIMARY KEY(scenario, carrier, orig, dest, flt_no, days_prior)"
         )
     else:
         sql = sql.format(primary_key="")
@@ -354,7 +356,7 @@ def create_table_path_class_detail(cnx: Database, primary_key: bool = False):
         iteration		INT NOT NULL,
         trial	    	INT NOT NULL,
         sample  		INT NOT NULL,
-        rrd         	INT NOT NULL,
+        days_prior   	INT NOT NULL,
         path_id			INT NOT NULL,
         booking_class   VARCHAR(10) NOT NULL,
         sold			INT,
@@ -369,7 +371,7 @@ def create_table_path_class_detail(cnx: Database, primary_key: bool = False):
     """
     if primary_key is True:
         sql = sql.format(
-            primary_key=", PRIMARY KEY(scenario, iteration, trial, sample, rrd, "
+            primary_key=", PRIMARY KEY(scenario, iteration, trial, sample, days_prior, "
             "path_id, booking_class)"
         )
     else:

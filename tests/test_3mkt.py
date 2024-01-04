@@ -83,7 +83,7 @@ def test_3mkt_db_detail(fast):
             "iteration",
             "trial",
             "sample",
-            "rrd",
+            "days_prior",
             "carrier",
             "orig",
             "dest",

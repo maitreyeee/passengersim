@@ -130,7 +130,8 @@ def fig_bookings_by_timeframe(
         if isinstance(ratio, str):
             against = ratio
         idx = list(
-            {"source", "carrier", "paxtype", "rrd", "booking_class"} & set(df.columns)
+            {"source", "carrier", "paxtype", "days_prior", "booking_class"}
+            & set(df.columns)
         )
         df_ = df.set_index(idx)
         ratios = df_.div(df_.query(f"source == '{against}'").droplevel("source")) - 1.0
@@ -154,14 +155,16 @@ def fig_bookings_by_timeframe(
         chart = alt.Chart(df.sort_values("source", ascending=False))
         chart_1 = chart.mark_bar().encode(
             color=color,
-            x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+            x=alt.X("days_prior:O")
+            .scale(reverse=True)
+            .title("Days Prior to Departure"),
             xOffset=alt.XOffset("source:N", title="Source", sort=source_order),
             y=alt.Y("sold", stack=True),
             tooltip=[
                 alt.Tooltip("source:N", title="Source"),
                 alt.Tooltip("paxtype", title="Passenger Type"),
                 *tooltips,
-                alt.Tooltip("rrd", title="DfD"),
+                alt.Tooltip("days_prior", title="DfD"),
                 alt.Tooltip("sold", format=".2f"),
                 *ratio_tooltips,
             ],
@@ -175,7 +178,9 @@ def fig_bookings_by_timeframe(
             align="left",
         ).encode(
             text=alt.Text("source:N", title="Source"),
-            x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+            x=alt.X("days_prior:O")
+            .scale(reverse=True)
+            .title("Days Prior to Departure"),
             xOffset=alt.XOffset("source:N", title="Source", sort=source_order),
             # shape=alt.Shape("source:N", title="Source", sort=source_order),
             y=alt.Y("sum(sold)", title=None),
@@ -198,14 +203,16 @@ def fig_bookings_by_timeframe(
             .mark_bar()
             .encode(
                 color=alt.Color("carrier:N").title("Carrier"),
-                x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+                x=alt.X("days_prior:O")
+                .scale(reverse=True)
+                .title("Days Prior to Departure"),
                 xOffset=alt.XOffset("source:N", title="Source", sort=source_order),
                 y=alt.Y("sold", stack=True),
                 tooltip=[
                     alt.Tooltip("source:N", title="Source"),
                     alt.Tooltip("paxtype", title="Passenger Type"),
                     alt.Tooltip("carrier", title="Carrier"),
-                    alt.Tooltip("rrd", title="DfD"),
+                    alt.Tooltip("days_prior", title="DfD"),
                     alt.Tooltip("sold", format=".2f"),
                     *ratio_tooltips,
                 ],
@@ -226,7 +233,9 @@ def fig_bookings_by_timeframe(
             .mark_line()
             .encode(
                 color=alt.Color("source:N", title="Source", sort=source_order),
-                x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+                x=alt.X("days_prior:O")
+                .scale(reverse=True)
+                .title("Days Prior to Departure"),
                 y="sold",
                 strokeDash=alt.StrokeDash("paxtype").title("Passenger Type"),
                 strokeWidth=alt.StrokeWidth(
@@ -235,7 +244,7 @@ def fig_bookings_by_timeframe(
                 tooltip=[
                     alt.Tooltip("source:N", title="Source"),
                     alt.Tooltip("paxtype", title="Passenger Type"),
-                    alt.Tooltip("rrd", title="DfD"),
+                    alt.Tooltip("days_prior", title="DfD"),
                     alt.Tooltip("sold", format=".2f"),
                     *ratio_tooltips,
                 ],
@@ -516,7 +525,9 @@ def _fig_forecasts(
     import altair as alt
 
     encoding = dict(
-        x=alt.X(f"rrd:{rrd_ntype}").scale(reverse=True).title("Days from Departure"),
+        x=alt.X(f"days_prior:{rrd_ntype}")
+        .scale(reverse=True)
+        .title("Days Prior to Departure"),
         y=alt.Y(f"{y}:Q", title=y_title),
         color="booking_class:N",
         strokeDash=alt.StrokeDash("source:N", title="Source"),
@@ -576,7 +587,7 @@ def fig_leg_forecasts(
         color = "source:N"
         if of == "mu":
             df = (
-                df.groupby(["source", "flt_no", "rrd"])
+                df.groupby(["source", "flt_no", "days_prior"])
                 .forecast_mean.sum()
                 .reset_index()
             )
@@ -586,7 +597,7 @@ def fig_leg_forecasts(
                 return np.sqrt(sum(x**2))
 
             df = (
-                df.groupby(["source", "flt_no", "rrd"])
+                df.groupby(["source", "flt_no", "days_prior"])
                 .forecast_stdev.apply(sum_sigma)
                 .reset_index()
             )
@@ -654,7 +665,7 @@ def fig_path_forecasts(
     if agg_booking_classes:
         if of == "mu":
             df = (
-                df.groupby(["source", "path_id", "rrd"])
+                df.groupby(["source", "path_id", "days_prior"])
                 .forecast_mean.sum()
                 .reset_index()
             )
@@ -664,13 +675,13 @@ def fig_path_forecasts(
                 return np.sqrt(sum(x**2))
 
             df = (
-                df.groupby(["source", "path_id", "rrd"])
+                df.groupby(["source", "path_id", "days_prior"])
                 .forecast_stdev.apply(sum_sigma)
                 .reset_index()
             )
         elif of == "closed":
             df = (
-                df.groupby(["source", "path_id", "rrd"])
+                df.groupby(["source", "path_id", "days_prior"])
                 .forecast_closed_in_tf.mean()
                 .reset_index()
             )
@@ -696,7 +707,7 @@ def fig_path_forecasts(
 
     # use ordinal data type for DCP labels unless the underlying data is daily, then use Q
     rrd_ntype = "O"
-    if len(df["rrd"].value_counts()) > 30:
+    if len(df["days_prior"].value_counts()) > 30:
         rrd_ntype = "Q"
     return _fig_forecasts(
         df,
@@ -740,7 +751,7 @@ def fig_bid_price_history(
         return df
 
     line_encoding = dict(
-        x=alt.X("rrd:Q").scale(reverse=True).title("Days from Departure"),
+        x=alt.X("days_prior:Q").scale(reverse=True).title("Days Prior to Departure"),
         y=alt.Y(bp_mean, title="Bid Price"),
         color="source:N",
     )
@@ -748,7 +759,9 @@ def fig_bid_price_history(
     fig = chart.mark_line(interpolate="step-before").encode(**line_encoding)
     if show_stdev:
         area_encoding = dict(
-            x=alt.X("rrd:Q").scale(reverse=True).title("Days from Departure"),
+            x=alt.X("days_prior:Q")
+            .scale(reverse=True)
+            .title("Days Prior to Departure"),
             y=alt.Y("bid_price_lower:Q", title="Bid Price"),
             y2=alt.Y2("bid_price_upper:Q", title="Bid Price"),
             color="source:N",
@@ -760,7 +773,9 @@ def fig_bid_price_history(
         bound_line = chart.mark_line(
             opacity=0.4, strokeDash=[5, 5], interpolate="step-before"
         ).encode(
-            x=alt.X("rrd:Q").scale(reverse=True).title("Days from Departure"),
+            x=alt.X("days_prior:Q")
+            .scale(reverse=True)
+            .title("Days Prior to Departure"),
             color="source:N",
         )
         top_line = bound_line.encode(y=alt.Y("bid_price_lower:Q", title="Bid Price"))
@@ -817,7 +832,9 @@ def fig_demand_to_come(
         alt.Chart(df)
         .mark_line()
         .encode(
-            x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+            x=alt.X("days_prior:O")
+            .scale(reverse=True)
+            .title("Days Prior to Departure"),
             y=alt.Y("dtc:Q").title(y_title),
             color="segment:N",
             strokeDash="source:N",
