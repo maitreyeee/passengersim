@@ -209,6 +209,7 @@ class SummaryTables:
         demand_to_come: pd.DataFrame | None = None,
         bid_price_history: pd.DataFrame | None = None,
         local_and_flow_yields: pd.DataFrame | None = None,
+        leg_carried: pd.DataFrame | None = None,
     ):
         self.demands = demands
         self.fares = fares
@@ -227,6 +228,7 @@ class SummaryTables:
         self.demand_to_come = demand_to_come
         self.bid_price_history = bid_price_history
         self.local_and_flow_yields = local_and_flow_yields
+        self.leg_carried = leg_carried
 
     def to_records(self) -> dict[str, list[dict]]:
         """Convert all summary tables to a dictionary of records."""
