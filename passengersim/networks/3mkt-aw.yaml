@@ -455,6 +455,9 @@ airlines:
     rm_system: rm_bid_price
     frat5: curve_C
     load_factor_curve: lf_curve1
+    ancillaries:
+      ANC1: 75.0
+      ANC2: 40.0
 
 classes:
   - Y0

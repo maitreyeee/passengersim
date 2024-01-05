@@ -24,3 +24,6 @@ class Airline(Named, extra="forbid"):
     This is the default that will be applied if not found at a more detailed level
     """
 
+    ancillaries: Optional[dict[str, float]] = {}
+    """Specifies ancillaries offered by the airline, codes are ANC1 .. ANC4"""
+
