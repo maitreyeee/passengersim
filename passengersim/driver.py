@@ -1069,6 +1069,12 @@ class Simulation:
                 logger.info(
                     f"Airline: {cxr.name}, AvgSold: {round(avg_sold, 2)}, LF {sys_lf:.2f}%,  AvgRev ${avg_rev:10,.2f}"
                 )
+
+            # Add up total ancillaries
+            tot_rev = 0.0
+            pass
+
+
             carrier_df.append(
                 {
                     "carrier": cxr.name,
