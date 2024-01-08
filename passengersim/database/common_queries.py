@@ -160,7 +160,8 @@ def total_demand(cnx: Database, scenario: str, burn_samples: int = 100) -> float
     Average total demand.
 
     This query requires that the simulation was run while recording final demand
-    details (i.e. with the `demand` or `demand_final` flags set on `Config.db.write_items`).
+    details (i.e. with the `demand` or `demand_final` flags set on
+    `Config.db.write_items`).
 
     Parameters
     ----------
@@ -227,8 +228,8 @@ def bookings_by_timeframe(
         - `avg_sold`: Average number of sales.
         - `avg_business`: Average number of sales to passengers in the business segment.
         - `avg_leisure`: Average number of sales to leisure passengers.
-        - `avg_revenue`: Average total revenue earned from customers booking in this booking
-            class in this time period.
+        - `avg_revenue`: Average total revenue earned from customers booking in this
+            booking class in this time period.
         - `avg_price`: Average price per ticket from customers booking in this booking
             class in this time period
     """
@@ -438,7 +439,6 @@ def demand_to_come(
     dmd = cnx.dataframe(
         qry, (scenario, burn_samples), dtype={"future_demand": np.int32}
     )
-    # dmd["future_demand"] = dmd.sample_demand.round().astype(int) - dmd.sold - dmd.no_go
     dhs = (
         dmd.set_index(
             ["iteration", "trial", "sample", "segment", "orig", "dest", "days_prior"]
@@ -573,8 +573,10 @@ def bid_price_history(
         days_prior,
         avg(bid_price) as bid_price_mean,
         stdev(bid_price) as bid_price_stdev,
-        avg(CASE WHEN leg_detail.sold < leg_defs.capacity THEN 1.0 ELSE 0.0 END) as fraction_some_cap,
-        avg(CASE WHEN leg_detail.sold < leg_defs.capacity THEN 0.0 ELSE 1.0 END) as fraction_zero_cap
+        avg(CASE WHEN leg_detail.sold < leg_defs.capacity THEN 1.0 ELSE 0.0 END)
+            as fraction_some_cap,
+        avg(CASE WHEN leg_detail.sold < leg_defs.capacity THEN 0.0 ELSE 1.0 END)
+            as fraction_zero_cap
     FROM leg_detail
         LEFT JOIN leg_defs ON leg_detail.flt_no = leg_defs.flt_no
     WHERE
@@ -596,8 +598,10 @@ def bid_price_history(
         days_prior,
         avg(bid_price) as some_cap_bid_price_mean_unweighted,
         stdev(bid_price) as some_cap_bid_price_stdev,
-        (SUM(bid_price * leg_defs.capacity) / SUM(leg_defs.capacity)) as some_cap_bid_price_mean_capweighted,
-        (SUM(bid_price * (leg_defs.capacity-leg_detail.sold)) / SUM((leg_defs.capacity-leg_detail.sold)))
+        (SUM(bid_price * leg_defs.capacity) / SUM(leg_defs.capacity))
+            as some_cap_bid_price_mean_capweighted,
+        (SUM(bid_price * (leg_defs.capacity-leg_detail.sold))
+         / SUM((leg_defs.capacity-leg_detail.sold)))
             as some_cap_bid_price_mean_remweighted
     FROM leg_detail
         LEFT JOIN leg_defs ON leg_detail.flt_no = leg_defs.flt_no
