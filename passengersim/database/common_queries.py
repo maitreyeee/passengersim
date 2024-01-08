@@ -1,4 +1,5 @@
 import logging
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -520,7 +521,10 @@ def carrier_history(
 
 
 def bid_price_history(
-    cnx: Database, scenario: str, burn_samples: int = 100
+    cnx: Database,
+    scenario: str,
+    burn_samples: int = 100,
+    weighting: Literal["equal", "capacity", "remaining"] = "equal",
 ) -> pd.DataFrame:
     """
     Compute average bid price history over all legs for each carrier.
@@ -536,6 +540,9 @@ def bid_price_history(
     burn_samples : int, default 100
         The bid prices will be analyzed ignoring this many samples from the
         beginning of each trial.
+    weighting : {'equal', 'capacity'}, default 'equal'
+        How to weight the bid prices.  If 'equal', then each leg is weighted
+        equally.  If 'capacity', then each leg is weighted by its total capacity.
 
     Returns
     -------
@@ -558,6 +565,8 @@ def bid_price_history(
             non-zero capacity.
 
     """
+    if weighting not in ("equal", "capacity"):
+        raise ValueError(f"unknown weighting {weighting}")
     qry = """
     SELECT
         carrier,
@@ -585,8 +594,11 @@ def bid_price_history(
     SELECT
         carrier,
         days_prior,
-        avg(bid_price) as some_cap_bid_price_mean,
-        stdev(bid_price) as some_cap_bid_price_stdev
+        avg(bid_price) as some_cap_bid_price_mean_unweighted,
+        stdev(bid_price) as some_cap_bid_price_stdev,
+        (SUM(bid_price * leg_defs.capacity) / SUM(leg_defs.capacity)) as some_cap_bid_price_mean_capweighted,
+        (SUM(bid_price * (leg_defs.capacity-leg_detail.sold)) / SUM((leg_defs.capacity-leg_detail.sold)))
+            as some_cap_bid_price_mean_remweighted
     FROM leg_detail
         LEFT JOIN leg_defs ON leg_detail.flt_no = leg_defs.flt_no
     WHERE
@@ -605,6 +617,12 @@ def bid_price_history(
     ).set_index(["carrier", "days_prior"])
     bph = bph.set_index(["carrier", "days_prior"]).join(bph_some_cap)
     bph = bph.sort_index(ascending=(True, False))
+    if weighting == "equal":
+        bph["some_cap_bid_price_mean"] = bph["some_cap_bid_price_mean_unweighted"]
+    elif weighting == "capacity":
+        bph["some_cap_bid_price_mean"] = bph["some_cap_bid_price_mean_capweighted"]
+    else:
+        raise ValueError(f"unknown weighting {weighting}")
     return bph
 
 
