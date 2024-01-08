@@ -190,6 +190,12 @@ class SummaryTables:
                 db, scenario, burn_samples
             )
 
+        if "leg_local_and_flow_by_class" in additional and db.is_open:
+            logger.info("loading leg_local_and_flow_by_class")
+            self.leg_carried = database.common_queries.leg_local_and_flow_by_class(
+                db, scenario, burn_samples
+            )
+
     def __init__(
         self,
         demands: pd.DataFrame | None = None,

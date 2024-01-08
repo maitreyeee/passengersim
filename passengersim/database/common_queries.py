@@ -698,6 +698,7 @@ def local_and_flow_yields(
 def leg_local_and_flow_by_class(
     cnx: Database, scenario: str, burn_samples: int = 100
 ) -> pd.DataFrame:
+    logger.info("creating pthcls temp table")
     cnx.execute(
         """
         CREATE TEMP TABLE IF NOT EXISTS pthcls AS
@@ -717,6 +718,7 @@ def leg_local_and_flow_by_class(
         ),
     )
 
+    logger.info("indexing pthcls temp table")
     cnx.execute(
         """
         CREATE INDEX IF NOT EXISTS idx_pthcls_1 ON pthcls (
@@ -725,25 +727,16 @@ def leg_local_and_flow_by_class(
         """
     )
 
-    # WITH pathclass AS (
-    #     SELECT
-    #         *
-    #     FROM
-    #         path_class_detail LEFT JOIN path_defs USING(path_id)
-    #     WHERE
-    #         days_prior == 0
-    #         AND leg2 IS NULL
-    # )
-
+    logger.info("running leg_local_and_flow_by_class query")
     qry = """
     SELECT
         flt_no,
         leg_defs.carrier,
         leg_defs.orig,
         leg_defs.dest,
-        bucket_number,
-        AVG(leg_bucket_detail.sold) AS total_sold,
-        IFNULL(AVG(pthcls.sold), 0) AS local_sold
+        leg_bucket_detail.name as booking_class,
+        AVG(leg_bucket_detail.sold) AS carried_all,
+        IFNULL(AVG(pthcls.sold), 0) AS carried_loc
     FROM
         leg_bucket_detail
         LEFT JOIN leg_defs USING (flt_no)
@@ -762,7 +755,7 @@ def leg_local_and_flow_by_class(
         leg_defs.carrier,
         leg_defs.orig,
         leg_defs.dest,
-        bucket_number
+        leg_bucket_detail.name
     """
     df = cnx.dataframe(
         qry,
