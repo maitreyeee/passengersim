@@ -19,6 +19,7 @@ import passengersim.core
 from passengersim.config import Config
 from passengersim.config.snapshot_filter import SnapshotFilter
 from passengersim.core import Event, Frat5, PathClass, SimulationEngine
+from passengersim_core import Ancillary
 from passengersim.summary import SummaryTables
 
 from . import database
@@ -220,12 +221,14 @@ class Simulation:
             if airline_config.frat5 is not None and airline_config.frat5 != "":
                 f5 = self.frat5curves[airline_config.frat5]
                 airline.frat5 = f5
-            if (
-                airline_config.load_factor_curve is not None
-                and airline_config.load_factor_curve != ""
-            ):
+            if airline_config.load_factor_curve is not None and airline_config.load_factor_curve != "":
                 lfc = self.load_factor_curves[airline_config.load_factor_curve]
                 airline.load_factor_curve = lfc
+
+            for anc_code, anc_price in airline_config.ancillaries.items():
+                anc = Ancillary(anc_code, anc_price, 0)
+                airline.add_ancillary(anc)
+
             self.sim.add_airline(airline)
 
         self.classes = config.classes
@@ -1071,9 +1074,10 @@ class Simulation:
                 )
 
             # Add up total ancillaries
-            tot_rev = 0.0
-            pass
-
+            tot_anc_rev = 0.0
+            for anc in cxr.ancillaries:
+                print(str(anc))
+                tot_anc_rev += anc.price * anc.sold
 
             carrier_df.append(
                 {
@@ -1085,7 +1089,8 @@ class Simulation:
                     "avg_price": avg_rev / avg_sold,
                     "asm": asm,
                     "rpm": rpm,
-                    "yield": np.nan if rpm == 0 else avg_rev / rpm
+                    "yield": np.nan if rpm == 0 else avg_rev / rpm,
+                    "ancillary_rev": tot_anc_rev
                 }
             )
             # logger.info(f"ASM = {airline_asm[cxr.name]:.2f}, RPM = {airline_rpm[cxr.name]:.2f}, LF = {sys_lf:.2f}%")
