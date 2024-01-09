@@ -524,7 +524,7 @@ def bid_price_history(
     cnx: Database,
     scenario: str,
     burn_samples: int = 100,
-    weighting: Literal["equal", "capacity", "remaining"] = "equal",
+    weighting: Literal["equal", "capacity"] = "equal",
 ) -> pd.DataFrame:
     """
     Compute average bid price history over all legs for each carrier.
@@ -599,10 +599,7 @@ def bid_price_history(
         avg(bid_price) as some_cap_bid_price_mean_unweighted,
         stdev(bid_price) as some_cap_bid_price_stdev,
         (SUM(bid_price * leg_defs.capacity) / SUM(leg_defs.capacity))
-            as some_cap_bid_price_mean_capweighted,
-        (SUM(bid_price * (leg_defs.capacity-leg_detail.sold))
-         / SUM((leg_defs.capacity-leg_detail.sold)))
-            as some_cap_bid_price_mean_remweighted
+            as some_cap_bid_price_mean_capweighted
     FROM leg_detail
         LEFT JOIN leg_defs ON leg_detail.flt_no = leg_defs.flt_no
     WHERE
