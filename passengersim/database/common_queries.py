@@ -1,4 +1,5 @@
 import logging
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -50,7 +51,7 @@ def fare_class_mix(
             FROM
                 fare_detail LEFT JOIN fare_defs USING (fare_id)
             WHERE
-                rrd = 0
+                days_prior = 0
                 AND sample >= ?2
                 AND scenario = ?1
             GROUP BY
@@ -110,7 +111,7 @@ def od_fare_class_mix(
             FROM
                 fare_detail LEFT JOIN fare_defs USING (fare_id)
             WHERE
-                rrd = 0
+                days_prior = 0
                 AND sample >= ?2
                 AND scenario = ?1
                 AND orig = ?3
@@ -144,7 +145,7 @@ def load_factors(cnx: Database, scenario: str, burn_samples: int = 100) -> pd.Da
                  SUM(revenue) AS revenue
           FROM leg_detail
                    JOIN leg_defs USING (flt_no)
-          WHERE rrd = 0
+          WHERE days_prior = 0
             AND sample >= ?2
             AND scenario = ?1
           GROUP BY trial, sample, carrier
@@ -159,7 +160,8 @@ def total_demand(cnx: Database, scenario: str, burn_samples: int = 100) -> float
     Average total demand.
 
     This query requires that the simulation was run while recording final demand
-    details (i.e. with the `demand` or `demand_final` flags set on `Config.db.write_items`).
+    details (i.e. with the `demand` or `demand_final` flags set on
+    `Config.db.write_items`).
 
     Parameters
     ----------
@@ -181,7 +183,7 @@ def total_demand(cnx: Database, scenario: str, burn_samples: int = 100) -> float
         FROM
             demand_detail
         WHERE
-            rrd = 0
+            days_prior = 0
             AND sample >= ?2
             AND scenario = ?1
         GROUP BY
@@ -221,25 +223,25 @@ def bookings_by_timeframe(
     -------
     pandas.DataFrame
         The resulting dataframe is indexed by `trial`, `carrier`, `class`,
-        and `rrd`, and has these columns:
+        and `days_prior`, and has these columns:
 
         - `avg_sold`: Average number of sales.
         - `avg_business`: Average number of sales to passengers in the business segment.
         - `avg_leisure`: Average number of sales to leisure passengers.
-        - `avg_revenue`: Average total revenue earned from customers booking in this booking
-            class in this time period.
+        - `avg_revenue`: Average total revenue earned from customers booking in this
+            booking class in this time period.
         - `avg_price`: Average price per ticket from customers booking in this booking
             class in this time period
     """
     qry_fare = """
-    SELECT trial, carrier, booking_class, rrd,
+    SELECT trial, carrier, booking_class, days_prior,
            (AVG(sold)) AS avg_sold,
            (AVG(sold_business)) AS avg_business,
            (AVG(sold_leisure)) AS avg_leisure,
            (AVG(revenue)) AS avg_revenue,
            (AVG(revenue) / AVG(sold)) AS avg_price,
            (SUM(sold)) AS tot_sold
-    FROM (SELECT trial, scenario, carrier, booking_class, rrd,
+    FROM (SELECT trial, scenario, carrier, booking_class, days_prior,
                  SUM(sold) AS sold,
                  SUM(sold_business) AS sold_business,
                  SUM(sold - sold_business) AS sold_leisure,
@@ -248,14 +250,14 @@ def bookings_by_timeframe(
           WHERE
                 sample >= ?2
                 AND scenario = ?1
-          GROUP BY trial, sample, carrier, booking_class, rrd) a
-    GROUP BY carrier, booking_class, rrd, trial
-    ORDER BY carrier, booking_class, rrd, trial;
+          GROUP BY trial, sample, carrier, booking_class, days_prior) a
+    GROUP BY carrier, booking_class, days_prior, trial
+    ORDER BY carrier, booking_class, days_prior, trial;
     """
 
     if from_fare_detail:
         return cnx.dataframe(qry_fare, (scenario, burn_samples)).set_index(
-            ["trial", "carrier", "booking_class", "rrd"]
+            ["trial", "carrier", "booking_class", "days_prior"]
         )
 
     qry_bookings = """
@@ -263,7 +265,7 @@ def bookings_by_timeframe(
         trial,
         carrier,
         booking_class,
-        rrd,
+        days_prior,
         avg_sold,
         avg_business,
         avg_leisure,
@@ -274,12 +276,12 @@ def bookings_by_timeframe(
     WHERE
         scenario = ?1
     GROUP BY
-        carrier, booking_class, rrd, trial
+        carrier, booking_class, days_prior, trial
     ORDER BY
-        carrier, booking_class, rrd, trial;
+        carrier, booking_class, days_prior, trial;
     """
     return cnx.dataframe(qry_bookings, (scenario,)).set_index(
-        ["trial", "carrier", "booking_class", "rrd"]
+        ["trial", "carrier", "booking_class", "days_prior"]
     )
 
 
@@ -304,7 +306,7 @@ def leg_forecasts(
     -------
     pandas.DataFrame
         The resulting dataframe is indexed by `carrier`, `flt_no`,
-        `bucket_number`, `booking_class` and `rrd`, and has these columns:
+        `bucket_number`, `booking_class` and `days_prior`, and has these columns:
 
         - `forecast_mean`: Average forecast mean (mu).
         - `forecast_stdev`: Average forecast standard deviation (sigma).
@@ -319,18 +321,18 @@ def leg_forecasts(
         flt_no,
         bucket_number,
         name as booking_class,
-        rrd,
+        days_prior,
         AVG(forecast_mean) as forecast_mean,
         AVG(forecast_stdev) as forecast_stdev,
         AVG(forecast_closed_in_tf) as forecast_closed_in_tf,
         AVG(forecast_closed_in_future) as forecast_closed_in_future
     FROM
-        leg_bucket_detail
+        leg_bucket_detail LEFT JOIN leg_defs USING (flt_no)
     WHERE
         scenario = ?1
         AND sample >= ?2
     GROUP BY
-        carrier, flt_no, bucket_number, name, rrd
+        carrier, flt_no, bucket_number, name, days_prior
     """
     return cnx.dataframe(
         qry,
@@ -338,7 +340,7 @@ def leg_forecasts(
             scenario,
             burn_samples,
         ),
-    ).set_index(["carrier", "flt_no", "bucket_number", "booking_class", "rrd"])
+    ).set_index(["carrier", "flt_no", "bucket_number", "booking_class", "days_prior"])
 
 
 def path_forecasts(
@@ -362,7 +364,7 @@ def path_forecasts(
     -------
     pandas.DataFrame
         The resulting dataframe is indexed by `path_id`, `booking_class` and
-        `rrd`, and has these columns:
+        `days_prior`, and has these columns:
 
         - `forecast_mean`: Average forecast mean (mu).
         - `forecast_stdev`: Average forecast standard deviation (sigma).
@@ -375,7 +377,7 @@ def path_forecasts(
     SELECT
         path_id,
         booking_class,
-        rrd,
+        days_prior,
         AVG(forecast_mean) as forecast_mean,
         AVG(forecast_stdev) as forecast_stdev,
         AVG(forecast_closed_in_tf) as forecast_closed_in_tf,
@@ -386,7 +388,7 @@ def path_forecasts(
         scenario = ?1
         AND sample >= ?2
     GROUP BY
-        path_id, booking_class, rrd
+        path_id, booking_class, days_prior
     """
     return cnx.dataframe(
         qry,
@@ -394,7 +396,7 @@ def path_forecasts(
             scenario,
             burn_samples,
         ),
-    ).set_index(["path_id", "booking_class", "rrd"])
+    ).set_index(["path_id", "booking_class", "days_prior"])
 
 
 def demand_to_come(
@@ -426,7 +428,7 @@ def demand_to_come(
     # Provides content similar to PODS *.DHS output file, but with market level detail
     qry = """
     SELECT
-        iteration, trial, sample, segment, orig, dest, rrd, sold, no_go,
+        iteration, trial, sample, segment, orig, dest, days_prior, sold, no_go,
         (round(sample_demand) - sold - no_go) AS future_demand
     FROM
         demand_detail
@@ -437,13 +439,12 @@ def demand_to_come(
     dmd = cnx.dataframe(
         qry, (scenario, burn_samples), dtype={"future_demand": np.int32}
     )
-    # dmd["future_demand"] = dmd.sample_demand.round().astype(int) - dmd.sold - dmd.no_go
     dhs = (
         dmd.set_index(
-            ["iteration", "trial", "sample", "segment", "orig", "dest", "rrd"]
+            ["iteration", "trial", "sample", "segment", "orig", "dest", "days_prior"]
         )["future_demand"]
-        .unstack("rrd")
-        .sort_values(by="rrd", axis=1, ascending=False)
+        .unstack("days_prior")
+        .sort_values(by="days_prior", axis=1, ascending=False)
     )
     return dhs
 
@@ -487,7 +488,7 @@ def carrier_history(
     max_rrd = int(
         cnx.dataframe(
             """
-            SELECT max(rrd) FROM leg_bucket_detail WHERE scenario == ?1
+            SELECT max(days_prior) FROM leg_bucket_detail WHERE scenario == ?1
             """,
             (scenario,),
         ).iloc[0, 0]
@@ -498,8 +499,8 @@ def carrier_history(
             iteration, trial, sample, carrier,
             sum(forecast_mean) as forecast_mean,
             sqrt(sum(forecast_stdev*forecast_stdev)) as forecast_stdev
-        FROM leg_bucket_detail
-        WHERE rrd == ?2 AND scenario == ?1 AND sample >= ?3
+        FROM leg_bucket_detail LEFT JOIN leg_defs USING (flt_no)
+        WHERE days_prior == ?2 AND scenario == ?1 AND sample >= ?3
         GROUP BY iteration, trial, sample, carrier
         """,
         (scenario, max_rrd, burn_samples),
@@ -510,8 +511,8 @@ def carrier_history(
             iteration, trial, sample, carrier,
             sum(sold) as sold,
             sum(revenue) as revenue
-        FROM leg_bucket_detail
-        WHERE rrd == 0 AND scenario == ?1 AND sample >= ?2
+        FROM leg_bucket_detail LEFT JOIN leg_defs USING (flt_no)
+        WHERE days_prior == 0 AND scenario == ?1 AND sample >= ?2
         GROUP BY iteration, trial, sample, carrier
         """,
         (scenario, burn_samples),
@@ -520,7 +521,10 @@ def carrier_history(
 
 
 def bid_price_history(
-    cnx: Database, scenario: str, burn_samples: int = 100
+    cnx: Database,
+    scenario: str,
+    burn_samples: int = 100,
+    weighting: Literal["equal", "capacity"] = "equal",
 ) -> pd.DataFrame:
     """
     Compute average bid price history over all legs for each carrier.
@@ -536,11 +540,14 @@ def bid_price_history(
     burn_samples : int, default 100
         The bid prices will be analyzed ignoring this many samples from the
         beginning of each trial.
+    weighting : {'equal', 'capacity'}, default 'equal'
+        How to weight the bid prices.  If 'equal', then each leg is weighted
+        equally.  If 'capacity', then each leg is weighted by its total capacity.
 
     Returns
     -------
     pandas.DataFrame
-        The resulting dataframe is indexed by `carrier` and `rrd`, and has
+        The resulting dataframe is indexed by `carrier` and `days_prior`, and has
         these columns:
 
         - `bid_price_mean`: Average bid price across all samples and all legs
@@ -558,21 +565,25 @@ def bid_price_history(
             non-zero capacity.
 
     """
+    if weighting not in ("equal", "capacity"):
+        raise ValueError(f"unknown weighting {weighting}")
     qry = """
     SELECT
         carrier,
-        rrd,
+        days_prior,
         avg(bid_price) as bid_price_mean,
         stdev(bid_price) as bid_price_stdev,
-        avg(CASE WHEN leg_detail.sold < leg_defs.capacity THEN 1.0 ELSE 0.0 END) as fraction_some_cap,
-        avg(CASE WHEN leg_detail.sold < leg_defs.capacity THEN 0.0 ELSE 1.0 END) as fraction_zero_cap
+        avg(CASE WHEN leg_detail.sold < leg_defs.capacity THEN 1.0 ELSE 0.0 END)
+            as fraction_some_cap,
+        avg(CASE WHEN leg_detail.sold < leg_defs.capacity THEN 0.0 ELSE 1.0 END)
+            as fraction_zero_cap
     FROM leg_detail
         LEFT JOIN leg_defs ON leg_detail.flt_no = leg_defs.flt_no
     WHERE
         scenario == ?1
         AND sample >= ?2
     GROUP BY
-        carrier, rrd
+        carrier, days_prior
     """
     bph = cnx.dataframe(
         qry,
@@ -584,9 +595,11 @@ def bid_price_history(
     qry2 = """
     SELECT
         carrier,
-        rrd,
-        avg(bid_price) as some_cap_bid_price_mean,
-        stdev(bid_price) as some_cap_bid_price_stdev
+        days_prior,
+        avg(bid_price) as some_cap_bid_price_mean_unweighted,
+        stdev(bid_price) as some_cap_bid_price_stdev,
+        (SUM(bid_price * leg_defs.capacity) / SUM(leg_defs.capacity))
+            as some_cap_bid_price_mean_capweighted
     FROM leg_detail
         LEFT JOIN leg_defs ON leg_detail.flt_no = leg_defs.flt_no
     WHERE
@@ -594,7 +607,7 @@ def bid_price_history(
         AND sample >= ?2
         AND leg_detail.sold < leg_defs.capacity
     GROUP BY
-        carrier, rrd
+        carrier, days_prior
     """
     bph_some_cap = cnx.dataframe(
         qry2,
@@ -602,9 +615,15 @@ def bid_price_history(
             scenario,
             burn_samples,
         ),
-    ).set_index(["carrier", "rrd"])
-    bph = bph.set_index(["carrier", "rrd"]).join(bph_some_cap)
+    ).set_index(["carrier", "days_prior"])
+    bph = bph.set_index(["carrier", "days_prior"]).join(bph_some_cap)
     bph = bph.sort_index(ascending=(True, False))
+    if weighting == "equal":
+        bph["some_cap_bid_price_mean"] = bph["some_cap_bid_price_mean_unweighted"]
+    elif weighting == "capacity":
+        bph["some_cap_bid_price_mean"] = bph["some_cap_bid_price_mean_capweighted"]
+    else:
+        raise ValueError(f"unknown weighting {weighting}")
     return bph
 
 
@@ -643,7 +662,7 @@ def local_and_flow_yields(
             path_class_detail
             LEFT JOIN path_defs USING (path_id)
         WHERE
-            rrd == 0
+            days_prior == 0
             AND scenario == ?1
             AND sample >= ?2
         GROUP BY
@@ -684,6 +703,78 @@ def local_and_flow_yields(
                 path_yields
             GROUP BY leg2
         ) f2 ON f2.leg2 == leg_defs.flt_no
+    """
+    df = cnx.dataframe(
+        qry,
+        (
+            scenario,
+            burn_samples,
+        ),
+    )
+    return df
+
+
+def leg_local_and_flow_by_class(
+    cnx: Database, scenario: str, burn_samples: int = 100
+) -> pd.DataFrame:
+    logger.info("creating pthcls temp table")
+    cnx.execute(
+        """
+        CREATE TEMP TABLE IF NOT EXISTS pthcls AS
+        SELECT
+            sold, leg1, booking_class, iteration, trial, sample
+        FROM
+            path_class_detail LEFT JOIN path_defs USING(path_id)
+        WHERE
+            days_prior == 0
+            AND leg2 IS NULL
+            AND scenario == ?1
+            AND sample >= ?2
+        """,
+        (
+            scenario,
+            burn_samples,
+        ),
+    )
+
+    logger.info("indexing pthcls temp table")
+    cnx.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_pthcls_1 ON pthcls (
+            iteration, trial, sample, leg1, booking_class
+        );
+        """
+    )
+
+    logger.info("running leg_local_and_flow_by_class query")
+    qry = """
+    SELECT
+        flt_no,
+        leg_defs.carrier,
+        leg_defs.orig,
+        leg_defs.dest,
+        leg_bucket_detail.name as booking_class,
+        AVG(leg_bucket_detail.sold) AS carried_all,
+        IFNULL(AVG(pthcls.sold), 0) AS carried_loc
+    FROM
+        leg_bucket_detail
+        LEFT JOIN leg_defs USING (flt_no)
+        LEFT JOIN pthcls ON
+            flt_no == pthcls.leg1
+            AND leg_bucket_detail.name == pthcls.booking_class
+            AND leg_bucket_detail.iteration == pthcls.iteration
+            AND leg_bucket_detail.trial == pthcls.trial
+            AND leg_bucket_detail.sample == pthcls.sample
+    WHERE
+        leg_bucket_detail.scenario == ?1
+        AND leg_bucket_detail.sample >= ?2
+        AND days_prior == 0
+    GROUP BY
+        flt_no,
+        leg_defs.carrier,
+        leg_defs.orig,
+        leg_defs.dest,
+        leg_bucket_detail.name
     """
     df = cnx.dataframe(
         qry,

@@ -20,7 +20,7 @@ class SummaryTables:
     def from_sqlite(
         cls,
         filename: str | pathlib.Path,
-        make_indexes: bool = False,
+        make_indexes: bool | dict = False,
         additional: Collection[str | tuple] | str | None = None,
     ):
         if not os.path.isfile(filename):
@@ -43,7 +43,10 @@ class SummaryTables:
         )
 
         if make_indexes:
-            db.add_indexes()
+            if isinstance(make_indexes, dict):
+                db.add_indexes(**make_indexes)
+            else:
+                db.add_indexes()
 
         logger.info("loading configs")
         config = db.load_configs()
@@ -190,6 +193,12 @@ class SummaryTables:
                 db, scenario, burn_samples
             )
 
+        if "leg_local_and_flow_by_class" in additional and db.is_open:
+            logger.info("loading leg_local_and_flow_by_class")
+            self.leg_carried = database.common_queries.leg_local_and_flow_by_class(
+                db, scenario, burn_samples
+            )
+
     def __init__(
         self,
         demands: pd.DataFrame | None = None,
@@ -209,6 +218,7 @@ class SummaryTables:
         demand_to_come: pd.DataFrame | None = None,
         bid_price_history: pd.DataFrame | None = None,
         local_and_flow_yields: pd.DataFrame | None = None,
+        leg_carried: pd.DataFrame | None = None,
     ):
         self.demands = demands
         self.fares = fares
@@ -227,8 +237,10 @@ class SummaryTables:
         self.demand_to_come = demand_to_come
         self.bid_price_history = bid_price_history
         self.local_and_flow_yields = local_and_flow_yields
+        self.leg_carried = leg_carried
 
-    def to_records(self):
+    def to_records(self) -> dict[str, list[dict]]:
+        """Convert all summary tables to a dictionary of records."""
         return {k: v.to_dict(orient="records") for (k, v) in self.__dict__.items()}
 
     def to_xlsx(self, filename: str | pathlib.Path) -> None:
@@ -449,7 +461,9 @@ class SummaryTables:
                 x = x.assign(trial=0)
             if by_class:
                 y = (
-                    x.groupby(["trial", "carrier", "booking_class", "rrd"])[f"avg_{c}"]
+                    x.groupby(["trial", "carrier", "booking_class", "days_prior"])[
+                        f"avg_{c}"
+                    ]
                     .sum()
                     .unstack(["trial", "carrier", "booking_class"])
                     .sort_index(ascending=False)
@@ -463,7 +477,7 @@ class SummaryTables:
                 )
             else:
                 y = (
-                    x.groupby(["trial", "carrier", "rrd"])[f"avg_{c}"]
+                    x.groupby(["trial", "carrier", "days_prior"])[f"avg_{c}"]
                     .sum()
                     .unstack(["trial", "carrier"])
                     .sort_index(ascending=False)
@@ -484,14 +498,14 @@ class SummaryTables:
             pd.concat([df0, df1], axis=0)
             .rename(columns={"mean": "sold"})
             .reset_index()
-            .query("(rrd>0) & (sold>0)")
+            .query("(days_prior>0) & (sold>0)")
         )
         title = "Bookings by Timeframe"
         if by_class is True:
             title = "Bookings by Timeframe and Booking Class"
         title_annot = []
         if not by_carrier:
-            g = ["rrd", "paxtype"]
+            g = ["days_prior", "paxtype"]
             if by_class:
                 g += ["booking_class"]
             df = df.groupby(g)[["sold", "ci0", "ci1"]].sum().reset_index()
@@ -530,14 +544,16 @@ class SummaryTables:
                 .mark_bar()
                 .encode(
                     color=alt.Color(color).title(color_title),
-                    x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+                    x=alt.X("days_prior:O")
+                    .scale(reverse=True)
+                    .title("Days Prior to Departure"),
                     y=alt.Y("sold"),
                     tooltip=(
                         [alt.Tooltip("carrier").title("Carrier")] if by_carrier else []
                     )
                     + [
                         alt.Tooltip("paxtype", title="Passenger Type"),
-                        alt.Tooltip("rrd", title="DfD"),
+                        alt.Tooltip("days_prior", title="DfD"),
                         alt.Tooltip("sold", format=".2f"),
                     ],
                 )
@@ -557,7 +573,9 @@ class SummaryTables:
                 .mark_line()
                 .encode(
                     color=alt.Color(color).title(color_title),
-                    x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+                    x=alt.X("days_prior:O")
+                    .scale(reverse=True)
+                    .title("Days Prior to Departure"),
                     y=alt.Y("sold") if by_class else "sold",
                     strokeDash=alt.StrokeDash("paxtype").title("Passenger Type"),
                     tooltip=(
@@ -565,7 +583,7 @@ class SummaryTables:
                     )
                     + [
                         alt.Tooltip("paxtype", title="Passenger Type"),
-                        alt.Tooltip("rrd", title="DfD"),
+                        alt.Tooltip("days_prior", title="DfD"),
                         alt.Tooltip("sold", format=".2f"),
                     ],
                 )
@@ -594,7 +612,7 @@ class SummaryTables:
 
         def _summarize(x, c):
             y = (
-                x.groupby(["trial", "carrier", "rrd"])[f"avg_{c}"]
+                x.groupby(["trial", "carrier", "days_prior"])[f"avg_{c}"]
                 .sum()
                 .unstack(["trial", "carrier"])
                 .sort_index(ascending=False)
@@ -614,11 +632,11 @@ class SummaryTables:
             pd.concat([df0, df1], axis=0)
             .rename(columns={"mean": "sold"})
             .reset_index()
-            .query("rrd>0")
+            .query("days_prior>0")
         )
         if not by_carrier:
             df = (
-                df.groupby(["rrd", "paxtype"])[["sold", "ci0", "ci1"]]
+                df.groupby(["days_prior", "paxtype"])[["sold", "ci0", "ci1"]]
                 .sum()
                 .reset_index()
             )
@@ -635,13 +653,15 @@ class SummaryTables:
             color=alt.Color("carrier:N" if by_carrier else "paxtype").title(
                 "Carrier" if by_carrier else "Passenger Type"
             ),
-            x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+            x=alt.X("days_prior:O")
+            .scale(reverse=True)
+            .title("Days Prior to Departure"),
             y="sold",
             strokeDash=alt.StrokeDash("paxtype").title("Passenger Type"),
             tooltip=([alt.Tooltip("carrier").title("Carrier")] if by_carrier else [])
             + [
                 alt.Tooltip("paxtype", title="Passenger Type"),
-                alt.Tooltip("rrd", title="DfD"),
+                alt.Tooltip("days_prior", title="DfD"),
                 alt.Tooltip("sold", format=".2f"),
             ],
         )
@@ -650,7 +670,9 @@ class SummaryTables:
                 "carrier:N" if by_carrier else "paxtype",
                 title="Carrier" if by_carrier else "Passenger Type",
             ),
-            x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+            x=alt.X("days_prior:O")
+            .scale(reverse=True)
+            .title("Days Prior to Departure"),
             y="ci0",
             y2="ci1",
             strokeDash=alt.StrokeDash("paxtype").title("Passenger Type"),
@@ -772,7 +794,9 @@ class SummaryTables:
         import altair as alt
 
         encoding = dict(
-            x=alt.X("rrd:O").scale(reverse=True).title("Days from Departure"),
+            x=alt.X("days_prior:O")
+            .scale(reverse=True)
+            .title("Days Prior to Departure"),
             y=alt.Y(f"{y}:Q", title="Avg Demand Forecast"),
         )
         if color:
@@ -803,7 +827,7 @@ class SummaryTables:
             "carrier",
             "flt_no",
             "booking_class",
-            "rrd",
+            "days_prior",
             y,
         ]
         if self.leg_forecasts is None:
@@ -836,7 +860,7 @@ class SummaryTables:
         columns = [
             "path_id",
             "booking_class",
-            "rrd",
+            "days_prior",
             y,
         ]
         df = self.path_forecasts.reset_index()[columns]
@@ -890,7 +914,9 @@ class SummaryTables:
         import altair as alt
 
         line_encoding = dict(
-            x=alt.X("rrd:Q").scale(reverse=True).title("Days from Departure"),
+            x=alt.X("days_prior:Q")
+            .scale(reverse=True)
+            .title("Days Prior to Departure"),
             y=alt.Y(bp_mean, title="Bid Price"),
         )
         if color:
@@ -899,7 +925,9 @@ class SummaryTables:
         fig = chart.mark_line(interpolate="step-before").encode(**line_encoding)
         if show_stdev:
             area_encoding = dict(
-                x=alt.X("rrd:Q").scale(reverse=True).title("Days from Departure"),
+                x=alt.X("days_prior:Q")
+                .scale(reverse=True)
+                .title("Days Prior to Departure"),
                 y=alt.Y("bid_price_lower:Q", title="Bid Price"),
                 y2=alt.Y2("bid_price_upper:Q", title="Bid Price"),
             )
@@ -909,7 +937,11 @@ class SummaryTables:
             ).encode(**area_encoding)
             bound_line = chart.mark_line(
                 opacity=0.4, strokeDash=[5, 5], interpolate="step-before"
-            ).encode(x=alt.X("rrd:Q").scale(reverse=True).title("Days from Departure"))
+            ).encode(
+                x=alt.X("days_prior:Q")
+                .scale(reverse=True)
+                .title("Days Prior to Departure")
+            )
             top_line = bound_line.encode(
                 y=alt.Y("bid_price_lower:Q", title="Bid Price")
             )

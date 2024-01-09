@@ -20,7 +20,7 @@ flags must be set on [`Config.db.write_items`][passengersim.config.DatabaseConfi
 | iteration                 | INT NOT NULL         |                                                                 |
 | trial                     | INT NOT NULL         |                                                                 |
 | sample  	                 | INT NOT NULL         | Sample number within trial                                      |
-| rrd                       | INT NOT NULL         | Days before departure                                           |
+| days_prior                | INT NOT NULL         | Days before departure                                           |
 | flt_no                    | INT NOT NULL         | Unique identifier for a given leg [^3]                          |
 | bucket_number             | INT NOT NULL         | Bucket number (sequential from 0)                               |
 | name                      | VARCHAR(10) NOT NULL | Bucket name                                                     |

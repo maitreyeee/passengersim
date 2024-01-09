@@ -35,6 +35,18 @@ class Simulation:
         filenames: pathlib.Path | list[pathlib.Path],
         output_dir: pathlib.Path | None = None,
     ):
+        """
+        Create a Simulation object from a YAML file.
+
+        Parameters
+        ----------
+        filenames : pathlib.Path | list[pathlib.Path]
+        output_dir : pathlib.Path | None, optional
+
+        Returns
+        -------
+        Simulation
+        """
         config = passengersim.config.Config.from_yaml(filenames)
         return cls(config, output_dir)
 
@@ -93,6 +105,9 @@ class Simulation:
 
     @property
     def base_time(self) -> int:
+        """
+        The base time for the simulation, in seconds since the epoch.
+        """
         return self.sim.base_time
 
     @property
@@ -496,7 +511,9 @@ class Simulation:
 
     def run_airline_models(self, info: Any = None, departed: bool = False, debug=False):
         event_type = info[0]
-        recording_day = info[1]  # could in theory also be non-integer for fractional days
+        recording_day = info[
+            1
+        ]  # could in theory also be non-integer for fractional days
         dcp_index = info[2]
         if dcp_index == -1:
             dcp_index = len(self.dcp_list) - 1
@@ -686,15 +703,16 @@ class Simulation:
             mu = dmd.base_demand
             std_dev = cv100 * sqrt(mu) * 10.0
             # std_dev = mu * 0.3
-            var = std_dev ** 2
-            shape_a = mu ** 2 / var
+            var = std_dev**2
+            shape_a = mu**2 / var
             scale_b = var / mu
             loc = 0.0
             r = gamma.rvs(shape_a, loc, scale_b, size=1)
             num_pax = int(r[0] + 0.5)
             dmd.scenario_demand = num_pax
             self.sim.allocate_demand_to_tf_pods(
-                dmd, num_pax, self.sim.tf_k_factor, int(end_time))
+                dmd, num_pax, self.sim.tf_k_factor, int(end_time)
+            )
         total_events = 0
         return total_events
 
@@ -1084,7 +1102,9 @@ class Simulation:
                     "carrier": cxr.name,
                     "sold": avg_sold,
                     "sys_lf": sys_lf,
-                    "avg_leg_lf": 100 * airline_leg_lf[cxr.name] / airline_leg_count[cxr.name],
+                    "avg_leg_lf": 100
+                    * airline_leg_lf[cxr.name]
+                    / airline_leg_count[cxr.name],
                     "avg_rev": avg_rev,
                     "avg_price": avg_rev / avg_sold,
                     "asm": asm,

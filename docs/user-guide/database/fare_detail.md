@@ -20,7 +20,7 @@ flags must be set on [`Config.db.write_items`][passengersim.config.DatabaseConfi
 | iteration     | INT NOT NULL         |                                                      |
 | trial         | INT NOT NULL         |                                                      |
 | sample  	     | INT NOT NULL         | Sample number within trial                           |
-| rrd           | INT NOT NULL         | Days before departure                                |
+| days_prior    | INT NOT NULL         | Days before departure                                |
 | carrier       | VARCHAR(10) NOT NULL | Carrier name                                         |
 | orig          | VARCHAR(10) NOT NULL | Origin (typically an airport code or similar)        |
 | dest          | VARCHAR(10) NOT NULL | Destination (typically an airport code or similar)   |

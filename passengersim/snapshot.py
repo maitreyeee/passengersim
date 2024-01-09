@@ -62,6 +62,7 @@ def get_snapshot_instruction(
         for sf in snapshot_filters:
             if only_type is not None:
                 if sf.type == only_type:
+                    # if we're only looking for a specific type, and we found it
                     snapshot_instruction = sf.run(
                         sim, leg=leg, path=path, carrier=carrier
                     )

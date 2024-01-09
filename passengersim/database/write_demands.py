@@ -31,7 +31,7 @@ def save_demand_to_database(cnx: Database, sim: SimulationEngine, dcp: int):
         iteration,      -- 2
         trial,          -- 3
         sample,         -- 4
-        rrd,            -- 5
+        days_prior,     -- 5
         orig,           -- 6
         dest,           -- 7
         segment,        -- 8

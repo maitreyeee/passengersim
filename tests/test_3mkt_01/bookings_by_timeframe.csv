@@ -1,4 +1,4 @@
-,trial,carrier,booking_class,rrd,avg_sold,avg_business,avg_leisure,avg_revenue,avg_price
+,trial,carrier,booking_class,days_prior,avg_sold,avg_business,avg_leisure,avg_revenue,avg_price
 0,0,AL1,Y0,0,0,0,0,0,
 1,0,AL1,Y0,1,0,0,0,0,
 2,0,AL1,Y0,3,0,0,0,0,

@@ -29,7 +29,25 @@ class DummyProgressBar:
 
 
 class ProgressBar:
+    """
+    A progress bar that uses rich if available, otherwise does nothing.
+    """
+
     def __init__(self, label="samples", total=100, refresh_per_second=10):
+        """
+        A progress bar that uses rich if available, otherwise does nothing.
+
+        Parameters
+        ----------
+        label : str
+            The label to show in the progress bar.
+        total : int
+            The total number of ticks to expect.
+        refresh_per_second : int
+            How many times per second to refresh the progress bar.
+        """
+        if Progress is None:
+            return
         self.label = label
         self.total = total
         self.last_update = 0
@@ -38,10 +56,16 @@ class ProgressBar:
         self.task = self.progress.add_task(self.label, total=self.total)
 
     def start(self) -> "ProgressBar":
+        """
+        Start the progress bar.
+        """
         self.progress.start()
         return self
 
     def stop(self) -> None:
+        """
+        Stop the progress bar.
+        """
         self.progress.stop()
 
     def __enter__(self) -> "ProgressBar":
@@ -60,7 +84,15 @@ class ProgressBar:
             happened = "Errored"
         self.progress.print(f"Task {happened} after {elapsed_time:,.2f} seconds")
 
-    def tick(self, refresh=False):
+    def tick(self, refresh=False) -> None:
+        """
+        Advance the progress bar by one tick.
+
+        Parameters
+        ----------
+        refresh : bool, optional
+            Whether to force a refresh of the progress bar, by default False.
+        """
         self.progress.update(self.task, advance=1)
         now = time.time()
         if refresh or (now - self.last_update > self.refresh_freq):

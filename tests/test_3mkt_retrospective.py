@@ -85,7 +85,7 @@ def test_arbitrary_sql(stored_results, dataframe_regression):
       leg_bucket_detail
     WHERE
       flt_no = 101
-      AND rrd = 21
+      AND days_prior = 21
       AND name = 'Y2'
       AND sample >= 100
     LIMIT 10

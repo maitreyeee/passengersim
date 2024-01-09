@@ -18,7 +18,7 @@ flag must be set on [`Config.db.write_items`][passengersim.config.DatabaseConfig
 | trial         | INT NOT NULL         |                                                                       |
 | carrier       | VARCHAR(10) NOT NULL | Carrier name                                                          |
 | booking_class | VARCHAR(10) NOT NULL |                                                                       |
-| rrd           | INT NOT NULL         | Days before departure                                                 |
+| days_prior    | INT NOT NULL         | Days before departure                                                 |
 | tot_sold      | FLOAT                | Total sales for the carrier and booking class, through this timeframe |
 | avg_sold      | FLOAT                | Average number of sales (per sample)                                  |
 | avg_business  | FLOAT                | Average number of sales to business customers                         |

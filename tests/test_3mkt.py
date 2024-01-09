@@ -83,12 +83,8 @@ def test_3mkt_db_detail(fast):
             "iteration",
             "trial",
             "sample",
-            "rrd",
-            "carrier",
-            "orig",
-            "dest",
+            "days_prior",
             "flt_no",
-            "dep_date",
             "bucket_number",
             "name",
             "auth",
@@ -102,6 +98,6 @@ def test_3mkt_db_detail(fast):
             "updated_at",
         ]
     )
-    assert buckets.shape == (num_samples * n_classes * n_dcps * n_legs, 21)  # 30600
+    assert buckets.shape == (num_samples * n_classes * n_dcps * n_legs, 17)  # 30600
     dmds = sim.cnx.dataframe("SELECT * FROM demand_detail")
     assert dmds.shape == (num_samples * n_demands * n_dcps, 13)  # 2040

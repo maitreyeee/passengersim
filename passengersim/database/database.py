@@ -175,7 +175,8 @@ class Database:
         if scenario:
             rawjson = next(
                 self.execute(
-                    "SELECT configs, max(updated_at) FROM runtime_configs WHERE scenario = ?1",
+                    "SELECT configs, max(updated_at) FROM runtime_configs "
+                    "WHERE scenario = ?1",
                     (scenario,),
                 )
             )[0]
@@ -260,13 +261,26 @@ class Database:
         qry = "SELECT name FROM sqlite_master WHERE type=='index' AND tbl_name==?1"
         return [i[0] for i in self._connection.execute(qry, (table_name,))]
 
-    def add_indexes(self, fare_detail=True):
+    def add_indexes(self, fare_detail=True, leg_detail=True):
         any_work = False
         if fare_detail and "fare_detail_idx_2" not in self.index_names("fare_detail"):
             logger.info("adding index on fare_detail")
             idx = """
             CREATE INDEX fare_detail_idx_2
-            ON fare_detail (scenario, trial, sample, rrd, carrier, booking_class);
+            ON fare_detail (
+                scenario, trial, sample, days_prior, carrier, booking_class
+            );
+            """
+            self._connection.execute(idx)
+            self._connection.commit()
+            self._connection.execute("BEGIN TRANSACTION;")
+            any_work = True
+
+        if leg_detail and "leg_detail_idx_2" not in self.index_names("leg_detail"):
+            logger.info("adding index on leg_detail")
+            idx = """
+            CREATE INDEX leg_detail_idx_2
+            ON leg_detail (scenario, trial, sample, days_prior, flt_no);
             """
             self._connection.execute(idx)
             self._connection.commit()
@@ -317,10 +331,10 @@ def get_database_connection(
 
 def compute_rrd(sim: SimulationEngine, dep_time: float):
     tmp = int(dep_time / 86400) * 86400
-    rrd = int((tmp - sim.last_event_time) / 86400)
+    days_prior = int((tmp - sim.last_event_time) / 86400)
     if sim.num_events() == 0:
-        rrd = 0
-    return rrd
+        days_prior = 0
+    return days_prior
 
 
 def delete_experiment(cnx: Database, name):
@@ -351,7 +365,7 @@ def save_leg(cnx, sim, leg, dcp) -> string:
     try:
         cursor = cnx.cursor()
         sql = f"""INSERT INTO leg_detail
-                (scenario, iteration, trial, sample, rrd, flt_no, sold, revenue)
+                (scenario, iteration, trial, sample, days_prior, flt_no, sold, revenue)
                 VALUES ({sql_placeholders(cnx, 8)})"""
         cursor.execute(
             sql,
@@ -378,8 +392,6 @@ leg_bucket_sql = {}
 def save_leg_bucket_multi(
     cnx: Database, sim: SimulationEngine, leg, dcp, commit=False
 ) -> string:
-    dep_time = datetime.utcfromtimestamp(leg.dep_time).strftime("%Y-%m-%d %H:%M:%S")
-    # print("dep_time = ", dep_time)
     try:
         cursor = cnx.cursor()
         cnx_type = type(cnx).__name__
@@ -387,9 +399,9 @@ def save_leg_bucket_multi(
             sql = leg_bucket_sql[
                 cnx_type
             ] = f"""INSERT INTO leg_bucket_detail
-                (scenario, iteration, trial, sample, rrd, carrier, orig, dest, flt_no,
-                dep_date, bucket_number, name, auth, revenue, sold, untruncated_demand,
-                forecast_mean) VALUES ({sql_placeholders(cnx, 17)})"""
+                (scenario, iteration, trial, sample, days_prior, flt_no,
+                bucket_number, name, auth, revenue, sold, untruncated_demand,
+                forecast_mean) VALUES ({sql_placeholders(cnx, 13)})"""
         else:
             sql = leg_bucket_sql.get(cnx_type)
         data_list = []
@@ -400,11 +412,7 @@ def save_leg_bucket_multi(
                 sim.trial,
                 sim.sample,
                 dcp,
-                leg.carrier,
-                leg.orig,
-                leg.dest,
                 leg.flt_no,
-                dep_time,
                 n,
                 bkt.name,
                 bkt.alloc,
@@ -444,12 +452,14 @@ def save_demand_multi(cnx: Database, sim: SimulationEngine, dcp) -> string:
             )
         )
         # if dmd.sold > dmd.scenario_demand:
-        #     print(f"{dmd.orig=}, {dmd.dest=}, {dmd.segment}, {dmd.sold}, {dmd.scenario_demand}")
+        #     print(f"{dmd.orig=}, {dmd.dest=}, {dmd.segment},
+        #     {dmd.sold}, {dmd.scenario_demand}")
 
     try:
         cursor = cnx.cursor()
         sql = f"""INSERT INTO demand_detail
-                (scenario, iteration, trial, sample, rrd, orig, dest, segment, sample_demand, sold, revenue)
+                (scenario, iteration, trial, sample, days_prior,
+                 orig, dest, segment, sample_demand, sold, revenue)
                 VALUES ({sql_placeholders(cnx, 11)})"""
         cursor.executemany(sql, data_list)
         return True
@@ -476,7 +486,7 @@ def save_fare_multi(cnx: Database, sim: SimulationEngine, dcp) -> string:
     try:
         cursor = cnx.cursor()
         sql = f"""INSERT INTO fare_detail
-                (scenario, iteration, trial, sample, rrd,
+                (scenario, iteration, trial, sample, days_prior,
                  sold, sold_business, fare_id)
                 VALUES ({sql_placeholders(cnx, 8)})"""
         cursor.executemany(sql, data_list)
@@ -491,23 +501,27 @@ def save_fare_multi(cnx: Database, sim: SimulationEngine, dcp) -> string:
 #     """Return a collection of legs
 #        Mostly used by the airline part of the simulation code"""
 #     legs = []
-#     sql = """SELECT a.iteration, a.trial, a.sample, a.rrd, a.carrier, a.orig, a.dest, a.flt_no,
+#     sql = """SELECT a.iteration, a.trial, a.sample, a.days_prior,
+#                    a.carrier, a.orig, a.dest, a.flt_no,
 #                    a.capacity, a.sold, a.q_demand, a.untruncated_demand,
 #                    b.bucket_number, b.name AS bucket_name, b.auth, b.sold, b.revenue
 #             FROM leg_detail a
-#             JOIN leg_bucket_detail b USING(iteration, trial, sample, rrd, carrier, orig, dest, flt_no)
+#             JOIN leg_bucket_detail b USING(
+#               iteration, trial, sample, days_prior, carrier, orig, dest, flt_no
+#             )
 #             WHERE a.scenario = %s
 #               AND a.trial = %s
-#               AND a.rrd = %s
-#             ORDER BY a.iteration, a.trial, a.sample, a.rrd, a.carrier, a.orig, a.dest, a.flt_no, b.bucket_number;"""
+#               AND a.days_prior = %s
+#             ORDER BY a.iteration, a.trial, a.sample, a.days_prior, a.carrier,
+#                      a.orig, a.dest, a.flt_no, b.bucket_number;"""
 #     try:
 #         cursor = cnx.cursor()
 #         cursor.execute(sql, (_scenario, _trial, _rrd))
 #         old_key = None
-#         for iteration, trial, sample, rrd, carrier, orig, dest, flt_no, \
+#         for iteration, trial, sample, days_prior, carrier, orig, dest, flt_no, \
 #                 capacity, sold, q_demand, untruncated_demand, \
 #                 bucket_number, bucket_name, auth, sold, bkt_revenue in cursor:
-#             key = (iteration, trial, sample, rrd, carrier, orig, dest, flt_no)
+#             key = (iteration, trial, sample, days_prior, carrier, orig, dest, flt_no)
 #             if key != old_key:
 #                 tmp_leg = Leg(carrier, flt_no, orig, dest, capacity=capacity)
 #                 legs.append(tmp_leg)

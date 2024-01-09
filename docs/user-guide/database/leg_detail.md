@@ -26,7 +26,7 @@ simulation exercises.
 | iteration          | INT NOT NULL         |                                                   |
 | trial              | INT NOT NULL         |                                                   |
 | sample  	          | INT NOT NULL         | Sample number within trial                        |
-| rrd                | INT NOT NULL         | Days before departure                             |
+| days_prior         | INT NOT NULL         | Days before departure                             |
 | flt_no             | INT NOT NULL         | Unique identifier for a given leg [^3]            |
 | updated_at         | DATETIME NOT NULL    | Time each row was written to the database         |
 | sold	              | INT                  | Number of seats sold at this point in time        |

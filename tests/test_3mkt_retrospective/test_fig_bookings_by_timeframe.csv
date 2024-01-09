@@ -1,4 +1,4 @@
-,source,paxtype,rrd,booking_class,sold,sem,ci0,ci1
+,source,paxtype,days_prior,booking_class,sold,sem,ci0,ci1
 0,Simple,business,63,Y0,3.2566666666666668,,,
 1,Simple,business,63,Y1,3.1066666666666665,,,
 2,Simple,business,63,Y2,1.6633333333333333,,,
