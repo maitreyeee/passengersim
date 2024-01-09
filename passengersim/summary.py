@@ -20,7 +20,7 @@ class SummaryTables:
     def from_sqlite(
         cls,
         filename: str | pathlib.Path,
-        make_indexes: bool = False,
+        make_indexes: bool | dict = False,
         additional: Collection[str | tuple] | str | None = None,
     ):
         if not os.path.isfile(filename):
@@ -43,7 +43,10 @@ class SummaryTables:
         )
 
         if make_indexes:
-            db.add_indexes()
+            if isinstance(make_indexes, dict):
+                db.add_indexes(**make_indexes)
+            else:
+                db.add_indexes()
 
         logger.info("loading configs")
         config = db.load_configs()

@@ -175,7 +175,8 @@ class Database:
         if scenario:
             rawjson = next(
                 self.execute(
-                    "SELECT configs, max(updated_at) FROM runtime_configs WHERE scenario = ?1",
+                    "SELECT configs, max(updated_at) FROM runtime_configs "
+                    "WHERE scenario = ?1",
                     (scenario,),
                 )
             )[0]
@@ -260,13 +261,26 @@ class Database:
         qry = "SELECT name FROM sqlite_master WHERE type=='index' AND tbl_name==?1"
         return [i[0] for i in self._connection.execute(qry, (table_name,))]
 
-    def add_indexes(self, fare_detail=True):
+    def add_indexes(self, fare_detail=True, leg_detail=True):
         any_work = False
         if fare_detail and "fare_detail_idx_2" not in self.index_names("fare_detail"):
             logger.info("adding index on fare_detail")
             idx = """
             CREATE INDEX fare_detail_idx_2
-            ON fare_detail (scenario, trial, sample, days_prior, carrier, booking_class);
+            ON fare_detail (
+                scenario, trial, sample, days_prior, carrier, booking_class
+            );
+            """
+            self._connection.execute(idx)
+            self._connection.commit()
+            self._connection.execute("BEGIN TRANSACTION;")
+            any_work = True
+
+        if leg_detail and "leg_detail_idx_2" not in self.index_names("leg_detail"):
+            logger.info("adding index on leg_detail")
+            idx = """
+            CREATE INDEX leg_detail_idx_2
+            ON leg_detail (scenario, trial, sample, days_prior, flt_no);
             """
             self._connection.execute(idx)
             self._connection.commit()
@@ -438,12 +452,14 @@ def save_demand_multi(cnx: Database, sim: SimulationEngine, dcp) -> string:
             )
         )
         # if dmd.sold > dmd.scenario_demand:
-        #     print(f"{dmd.orig=}, {dmd.dest=}, {dmd.segment}, {dmd.sold}, {dmd.scenario_demand}")
+        #     print(f"{dmd.orig=}, {dmd.dest=}, {dmd.segment},
+        #     {dmd.sold}, {dmd.scenario_demand}")
 
     try:
         cursor = cnx.cursor()
         sql = f"""INSERT INTO demand_detail
-                (scenario, iteration, trial, sample, days_prior, orig, dest, segment, sample_demand, sold, revenue)
+                (scenario, iteration, trial, sample, days_prior,
+                 orig, dest, segment, sample_demand, sold, revenue)
                 VALUES ({sql_placeholders(cnx, 11)})"""
         cursor.executemany(sql, data_list)
         return True
@@ -485,11 +501,14 @@ def save_fare_multi(cnx: Database, sim: SimulationEngine, dcp) -> string:
 #     """Return a collection of legs
 #        Mostly used by the airline part of the simulation code"""
 #     legs = []
-#     sql = """SELECT a.iteration, a.trial, a.sample, a.days_prior, a.carrier, a.orig, a.dest, a.flt_no,
+#     sql = """SELECT a.iteration, a.trial, a.sample, a.days_prior,
+#                    a.carrier, a.orig, a.dest, a.flt_no,
 #                    a.capacity, a.sold, a.q_demand, a.untruncated_demand,
 #                    b.bucket_number, b.name AS bucket_name, b.auth, b.sold, b.revenue
 #             FROM leg_detail a
-#             JOIN leg_bucket_detail b USING(iteration, trial, sample, days_prior, carrier, orig, dest, flt_no)
+#             JOIN leg_bucket_detail b USING(
+#               iteration, trial, sample, days_prior, carrier, orig, dest, flt_no
+#             )
 #             WHERE a.scenario = %s
 #               AND a.trial = %s
 #               AND a.days_prior = %s
