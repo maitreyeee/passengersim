@@ -89,6 +89,7 @@ class Simulation:
         self.update_frequency = None
         self.random_generator = passengersim.core.Generator(42)
         self.sample_done_callback = lambda n, n_total: None
+        self.choice_set_file = None
         self._initialize(config)
         self.cnx = database.Database(
             engine=config.db.engine,
@@ -144,6 +145,13 @@ class Simulation:
                 self.random_generator.seed(pvalue)
             elif pname == "update_frequency":
                 self.update_frequency = pvalue
+            elif pname == "capture_choice_set_file":
+                if len(pvalue) > 0:
+                    self.sim.set_parm("capture_choice_set", 1)
+                    self.choice_set_file = open(pvalue, "w")
+                    cols = self.sim.choice_set_columns()
+                    tmp = ",".join(cols)
+                    print(tmp, file=self.choice_set_file)
             elif pname == "base_date":
                 pass
             elif pname == "dcp_hour":
@@ -403,6 +411,16 @@ class Simulation:
                 self.cnx.commit()
             except AttributeError:
                 pass
+
+        # Are we capturing choice-set data?
+        if self.choice_set_file is not None:
+            if self.sim.sample > self.sim.burn_samples:
+                cs = self.sim.get_choice_set()
+                for line in cs:
+                    tmp = [str(z) for z in line]
+                    tmp2 = ",".join(tmp)
+                    print(tmp2, file=self.choice_set_file)
+            self.sim.clear_choice_set()
 
         # Market share computation (MIDT-lite), might move to C++ in a future version
         alpha = 0.15
