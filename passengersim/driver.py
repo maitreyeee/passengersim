@@ -90,6 +90,7 @@ class Simulation:
         self.random_generator = passengersim.core.Generator(42)
         self.sample_done_callback = lambda n, n_total: None
         self.choice_set_file = None
+        self.choice_set_obs = 0
         self._initialize(config)
         self.cnx = database.Database(
             engine=config.db.engine,
@@ -152,6 +153,8 @@ class Simulation:
                     cols = self.sim.choice_set_columns()
                     tmp = ",".join(cols)
                     print(tmp, file=self.choice_set_file)
+            elif pname == "capture_choice_set_obs":
+                self.choice_set_obs = pvalue
             elif pname == "base_date":
                 pass
             elif pname == "dcp_hour":
@@ -389,6 +392,15 @@ class Simulation:
             database.tables.create_table_path_defs(self.cnx._connection, self.sim.paths)
         logger.debug(f"Connections done, num_paths = {num_paths}")
         self.vn_initial_mapping()
+
+        # This will save approximately the number of choice sets requested
+        if self.choice_set_file is not None and self.choice_set_obs > 0:
+            tot_dmd = 0
+            for d in self.config.demands:
+                tot_dmd += d.base_demand
+            total_choice_sets = tot_dmd * self.sim.num_trials * (self.sim.num_samples - self.sim.burn_samples)
+            prob = self.choice_set_obs / total_choice_sets
+            self.sim.choice_set_sampling_probability = prob
 
     def vn_initial_mapping(self):
         vn_airlines = []
@@ -1169,6 +1181,8 @@ class Simulation:
         start_time = time.time()
         self.setup_scenario()
         self._run_sim()
+        if self.choice_set_file is not None:
+            self.choice_set_file.close()
         summary = self.compute_reports(
             self.sim,
             to_log=log_reports or self.sim.config.outputs.log_reports,

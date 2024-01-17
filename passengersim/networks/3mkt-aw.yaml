@@ -21,6 +21,7 @@ simulation_controls:
   debug_orders: false
   timeframe_demand_allocation: pods
   capture_choice_set_file: choice-set.csv
+  capture_choice_set_obs: 5000
 
 frat5_curves:
   - name: curve_A

@@ -230,6 +230,13 @@ class SimulationSettings(PrettyModel, extra="allow", validate_assignment=True):
     Turns on the capturing of the choice set and writes the data to the specified file
     """
 
+    capture_choice_set_obs: int = 0
+    """
+    If this is set, PassengerSim will randomly sample the ChoiceSet data and output 
+    APPROXIMATELY this many choice sets (each will have multiple items and all items for the choice
+    set will be saved and output)
+    """
+
     show_progress_bar: bool = True
     """
     Show a progress bar while running.
