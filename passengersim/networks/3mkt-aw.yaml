@@ -4,7 +4,7 @@
 
 scenario: AW_test
 simulation_controls:
-  num_trials: 1
+  num_trials: 5
   num_samples: 600
   sys_k_factor: 0.1
   mkt_k_factor: 0.15
@@ -20,8 +20,8 @@ simulation_controls:
   manual_paths: false
   debug_orders: false
   timeframe_demand_allocation: pods
-  capture_choice_set_file: choice-set.csv
-  capture_choice_set_obs: 5000
+#  capture_choice_set_file: choice-set.csv
+#  capture_choice_set_obs: 5000
 
 frat5_curves:
   - name: curve_A
@@ -453,12 +453,12 @@ airlines:
     frat5: curve_A
     load_factor_curve: lf_curve1
   - name: AL2
-    rm_system: rm_bid_price
+    rm_system: rm_davn
     frat5: curve_C
     load_factor_curve: lf_curve1
-    ancillaries:
-      ANC1: 75.0
-      ANC2: 40.0
+#    ancillaries:
+#      ANC1: 75.0
+#      ANC2: 40.0
 
 classes:
   - Y0
