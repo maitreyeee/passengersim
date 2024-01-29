@@ -337,9 +337,7 @@ class Simulation:
             p.path_quality_index = path_config.path_quality_index
             leg_index1 = path_config.legs[0]
             tmp_leg = self.legs[leg_index1]
-            assert (
-                tmp_leg.orig == path_config.orig
-            ), "Path statement is corrupted, orig doesn't match"
+            assert (tmp_leg.orig == path_config.orig), "Path statement is corrupted, orig doesn't match"
             assert tmp_leg.flt_no == leg_index1
             p.add_leg(tmp_leg)
             if len(path_config.legs) >= 2:
@@ -347,9 +345,7 @@ class Simulation:
                 if leg_index2 > 0:
                     tmp_leg = self.legs[leg_index2]
                     p.add_leg(self.legs[leg_index2])
-            assert (
-                tmp_leg.dest == path_config.dest
-            ), "Path statement is corrupted, dest doesn't match"
+            assert (tmp_leg.dest == path_config.dest), "Path statement is corrupted, dest doesn't match"
             self.sim.add_path(p)
 
         # Go through and make sure things are linked correctly

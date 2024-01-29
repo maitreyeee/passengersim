@@ -21,7 +21,7 @@ simulation_controls:
   debug_orders: false
   timeframe_demand_allocation: pods
   capture_choice_set_file: choice-set.csv
-  capture_choice_set_obs: 5000
+  capture_choice_set_obs: 2500
 
 frat5_curves:
   - name: curve_A
@@ -435,6 +435,10 @@ choice_models:
     r1: 1.0
     r2: 0.35
     r3: 0.50
+    anc1_relevance: 0.8
+    anc2_relevance: 0.5
+    anc3_relevance: 0.8
+
   leisure:
     kind: pods
     emult: 1.5
@@ -445,6 +449,9 @@ choice_models:
     r1: 0.70
     r2: 0.35
     r3: 0.35
+    anc1_relevance: 0.5
+    anc2_relevance: 0.8
+    anc3_relevance: 0.5
 
 
 airlines:

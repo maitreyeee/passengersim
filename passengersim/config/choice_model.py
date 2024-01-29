@@ -25,6 +25,11 @@ class PodsChoiceModel(Named, extra="forbid"):
     non_stop_multiplier: float | None = None
     connection_multiplier: float | None = None
 
+    anc1_relevance: float | None = None
+    anc2_relevance: float | None = None
+    anc3_relevance: float | None = None
+    anc4_relevance: float | None = None
+
 
 class LogitChoiceModel(Named, extra="forbid"):
     kind: Literal["logit"]
@@ -36,6 +41,11 @@ class LogitChoiceModel(Named, extra="forbid"):
     r2: float | None = None
     r3: float | None = None
     r4: float | None = None
+
+    anc1_relevance: float | None = None
+    anc2_relevance: float | None = None
+    anc3_relevance: float | None = None
+    anc4_relevance: float | None = None
 
     intercept: float = 0
     """This is the alternative specific constant for the no-purchase alternative."""
