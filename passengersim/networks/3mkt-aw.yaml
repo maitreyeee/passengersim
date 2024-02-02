@@ -12,7 +12,6 @@ simulation_controls:
   tf_k_factor: 0.1
   tf_z_factor: 2.0
   prorate_revenue: true
-  dwm_lite: false
   max_connect_time: 120
   disable_ap: false
   demand_multiplier: 1.0
