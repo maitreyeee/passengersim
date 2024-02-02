@@ -1,7 +1,7 @@
 # TITLE: Choice Models
 from __future__ import annotations
 
-from typing import Annotated, Literal
+from typing import Annotated, Literal, List
 
 from pydantic import Field
 
@@ -21,6 +21,7 @@ class PodsChoiceModel(Named, extra="forbid"):
     r2: float | None = None
     r3: float | None = None
     r4: float | None = None
+    dwm_tod: List[float] = []
     tolerance: float | None = None
     non_stop_multiplier: float | None = None
     connection_multiplier: float | None = None

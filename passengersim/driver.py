@@ -221,6 +221,8 @@ class Simulation:
                     continue
                 if pvalue is None:
                     continue
+                if pname == "dwm_tod":
+                    x.dwm_tod = pvalue
                 if isinstance(pvalue, list | tuple):
                     x.add_parm(pname, *pvalue)
                 else:
