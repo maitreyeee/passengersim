@@ -22,6 +22,7 @@ class PodsChoiceModel(Named, extra="forbid"):
     r3: float | None = None
     r4: float | None = None
     dwm_tod: List[float] = []
+    dwm_tolerance: float | None = None
     tolerance: float | None = None
     non_stop_multiplier: float | None = None
     connection_multiplier: float | None = None
