@@ -21,6 +21,8 @@ simulation_controls:
   timeframe_demand_allocation: pods
   capture_choice_set_file: choice-set.csv
   capture_choice_set_obs: 10000
+  # Mountain Standard Time (for me)
+  controller_time_zone: -7
 
 frat5_curves:
   - name: curve_A
