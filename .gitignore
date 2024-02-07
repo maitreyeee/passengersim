@@ -161,9 +161,11 @@ cython_debug/
 _version.py
 sandbox.py
 
-# generated database files
+# generated database files and output files
 *.sqlite
 *.sqlite-journal
+*.csv
+*.csv.gz
 
 # notebooks executed for documentation
 *.nbconvert.ipynb

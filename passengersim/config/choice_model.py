@@ -1,7 +1,7 @@
 # TITLE: Choice Models
 from __future__ import annotations
 
-from typing import Annotated, Literal
+from typing import Annotated, Literal, List
 
 from pydantic import Field
 
@@ -21,9 +21,16 @@ class PodsChoiceModel(Named, extra="forbid"):
     r2: float | None = None
     r3: float | None = None
     r4: float | None = None
+    dwm_tod: List[float] = []
+    dwm_tolerance: float | None = None
     tolerance: float | None = None
     non_stop_multiplier: float | None = None
     connection_multiplier: float | None = None
+
+    anc1_relevance: float | None = None
+    anc2_relevance: float | None = None
+    anc3_relevance: float | None = None
+    anc4_relevance: float | None = None
 
 
 class LogitChoiceModel(Named, extra="forbid"):
@@ -36,6 +43,11 @@ class LogitChoiceModel(Named, extra="forbid"):
     r2: float | None = None
     r3: float | None = None
     r4: float | None = None
+
+    anc1_relevance: float | None = None
+    anc2_relevance: float | None = None
+    anc3_relevance: float | None = None
+    anc4_relevance: float | None = None
 
     intercept: float = 0
     """This is the alternative specific constant for the no-purchase alternative."""

@@ -155,19 +155,19 @@ class Simulation:
                     print(tmp, file=self.choice_set_file)
             elif pname == "capture_choice_set_obs":
                 self.choice_set_obs = pvalue
-            elif pname == "base_date":
-                pass
-            elif pname == "dcp_hour":
-                pass
-            elif pname == "show_progress_bar":
-                pass
-            elif pname == "double_capacity_until":
-                pass
-            elif pname == "timeframe_demand_allocation":
-                pass
-            elif pname == "tot_z_factor":
-                pass
-            elif pname == "simple_k_factor":
+
+            # These parameters are not used directly in the core, but leave them listed
+            # for now to not break config files reading
+            elif pname in [
+                "base_date",
+                "dcp_hour",
+                "dwm_lite",
+                "double_capacity_until",
+                "show_progress_bar",
+                "simple_k_factor",
+                "timeframe_demand_allocation",
+                "tot_z_factor",
+            ]:
                 pass
             else:
                 self.sim.set_parm(pname, float(pvalue))
@@ -222,7 +222,10 @@ class Simulation:
                     continue
                 if pvalue is None:
                     continue
-                if isinstance(pvalue, list | tuple):
+                if pname == "dwm_tod":
+                    if len(pvalue) > 0:
+                        x.dwm_tod = pvalue
+                elif isinstance(pvalue, list | tuple):
                     x.add_parm(pname, *pvalue)
                 else:
                     x.add_parm(pname, pvalue)
