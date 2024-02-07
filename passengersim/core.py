@@ -9,6 +9,7 @@ except ImportError:
     Bucket = None
     ChoiceModel = None
     Demand = None
+    DynamicProgram = None
     Event = None
     Fare = None
     Forecast = None
@@ -28,6 +29,7 @@ else:
         Bucket,
         ChoiceModel,
         Demand,
+        DynamicProgram,
         Event,
         Fare,
         Forecast,
@@ -48,6 +50,7 @@ __all__ = [
     "Bucket",
     "ChoiceModel",
     "Demand",
+    "DynamicProgram",
     "Event",
     "Fare",
     "Forecast",

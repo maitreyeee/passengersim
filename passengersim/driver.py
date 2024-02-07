@@ -12,6 +12,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from passengersim_core import Ancillary
 from scipy.stats import gamma
 
 import passengersim.config.rm_systems
@@ -19,7 +20,6 @@ import passengersim.core
 from passengersim.config import Config
 from passengersim.config.snapshot_filter import SnapshotFilter
 from passengersim.core import Event, Frat5, PathClass, SimulationEngine
-from passengersim_core import Ancillary
 from passengersim.summary import SummaryTables
 
 from . import database
@@ -175,7 +175,8 @@ class Simulation:
             print(f"extra simulation setting: {pname} = ", float(pvalue))
             self.sim.set_parm(pname, float(pvalue))
 
-        # There is a default array of DCPs, we'll override it with the data from the input file (if available)
+        # There is a default array of DCPs, we'll override it with the data from the
+        # input file (if available)
         if len(config.dcps) > 0:
             self.dcps = []
             for dcp_index, days_prior in enumerate(config.dcps):
@@ -247,7 +248,10 @@ class Simulation:
             if airline_config.frat5 is not None and airline_config.frat5 != "":
                 f5 = self.frat5curves[airline_config.frat5]
                 airline.frat5 = f5
-            if airline_config.load_factor_curve is not None and airline_config.load_factor_curve != "":
+            if (
+                airline_config.load_factor_curve is not None
+                and airline_config.load_factor_curve != ""
+            ):
                 lfc = self.load_factor_curves[airline_config.load_factor_curve]
                 airline.load_factor_curve = lfc
 
@@ -398,7 +402,11 @@ class Simulation:
             tot_dmd = 0
             for d in self.config.demands:
                 tot_dmd += d.base_demand
-            total_choice_sets = tot_dmd * self.sim.num_trials * (self.sim.num_samples - self.sim.burn_samples)
+            total_choice_sets = (
+                tot_dmd
+                * self.sim.num_trials
+                * (self.sim.num_samples - self.sim.burn_samples)
+            )
             prob = self.choice_set_obs / total_choice_sets
             self.sim.choice_set_sampling_probability = prob
 
@@ -448,15 +456,14 @@ class Simulation:
                     old_share = m.get_airline_share(a.name)
                     new_share = alpha * share + (1.0 - alpha) * old_share
                     m.set_airline_share(a.name, new_share)
-                    # print(f"Set share, sample={self.sim.sample}, key={a.name}: {m.orig}-{m.dest}"
-                    #      f", sold={sold}, al_sold={airline_sold}, old={old_share:6.3f}, shr= {new_share:6.3f}")
                 else:
                     m.set_airline_share(a.name, share)
 
     def _run_sim(self):
         update_freq = self.update_frequency
         logger.debug(
-            f"run_sim, num_trials = {self.sim.num_trials}, num_samples = {self.sim.num_samples}"
+            f"run_sim, num_trials = {self.sim.num_trials}, "
+            f"num_samples = {self.sim.num_samples}"
         )
         self.sim.update_db_write_flags()
         n_samples_total = self.sim.num_trials * self.sim.num_samples
@@ -472,7 +479,7 @@ class Simulation:
                 self.sim.reset_trial_counters()
                 for sample in range(self.sim.num_samples):
                     if self.sim.config.simulation_controls.double_capacity_until:
-                        # Just trying this, PODS has something similar during the burn phase
+                        # Just trying this, PODS has something similar during burn phase
                         if sample == 0:
                             for leg in self.sim.legs:
                                 leg.capacity = leg.capacity * 2.0
@@ -511,7 +518,8 @@ class Simulation:
                                 dmd_l += dmd.scenario_demand
                         d_info = f", {int(dmd_b)}, {int(dmd_l)}"
                         logger.info(
-                            f"Trial={self.sim.trial}, Sample={self.sim.sample}{airline_info}{d_info}"
+                            f"Trial={self.sim.trial}, "
+                            f"Sample={self.sim.sample}{airline_info}{d_info}"
                         )
                     if self.sim.trial > 0 or self.sim.sample > 0:
                         self.sim.reset_counters()
@@ -552,7 +560,8 @@ class Simulation:
             self.sim.last_dcp = recording_day
             self.capture_dcp_data(dcp_index)
 
-        # This will change once we have "dcp" and "daily" portions of an RM system in the YAML input file
+        # This will change once we have "dcp" and "daily" portions of an RM system in
+        # the YAML input file
         for airline in self.sim.airlines:
             if event_type.lower() in {"dcp", "done"}:
                 airline.rm_system.run(
@@ -651,7 +660,8 @@ class Simulation:
             self.random_generator.get_normal() if system_rn is None else system_rn
         )
 
-        # We don't have an O&D object, but we use this to get a market random number per market
+        # We don't have an O&D object, but we use this to get a market random number
+        # per market
         mrn_ref = {}
 
         # Need to have leisure / business split for PODS
@@ -697,7 +707,8 @@ class Simulation:
 
             if debug:
                 logger.debug(
-                    f"DMD,{self.sim.sample},{dmd.orig},{dmd.dest},{dmd.segment},{dmd.base_demand},"
+                    f"DMD,{self.sim.sample},{dmd.orig},{dmd.dest},"
+                    f"{dmd.segment},{dmd.base_demand},"
                     f"{round(mu,2)},{round(sigma,2)},{round(n,2)}"
                 )
 
@@ -717,9 +728,9 @@ class Simulation:
             num_events = sum(num_events_by_tf)
             total_events += num_events
             if num_events != round(num_pax):
-                # print(f"Generate demand function, num_pax={num_pax}, num_events={num_events}")
-                raise Exception(
-                    f"Generate demand function, num_pax={num_pax}, num_events={num_events}"
+                raise ValueError(
+                    f"Generate demand function, num_pax={num_pax}, "
+                    f"num_events={num_events}"
                 )
 
         return total_events
@@ -745,71 +756,6 @@ class Simulation:
             )
         total_events = 0
         return total_events
-
-    # def data_by_timeframe(self):
-    #     logger.info("----- Demand By DCP -----")
-    #     dmd_by_tf = defaultdict(float)
-    #     for dmd in self.sim.demands:
-    #         for dcp in self.dcp_list:
-    #             if dcp == 0:
-    #                 continue
-    #             dmd_by_tf[(dmd.curve_number, dcp)] += dmd.get_demand_dcp(dcp)
-    #     for k, v in dmd_by_tf.items():
-    #         logger.info(f"    {k[0]}, {k[1]}, {v}")
-    #
-    #     total_samples = self.sim.num_trials * self.sim.num_samples
-    #     logger.info(
-    #         f"Fare Sales by DCP (dcp, business, tf_business, leisure, tf_leisure), samples = {total_samples}"
-    #     )
-    #     prev_b, prev_l = 0, 0
-    #     for dcp in self.dcp_list:
-    #         if dcp == 0:
-    #             continue
-    #         business = self.fare_sales_by_dcp[("business", dcp)]
-    #         leisure = self.fare_sales_by_dcp[("leisure", dcp)]
-    #         logger.info(
-    #             f"    {dcp}, {business}, {business - prev_b}, {leisure}, {leisure - prev_l}"
-    #         )
-    #         prev_b, prev_l = business, leisure
-    #
-    #     logger.info("Fare Sales by DCP & airline (dcp, Al1, AL2, ...etc)")
-    #     prev = defaultdict(int)
-    #     for dcp in self.dcp_list:
-    #         if dcp == 0:
-    #             continue
-    #         tmp = ""
-    #         for a in self.sim.airlines:
-    #             sold = self.fare_sales_by_airline_dcp[(a.name, dcp)]
-    #             inc_sold = sold - prev[a.name]
-    #             tmp += str(inc_sold) if tmp == "" else (", " + str(inc_sold))
-    #             prev[a.name] = sold
-    #         logger.info(f"    {dcp}, {tmp}")
-    #
-    #     logger.info(
-    #         "Fare Details:  Airline, Class, RRD, Sold, Business, Leisure, AvgPrice"
-    #     )
-    #     my_keys = self.fare_details_sold.keys()
-    #     my_keys = sorted(my_keys, key=lambda x: (x[0], x[1], 100 - x[2]))
-    #     prev_dcp, prev_sold, prev_business, prev_leisure = 0, 0, 0, 0
-    #     for k in my_keys:
-    #         dcp = k[2]
-    #         if int(dcp) > int(prev_dcp):
-    #             prev_sold, prev_business, prev_leisure = 0, 0, 0
-    #         sold = self.fare_details_sold[k]
-    #         sold_business = self.fare_details_sold_business[k]
-    #         sold_leisure = sold - sold_business
-    #         avg_price = self.fare_details_revenue[k] / sold if sold > 0 else 0.0
-    #         logger.info(
-    #             f"    {k[0]:4} {k[1]:4} {k[2]:4} "
-    #             f"{sold - prev_sold:8} {sold_business - prev_business:8} "
-    #             f"{sold_leisure - prev_leisure:8} {avg_price:10.2f}"
-    #         )
-    #         prev_dcp, prev_sold, prev_business, prev_leisure = (
-    #             dcp,
-    #             sold,
-    #             sold_business,
-    #             sold_leisure,
-    #         )
 
     def compute_reports(
         self,
@@ -928,7 +874,8 @@ class Simulation:
             if to_log:
                 logger.info(
                     f"    Leg: {leg.carrier}:{leg.flt_no} {leg.orig}-{leg.dest}: "
-                    f" AvgSold = {avg_sold:6.2f},  AvgRev = ${avg_rev:,.2f}, LF = {lf:,.2f}%"
+                    f" AvgSold = {avg_sold:6.2f},  AvgRev = ${avg_rev:,.2f}, "
+                    f"LF = {lf:,.2f}%"
                 )
             leg_df.append(
                 dict(
@@ -1012,19 +959,6 @@ class Simulation:
         self, sim: SimulationEngine, to_log=True, to_db: database.Database | None = None
     ):
         num_samples = sim.num_trials * (sim.num_samples - sim.burn_samples)
-        # avg_lf, n = 0.0, 0
-        #        for leg in sim.legs:
-        #            lf = 100.0 * leg.gt_sold / (leg.capacity * num_samples)
-        #            avg_lf += lf
-        #            n += 1
-
-        #        tot_rev = 0.0
-        #        for m in sim.demands:
-        #            tot_rev += m.revenue
-
-        #        avg_lf = avg_lf / n if n > 0 else 0
-        #        if to_log:
-        #            logger.info(f"    LF:  {avg_lf:6.2f}%, Total revenue = ${tot_rev:,.2f}")
 
         path_class_df = []
         for path in sim.paths:
@@ -1118,7 +1052,8 @@ class Simulation:
             sys_lf = (100.0 * airline_rpm[cxr.name] / denom) if denom > 0 else 0
             if to_log:
                 logger.info(
-                    f"Airline: {cxr.name}, AvgSold: {round(avg_sold, 2)}, LF {sys_lf:.2f}%,  AvgRev ${avg_rev:10,.2f}"
+                    f"Airline: {cxr.name}, AvgSold: {round(avg_sold, 2)}, "
+                    f"LF {sys_lf:.2f}%,  AvgRev ${avg_rev:10,.2f}"
                 )
 
             # Add up total ancillaries
@@ -1140,10 +1075,9 @@ class Simulation:
                     "asm": asm,
                     "rpm": rpm,
                     "yield": np.nan if rpm == 0 else avg_rev / rpm,
-                    "ancillary_rev": tot_anc_rev
+                    "ancillary_rev": tot_anc_rev,
                 }
             )
-            # logger.info(f"ASM = {airline_asm[cxr.name]:.2f}, RPM = {airline_rpm[cxr.name]:.2f}, LF = {sys_lf:.2f}%")
         carrier_df = pd.DataFrame(carrier_df)
         if to_db and to_db.is_open:
             to_db.save_dataframe("carrier_summary", carrier_df)
@@ -1191,7 +1125,8 @@ class Simulation:
         if self.sim.config.outputs.excel:
             summary.to_xlsx(self.sim.config.outputs.excel)
         logger.info(
-            f"Th' th' that's all folks !!!    (Elapsed time = {round(time.time() - start_time, 2)})"
+            f"Th' th' that's all folks !!!    "
+            f"(Elapsed time = {round(time.time() - start_time, 2)})"
         )
         return summary
 
@@ -1209,3 +1144,22 @@ class Simulation:
         for p in self.sim.paths:
             result[p.path_id] = str(p)
         return result
+
+    @property
+    def paths(self):
+        """Generator of all paths in the simulation."""
+        return self.sim.paths
+
+    @property
+    def pathclasses(self):
+        """Generator of all path classes in the simulation."""
+        for path in self.sim.paths:
+            for pc in path.pathclasses:
+                yield pc
+
+    def pathclasses_for_airline(self, airline: str):
+        """Generator of all path classes for a given airline."""
+        for path in self.sim.paths:
+            if path.carrier == airline:
+                for pc in path.pathclasses:
+                    yield pc
