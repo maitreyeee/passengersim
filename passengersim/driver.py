@@ -1129,8 +1129,8 @@ class Simulation:
                     "avg_price": avg_rev / avg_sold,
                     "asm": asm,
                     "rpm": rpm,
-                    "yield": np.nan if rpm == 0 else avg_rev / rpm,
-                    "ancillary_rev": tot_anc_rev
+                    "yield": np.nan if rpm == 0 else avg_rev / rpm
+                    # "ancillary_rev": tot_anc_rev
                 }
             )
             # logger.info(f"ASM = {airline_asm[cxr.name]:.2f}, RPM = {airline_rpm[cxr.name]:.2f}, LF = {sys_lf:.2f}%")
