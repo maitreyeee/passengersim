@@ -418,7 +418,6 @@ class Simulation:
         for airline in self.sim.airlines:
             if airline.control == "vn":
                 vn_airlines.append(airline.name)
-
         for path in self.sim.paths:
             if path.get_leg_carrier(0) in vn_airlines:
                 for bc in self.classes:
@@ -559,22 +558,46 @@ class Simulation:
         if dcp_index == -1:
             dcp_index = len(self.dcp_list) - 1
 
+        # Data capture that is normally done by RM systems
         if event_type.lower() in {"dcp", "done"}:
             self.sim.last_dcp = recording_day
             self.capture_dcp_data(dcp_index)
 
-        # This will change once we have "dcp" and "daily" portions of an RM system in
-        # the YAML input file
+        # Run the specified process(es) for the airlines
         for airline in self.sim.airlines:
-            if event_type.lower() in {"dcp", "done"}:
+            if event_type.lower() in {"dcp"}:
+                # Regular Data Collection Points (pre-departure)
                 airline.rm_system.run(
                     self.sim, airline.name, dcp_index, recording_day, event_type="dcp"
                 )
             elif event_type.lower() == "daily":
+                # Daily report, every day prior to departure EXCEPT specified DCPs
                 airline.rm_system.run(
                     self.sim, airline.name, dcp_index, recording_day, event_type="daily"
                 )
+            elif event_type.lower() == "done":
+                # Post departure processing
+                airline.rm_system.run(
+                    self.sim, airline.name, dcp_index, recording_day, event_type="dcp"
+                )
+                airline.rm_system.run(
+                    self.sim,
+                    airline.name,
+                    dcp_index,
+                    recording_day,
+                    event_type="departure",
+                )
+                if self.sim.sample % 7 == 0:
+                    # Can be used less frequently, such as ML steps on accumlated data
+                    airline.rm_system.run(
+                        self.sim,
+                        airline.name,
+                        dcp_index,
+                        recording_day,
+                        event_type="weekly",
+                    )
 
+        # Database capture
         if event_type.lower() == "daily":
             if (
                 self.cnx.is_open
