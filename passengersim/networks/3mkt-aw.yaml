@@ -24,6 +24,18 @@ simulation_controls:
   # Mountain Standard Time (for me)
   controller_time_zone: -7
 
+db:
+  write_items:
+    - leg_final
+    - fare_final
+    - demand
+    - demand_final
+    - bookings
+    - bucket
+  fast: true
+  engine: sqlite
+  filename: ":memory:"
+
 frat5_curves:
   - name: curve_A
     curve:
