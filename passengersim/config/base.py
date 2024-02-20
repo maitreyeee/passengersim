@@ -542,9 +542,7 @@ class Config(YamlConfig, extra="forbid"):
                     tz = place.time_zone_info
                     if tz is not None:
                         t = datetime.fromtimestamp(t)
-                        print(f"adjusting {t} by {tz.utcoffset(t)}")
                         t -= tz.utcoffset(t)
-                        print(f"   now {t}")
                         return int(time.mktime(t.timetuple()))
                 return t
 
