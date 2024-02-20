@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, ValidationInfo, field_validator
 
@@ -25,11 +26,25 @@ class Leg(BaseModel, extra="forbid"):
     orig: str
     """Origination location for this leg."""
 
+    orig_timezone: str | None = None
+    """Timezone name for the origination location for this leg."""
+
     dest: str
     """Destination location for this leg."""
 
+    dest_timezone: str | None = None
+    """Timezone name for the destination location for this leg."""
+
     date: datetime = datetime.fromisoformat("2020-03-01")
-    """Date for this leg."""
+    """Departure date for this leg."""
+
+    arr_day: int = 0
+    """If the arrival time is on a different day, this is offset in days.
+
+    This will usually be zero (arrival date is same as departure date) but will
+    sometimes be 1 (arrives next day) or in a few pathological cases -1 or +2
+    (for travel across the international dateline).
+    """
 
     dep_time: int
     """Departure time for this leg in Unix time.
@@ -39,6 +54,16 @@ class Leg(BaseModel, extra="forbid"):
 
     Unix time is the number of seconds since 00:00:00 UTC on 1 Jan 1970."""
 
+    @property
+    def dep_localtime(self) -> datetime:
+        """Departure time for this leg in local time at the origin."""
+        t = datetime.fromtimestamp(self.dep_time)
+        t = t.replace(tzinfo=timezone.utc)
+        if self.orig_timezone is not None:
+            z = ZoneInfo(self.orig_timezone)
+            t = t.astimezone(z)
+        return t
+
     arr_time: int
     """Arrival time for this leg in Unix time.
 
@@ -46,6 +71,16 @@ class Leg(BaseModel, extra="forbid"):
     with the hour in 24-hour format.
 
     Unix time is the number of seconds since 00:00:00 UTC on 1 Jan 1970."""
+
+    @property
+    def arr_localtime(self) -> datetime:
+        """Arrival time for this leg in local time at the destination."""
+        t = datetime.fromtimestamp(self.arr_time)
+        t = t.replace(tzinfo=timezone.utc)
+        if self.dest_timezone is not None:
+            z = ZoneInfo(self.dest_timezone)
+            t = t.astimezone(z)
+        return t
 
     capacity: int
     distance: float | None = None
@@ -63,6 +98,8 @@ class Leg(BaseModel, extra="forbid"):
             hh, mm = int(dep_time_str[0]), int(dep_time_str[1])
             v = create_timestamp(info.data["date"], 0, hh, mm)
         if info.field_name == "arr_time":
-            if v < info.data["dep_time"]:
+            if v < info.data["dep_time"] and info.data["arr_day"] == 0:
                 v += 86400  # add a day (in seconds) as arr time is next day
+            elif info.data["arr_day"] != 0:
+                v += 86400 * info.data["arr_day"]  # adjust day[s] (in seconds)
         return v
