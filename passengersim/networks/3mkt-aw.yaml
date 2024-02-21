@@ -163,6 +163,25 @@ frat5_curves:
       5: 1.43
       3: 1.47
       1: 1.5
+  - name: curve_1_5
+    # Purely flat curve, used to test if we can use ML to find the curve
+    curve:
+      63: 1.5
+      56: 1.5
+      49: 1.5
+      42: 1.5
+      35: 1.5
+      31: 1.5
+      28: 1.5
+      24: 1.5
+      21: 1.5
+      17: 1.5
+      14: 1.5
+      10: 1.5
+      7: 1.5
+      5: 1.5
+      3: 1.5
+      1: 1.5
 
 load_factor_curves:
   - name: lf_curve1
@@ -499,7 +518,7 @@ choice_models:
 airlines:
   - name: AL1
     rm_system: rm_test_elasticity
-    frat5: curve_A
+    frat5: curve_1_5
     load_factor_curve: lf_curve1
   - name: AL2
     rm_system: rm_bid_price
