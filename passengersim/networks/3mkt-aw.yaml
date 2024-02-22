@@ -387,6 +387,11 @@ rm_systems:
           name: optimization
           algorithm: emsrb
           kind: leg
+      DEPARTURE:
+        - step_type: elasticity
+          name: elasticity
+          algorithm: loglog
+          kind: leg
 
   rm_fare_adj_leg:
     availability_control: leg
@@ -445,6 +450,11 @@ rm_systems:
           frat5: curve_C
         - step_type: probp
           name: optimization
+      DEPARTURE:
+        - step_type: elasticity
+          name: elasticity
+          algorithm: loglog
+          kind: leg
 
   rm_subgradient:
     availability_control: bp
@@ -518,15 +528,15 @@ choice_models:
 airlines:
   - name: AL1
     rm_system: rm_test_elasticity
-    frat5: curve_1_5
+    frat5: curve_A
     load_factor_curve: lf_curve1
   - name: AL2
-    rm_system: rm_bid_price
+    rm_system: rm_test1
     frat5: curve_C
     load_factor_curve: lf_curve1
-#    ancillaries:
-#      ANC1: 75.0
-#      ANC2: 40.0
+    ancillaries:
+      ANC1: 75.0
+      ANC2: 40.0
 
 classes:
   - Y0
