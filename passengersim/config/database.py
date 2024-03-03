@@ -79,3 +79,6 @@ class DatabaseConfig(PrettyModel, extra="forbid", validate_assignment=True):
 
     store_leg_bid_prices: bool = True
     """Should leg bid prices be stored in the database."""
+
+    store_displacements: bool = True
+    """Should leg displacements be stored in the database."""
