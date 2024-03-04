@@ -248,6 +248,7 @@ class Simulation:
             ].availability_control
             airline = passengersim.core.Airline(airline_name, availability_control)
             airline.rm_system = self.rm_systems[airline_config.rm_system]
+            airline.continuous_pricing = airline_config.continuous_pricing
             if airline_config.frat5 is not None and airline_config.frat5 != "":
                 f5 = self.frat5curves[airline_config.frat5]
                 airline.frat5 = f5

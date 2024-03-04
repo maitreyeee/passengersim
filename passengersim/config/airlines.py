@@ -14,6 +14,9 @@ class Airline(Named, extra="forbid"):
     control: str = ""
     """Deprecated.  No effect"""
 
+    continuous_pricing: Optional[bool] = False
+    """Used to select continuous pricing"""
+
     frat5: Optional[str] = ""
     """Named FRAT5 curve.  
     This is the default that will be applied if not found at a more detailed level
