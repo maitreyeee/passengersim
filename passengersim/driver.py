@@ -581,6 +581,7 @@ class Simulation:
         # Data capture that is normally done by RM systems
         if event_type.lower() in {"dcp", "done"}:
             self.sim.last_dcp = recording_day
+            self.sim.last_dcp_index = dcp_index
             self.capture_dcp_data(dcp_index)
 
         # Run the specified process(es) for the airlines
