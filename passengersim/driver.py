@@ -565,7 +565,7 @@ class Simulation:
 
         # Run the specified process(es) for the airlines
         for airline in self.sim.airlines:
-            if event_type.lower() in {"dcp"}:
+            if event_type.lower() == "dcp":
                 # Regular Data Collection Points (pre-departure)
                 airline.rm_system.run(
                     self.sim, airline.name, dcp_index, recording_day, event_type="dcp"
@@ -872,7 +872,7 @@ class Simulation:
                         booking_class=f.booking_class,
                         dcp_index=dcp_index,
                         price=f.price,
-                        sold=f.get_sales_by_dcp(days_prior),
+                        sold=f.get_sales_by_dcp2(days_prior),
                         gt_sold=f.gt_sold,
                         avg_adjusted_price=f.get_adjusted_by_dcp(dcp_index),
                     )
