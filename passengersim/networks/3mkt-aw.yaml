@@ -535,7 +535,7 @@ airlines:
     rm_system: rm_bid_price
     frat5: curve_C
     load_factor_curve: lf_curve1
-    continuous_pricing: True
+#    continuous_pricing: True
 #    ancillaries:
 #      ANC1: 75.0
 #      ANC2: 40.0
