@@ -527,16 +527,18 @@ choice_models:
 
 airlines:
   - name: AL1
-    rm_system: rm_test_elasticity
-    frat5: curve_A
-    load_factor_curve: lf_curve1
-  - name: AL2
-    rm_system: rm_test1
+    rm_system: rm_bid_price
     frat5: curve_C
     load_factor_curve: lf_curve1
-    ancillaries:
-      ANC1: 75.0
-      ANC2: 40.0
+    continuous_pricing: True
+  - name: AL2
+    rm_system: rm_bid_price
+    frat5: curve_C
+    load_factor_curve: lf_curve1
+#    continuous_pricing: True
+#    ancillaries:
+#      ANC1: 75.0
+#      ANC2: 40.0
 
 classes:
   - Y0

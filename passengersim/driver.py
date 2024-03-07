@@ -248,6 +248,7 @@ class Simulation:
             ].availability_control
             airline = passengersim.core.Airline(airline_name, availability_control)
             airline.rm_system = self.rm_systems[airline_config.rm_system]
+            airline.continuous_pricing = airline_config.continuous_pricing
             if airline_config.frat5 is not None and airline_config.frat5 != "":
                 f5 = self.frat5curves[airline_config.frat5]
                 airline.frat5 = f5
@@ -361,10 +362,29 @@ class Simulation:
 
         # Go through and make sure things are linked correctly
         for dmd in self.sim.demands:
+            tmp_fares = []
             for fare in self.sim.fares:
                 if fare.orig == dmd.orig and fare.dest == dmd.dest:
                     # print("Joining:", dmd, fare)
-                    dmd.add_fare(fare)
+                    tmp_fares.append(fare)
+            tmp_fares = sorted(tmp_fares, reverse=True, key=lambda p: p.price)
+            for fare in tmp_fares:
+                dmd.add_fare(fare)
+
+            # Now set upper and lower bounds, these are used in continuous pricing
+            for cxr in self.sim.airlines:
+                prev_fare = None
+                for fare in dmd.fares:
+                    if fare.carrier != cxr.name:
+                        continue
+                    if prev_fare is not None:
+                        diff = prev_fare.price - fare.price
+                        prev_fare.price_lower_bound = fare.price - diff / 2.0
+                        fare.price_upper_bound = fare.price + diff / 2.0
+                        # This provides a price floor, but will be overwritten
+                        # each time through the loop EXCEPT for the lowest fare
+                        fare.price_lower_bound = fare.price / 2.0
+                    prev_fare = fare
 
         for leg in self.sim.legs:
             for fare in self.sim.fares:
@@ -561,6 +581,7 @@ class Simulation:
         # Data capture that is normally done by RM systems
         if event_type.lower() in {"dcp", "done"}:
             self.sim.last_dcp = recording_day
+            self.sim.last_dcp_index = dcp_index
             self.capture_dcp_data(dcp_index)
 
         # Run the specified process(es) for the airlines
