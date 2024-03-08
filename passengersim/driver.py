@@ -571,9 +571,7 @@ class Simulation:
 
     def run_airline_models(self, info: Any = None, departed: bool = False, debug=False):
         event_type = info[0]
-        recording_day = info[
-            1
-        ]  # could in theory also be non-integer for fractional days
+        recording_day = info[1]  # could in theory also be non-integer for fractional days
         dcp_index = info[2]
         if dcp_index == -1:
             dcp_index = len(self.dcp_list) - 1
@@ -583,6 +581,7 @@ class Simulation:
             self.sim.last_dcp = recording_day
             self.sim.last_dcp_index = dcp_index
             self.capture_dcp_data(dcp_index)
+            self.capture_competitor_data()    # Simulates Infare / QL2
 
         # Run the specified process(es) for the airlines
         for airline in self.sim.airlines:
@@ -637,6 +636,12 @@ class Simulation:
                 self.cnx.save_details(self.sim, recording_day)
             if self.file_writer is not None:
                 self.file_writer.save_details(self.sim, recording_day)
+
+    def capture_competitor_data(self):
+        for mkt in self.sim.markets:
+            lowest = self.sim.shop(mkt.orig, mkt.dest)
+            for cxr, price in lowest:
+                mkt.set_competitor_price(cxr, price)
 
     def capture_dcp_data(self, dcp_index):
         for leg in self.sim.legs:
