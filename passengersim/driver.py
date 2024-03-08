@@ -369,7 +369,7 @@ class Simulation:
                     tmp_fares.append(fare)
             tmp_fares = sorted(tmp_fares, reverse=True, key=lambda p: p.price)
             for fare in tmp_fares:
-                    dmd.add_fare(fare)
+                dmd.add_fare(fare)
 
             # Now set upper and lower bounds, these are used in continuous pricing
             for cxr in self.sim.airlines:
@@ -381,8 +381,8 @@ class Simulation:
                         diff = prev_fare.price - fare.price
                         prev_fare.price_lower_bound = fare.price - diff / 2.0
                         fare.price_upper_bound = fare.price + diff / 2.0
-                        # This provides a price floor, but will be overwritten each time through the loop
-                        # EXCEPT for the lowest fare
+                        # This provides a price floor, but will be overwritten
+                        # each time through the loop EXCEPT for the lowest fare
                         fare.price_lower_bound = fare.price / 2.0
                     prev_fare = fare
 
@@ -630,6 +630,7 @@ class Simulation:
                     recording_day,
                     store_bid_prices=self.sim.config.db.store_leg_bid_prices,
                     intermediate_day=True,
+                    store_displacements=self.sim.config.db.store_displacements,
                 )
         elif event_type.lower() in {"dcp", "done"}:
             if self.cnx.is_open:
@@ -1201,12 +1202,10 @@ class Simulation:
     def pathclasses(self):
         """Generator of all path classes in the simulation."""
         for path in self.sim.paths:
-            for pc in path.pathclasses:
-                yield pc
+            yield from path.pathclasses
 
     def pathclasses_for_airline(self, airline: str):
         """Generator of all path classes for a given airline."""
         for path in self.sim.paths:
             if path.carrier == airline:
-                for pc in path.pathclasses:
-                    yield pc
+                yield from path.pathclasses

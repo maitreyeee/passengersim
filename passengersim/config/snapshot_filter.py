@@ -75,6 +75,7 @@ class SnapshotFilter(BaseModel, validate_assignment=True):
         "rm",
         "pro_bp",
         "forecast_adj",
+        "udp",
         None,
     ] = None
     title: str = ""
@@ -175,7 +176,8 @@ class SnapshotFilter(BaseModel, validate_assignment=True):
 
         # Now do something
         snapshot_file = self.filepath(sim, leg, path)
-        title = f"{self.title}:{info}\n{time.strftime('Snapshot created %Y-%m-%d %A %I:%M:%S %p')}\n"
+        created_date = time.strftime("Snapshot created %Y-%m-%d %A %I:%M:%S %p")
+        title = f"{self.title}:{info}\n{created_date}\n"
         if len(self.title) > 0 and not snapshot_file:
             print(f"{self.title}:{info}", flush=True)
 
@@ -196,6 +198,8 @@ class SnapshotFilter(BaseModel, validate_assignment=True):
                 print(bucket_detail)
             return SnapshotInstruction(True, snapshot_file, why=title, filter=self)
         elif self.type == "pro_bp":
+            return SnapshotInstruction(True, snapshot_file, why=title, filter=self)
+        elif self.type == "udp":
             return SnapshotInstruction(True, snapshot_file, why=title, filter=self)
 
         raise ValueError("unknown snapshot filter type")

@@ -1,5 +1,9 @@
+import datetime
+import zoneinfo
+
 import altair
 import pytest
+from pytest import approx
 
 from passengersim import Simulation, demo_network
 from passengersim.config import Config
@@ -18,6 +22,24 @@ def summary() -> SummaryTables:
     sim = Simulation(cfg)
     summary = sim.run()
     return summary
+
+
+def test_3mkt_01_time_zones():
+    input_file = demo_network("3MKT/01-base")
+    cfg = Config.from_yaml(input_file)
+    assert len(cfg.legs) == 8
+    leg = cfg.legs[0]
+    assert leg.orig == "BOS"
+    assert leg.dest == "ORD"
+    assert leg.dep_time == 1583089200
+    assert leg.arr_time == 1583100000
+    assert leg.dep_localtime == datetime.datetime(
+        2020, 3, 1, 8, 0, tzinfo=zoneinfo.ZoneInfo(key="America/New_York")
+    )
+    assert leg.arr_localtime == datetime.datetime(
+        2020, 3, 1, 10, 0, tzinfo=zoneinfo.ZoneInfo(key="America/Chicago")
+    )
+    assert leg.distance == approx(863.753282)
 
 
 def test_3mkt_01_bookings_by_timeframe(summary, dataframe_regression):

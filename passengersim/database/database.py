@@ -197,6 +197,7 @@ class Database:
                 self._connection,
                 dcp,
                 store_bid_prices=sim.config.db.store_leg_bid_prices,
+                store_displacements=sim.config.db.store_displacements,
             )
         else:
             for leg in sim.legs:

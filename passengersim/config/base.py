@@ -12,6 +12,7 @@ import sys
 import time
 import typing
 import warnings
+from datetime import datetime
 from urllib.request import urlopen
 
 import addicty
@@ -155,7 +156,8 @@ class YamlConfig(PrettyModel):
         exclude_unset : bool, default False
             Whether to exclude fields that are unset or None from the output.
         exclude_defaults : bool, default False
-            Whether to exclude fields that are set to their default value from the output.
+            Whether to exclude fields that are set to their default value from
+            the output.
         exclude_none : bool, default False
             Whether to exclude fields that have a value of `None` from the output.
         warnings : bool, default True
@@ -482,7 +484,8 @@ class Config(YamlConfig, extra="forbid"):
         importlib.reload(sys.modules.get(__name__))
         module = importlib.reload(sys.modules.get(module_parent))
         reloaded_class = getattr(module, cls.__name__)
-        # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
+        # `__tracebackhide__` tells pytest and some other tools to omit this
+        # function from tracebacks
         __tracebackhide__ = True
         return reloaded_class.__pydantic_validator__.validate_python(*args, **kwargs)
 
@@ -525,6 +528,34 @@ class Config(YamlConfig, extra="forbid"):
                     warnings.warn(f"No defined place for {leg.orig}", stacklevel=2)
                 if place_d is None:
                     warnings.warn(f"No defined place for {leg.dest}", stacklevel=2)
+        return self
+
+    @model_validator(mode="after")
+    def _adjust_times_for_time_zones(self):
+        """Adjust arrival/departure times to local time from UTC."""
+        for leg in self.legs:
+            # the nominal time is local time but so far got stored as UTC,
+            # so we need to add the time zone offset to be actually local time
+
+            def adjust_time_zone(t, place):
+                if place is not None:
+                    tz = place.time_zone_info
+                    if tz is not None:
+                        t = datetime.fromtimestamp(t)
+                        t -= tz.utcoffset(t)
+                        return int(time.mktime(t.timetuple()))
+                return t
+
+            place_o = self.places.get(leg.orig, None)
+            leg.dep_time = adjust_time_zone(leg.dep_time, place_o)
+            leg.orig_timezone = str(place_o.time_zone_info) if place_o else None
+            place_d = self.places.get(leg.dest, None)
+            leg.arr_time = adjust_time_zone(leg.arr_time, place_d)
+            leg.dest_timezone = str(place_d.time_zone_info) if place_d else None
+            if place_o is None:
+                warnings.warn(f"No defined place for {leg.orig}", stacklevel=2)
+            if place_d is None:
+                warnings.warn(f"No defined place for {leg.dest}", stacklevel=2)
         return self
 
     def __repr__(self):

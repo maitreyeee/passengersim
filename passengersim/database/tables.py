@@ -191,7 +191,8 @@ def create_table_leg_detail(cnx: Database, primary_key: bool = False) -> None:
         q_demand            FLOAT,
         untruncated_demand  FLOAT,
         forecast_mean       FLOAT,
-        bid_price           FLOAT
+        bid_price           FLOAT,
+        displacement        FLOAT
         {primary_key}
     );
     """
@@ -261,7 +262,8 @@ def create_table_demand_detail(cnx: Database, primary_key: bool = False):
     """
     if primary_key is True:
         sql = sql.format(
-            primary_key=", PRIMARY KEY(scenario, iteration, trial, sample, days_prior, segment, orig, dest)"
+            primary_key=", PRIMARY KEY(scenario, iteration, trial, "
+            "sample, days_prior, segment, orig, dest)"
         )
     else:
         sql = sql.format(primary_key="")
@@ -337,7 +339,8 @@ def create_table_booking_curve(cnx: Database, primary_key: bool = True):
     """
     if primary_key is True:
         sql = sql.format(
-            primary_key=", PRIMARY KEY(scenario, carrier, orig, dest, flt_no, days_prior)"
+            primary_key=", PRIMARY KEY(scenario, carrier, "
+            "orig, dest, flt_no, days_prior)"
         )
     else:
         sql = sql.format(primary_key="")

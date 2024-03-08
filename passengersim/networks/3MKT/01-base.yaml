@@ -71,6 +71,7 @@ rm_systems:
         name: untruncation
         algorithm: em
         kind: leg
+        initialization_method: default
       - step_type: forecast
         name: forecast
         algorithm: additive_pickup
