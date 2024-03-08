@@ -233,6 +233,24 @@ rm_systems:
           algorithm: emsrb
           kind: leg
 
+  rm_leg:
+    availability_control: leg
+    processes:
+      DCP:
+        - step_type: untruncation
+          name: untruncation
+          algorithm: em
+          kind: leg
+        - step_type: forecast
+          name: forecast
+          algorithm: exp_smoothing
+          alpha: 0.15
+          kind: leg
+        - step_type: emsr
+          name: leg_optimization
+          algorithm: emsrb
+          kind: leg
+
   rm_test1:
     availability_control: leg
     processes:
@@ -361,6 +379,29 @@ rm_systems:
 #          name: adjust_fares
 #          algorithm: mr
 #          kind: path
+        - step_type: probp
+          name: optimization
+      DAILY:
+        - step_type: forecastadjustment
+          name: adjust
+          algorithm: timeframe
+          kind: path
+        - step_type: probp
+          name: optimization
+
+  rm_bid_price2:
+    availability_control: bp
+    processes:
+      DCP:
+        - step_type: untruncation
+          name: untruncation
+          algorithm: em
+          kind: path
+        - step_type: forecast
+          name: path_forecast
+          algorithm: additive_pickup
+          alpha: 0.15
+          kind: path
         - step_type: probp
           name: optimization
       DAILY:
@@ -527,10 +568,10 @@ choice_models:
 
 airlines:
   - name: AL1
-    rm_system: rm_bid_price
+    rm_system: rm_test1
     frat5: curve_C
     load_factor_curve: lf_curve1
-    continuous_pricing: True
+#    continuous_pricing: True
   - name: AL2
     rm_system: rm_bid_price
     frat5: curve_C
