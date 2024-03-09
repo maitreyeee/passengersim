@@ -4,7 +4,7 @@
 
 scenario: AW_test
 simulation_controls:
-  num_trials: 5
+  num_trials: 15
   num_samples: 600
   sys_k_factor: 0.1
   mkt_k_factor: 0.15
@@ -257,7 +257,7 @@ rm_systems:
       DCP:
         - step_type: untruncation
           name: untruncation
-          algorithm: em
+          algorithm: naive3
           kind: leg
         - step_type: forecast
           name: forecast
