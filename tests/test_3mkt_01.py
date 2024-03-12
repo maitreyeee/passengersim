@@ -31,14 +31,16 @@ def test_3mkt_01_time_zones():
     leg = cfg.legs[0]
     assert leg.orig == "BOS"
     assert leg.dest == "ORD"
-    assert leg.dep_time == 1583089200
-    assert leg.arr_time == 1583100000
+    assert leg.orig_timezone == "America/New_York"
+    assert leg.dest_timezone == "America/Chicago"
     assert leg.dep_localtime == datetime.datetime(
         2020, 3, 1, 8, 0, tzinfo=zoneinfo.ZoneInfo(key="America/New_York")
     )
     assert leg.arr_localtime == datetime.datetime(
         2020, 3, 1, 10, 0, tzinfo=zoneinfo.ZoneInfo(key="America/Chicago")
     )
+    assert leg.dep_time == 1583067600
+    assert leg.arr_time == 1583078400
     assert leg.distance == approx(863.753282)
 
 
