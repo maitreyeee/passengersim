@@ -12,7 +12,7 @@ import sys
 import time
 import typing
 import warnings
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.request import urlopen
 
 import addicty
@@ -541,9 +541,13 @@ class Config(YamlConfig, extra="forbid"):
                 if place is not None:
                     tz = place.time_zone_info
                     if tz is not None:
-                        t = datetime.fromtimestamp(t)
-                        t -= tz.utcoffset(t)
-                        return int(time.mktime(t.timetuple()))
+                        # construct a datetime object as if it is UTC
+                        t = datetime.utcfromtimestamp(t)
+                        # naively inject the desired timezone
+                        t = t.replace(tzinfo=tz)
+                        # convert "back" to UTC
+                        t = t.astimezone(timezone.utc)
+                        return int(t.timestamp())
                 return t
 
             place_o = self.places.get(leg.orig, None)
