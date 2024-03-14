@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import time
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
@@ -11,7 +10,8 @@ def create_timestamp(base_date, offset, hh, mm) -> int:
     """Create Unix time from base date, offset (days) and time"""
     td = timedelta(days=offset, hours=hh, minutes=mm)
     tmp = base_date + td
-    return int(time.mktime(tmp.timetuple()))
+    result = int(tmp.timestamp())
+    return result
 
 
 class Leg(BaseModel, extra="forbid"):
@@ -35,7 +35,7 @@ class Leg(BaseModel, extra="forbid"):
     dest_timezone: str | None = None
     """Timezone name for the destination location for this leg."""
 
-    date: datetime = datetime.fromisoformat("2020-03-01")
+    date: datetime = datetime.fromisoformat("2020-03-01").replace(tzinfo=timezone.utc)
     """Departure date for this leg."""
 
     arr_day: int = 0
@@ -57,8 +57,7 @@ class Leg(BaseModel, extra="forbid"):
     @property
     def dep_localtime(self) -> datetime:
         """Departure time for this leg in local time at the origin."""
-        t = datetime.fromtimestamp(self.dep_time)
-        t = t.replace(tzinfo=timezone.utc)
+        t = datetime.fromtimestamp(self.dep_time, tz=timezone.utc)
         if self.orig_timezone is not None:
             z = ZoneInfo(self.orig_timezone)
             t = t.astimezone(z)
@@ -75,8 +74,7 @@ class Leg(BaseModel, extra="forbid"):
     @property
     def arr_localtime(self) -> datetime:
         """Arrival time for this leg in local time at the destination."""
-        t = datetime.fromtimestamp(self.arr_time)
-        t = t.replace(tzinfo=timezone.utc)
+        t = datetime.fromtimestamp(self.arr_time, tz=timezone.utc)
         if self.dest_timezone is not None:
             z = ZoneInfo(self.dest_timezone)
             t = t.astimezone(z)
