@@ -567,9 +567,9 @@ choice_models:
     dwm_tod: [0.0, 0.0, 0.0, 0.0, 0.0, 0.04, 0.07, 0.10, 0.13, 0.13, 0.12, 0.10,
               0.03, 0.03, 0.04, 0.05, 0.05, 0.04, 0.02, 0.01, 0.01, 0.0, 0.0, 0.0]
     dwm_tolerance: 1.0
-    r1: 2.0
-    r2: 0.35
-    r3: 0.50
+#    r1: 2.0
+#    r2: 0.35
+#    r3: 0.50
     anc1_relevance: 0.8
     anc2_relevance: 0.5
     anc3_relevance: 0.8
@@ -583,9 +583,9 @@ choice_models:
     dwm_tod: [0.0, 0.0, 0.0, 0.0, 0.0, 0.02, 0.05, 0.08, 0.09, 0.09, 0.09, 0.06,
               0.05, 0.05, 0.07, 0.09, 0.09, 0.07, 0.05, 0.03, 0.03, 0.0, 0.0, 0.0]
     dwm_tolerance: 4.0
-    r1: 0.70
-    r2: 0.35
-    r3: 0.35
+#    r1: 0.70
+#    r2: 0.35
+#    r3: 0.35
     anc1_relevance: 0.5
     anc2_relevance: 0.8
     anc3_relevance: 0.5
@@ -598,8 +598,8 @@ airlines:
     load_factor_curve: lf_curve1
 #    continuous_pricing: True
   - name: AL2
-    rm_system: rm_hybrid
-    frat5: curve_G
+    rm_system: rm_adaptive_hybrid
+    frat5: curve_1_5
     load_factor_curve: lf_curve1
 #    continuous_pricing: True
 #    ancillaries:
