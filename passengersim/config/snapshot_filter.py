@@ -75,6 +75,7 @@ class SnapshotFilter(BaseModel, validate_assignment=True):
         "rm",
         "pro_bp",
         "forecast_adj",
+        "hybrid",
         "udp",
         None,
     ] = None
@@ -186,6 +187,8 @@ class SnapshotFilter(BaseModel, validate_assignment=True):
         if self.type in ["leg_untruncation", "path_untruncation"]:
             return SnapshotInstruction(True, snapshot_file, why=title, filter=self)
         elif self.type in ("forecast", "forecast_adj"):
+            return SnapshotInstruction(True, snapshot_file, why=title, filter=self)
+        elif self.type == "hybrid":
             return SnapshotInstruction(True, snapshot_file, why=title, filter=self)
         elif self.type == "rm":
             bucket_detail = leg.print_bucket_detail()

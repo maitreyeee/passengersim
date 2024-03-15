@@ -311,6 +311,7 @@ rm_systems:
           name: optimization
           algorithm: emsrg
           kind: leg
+
   rm_mfem:
     availability_control: leg
     processes:
@@ -415,6 +416,28 @@ rm_systems:
           name: optimization
 
   rm_hybrid:
+    availability_control: leg
+    processes:
+      DCP:
+        - step_type: forecast
+          name: hybrid_forecast
+          algorithm: exp_smoothing
+          alpha: 0.15
+          max_cap: 10.0
+          kind: hybrid
+        - step_type: aggregation
+          name: aggregate
+        - step_type: emsr
+          name: optimization
+          algorithm: emsrb
+          kind: leg
+#      DEPARTURE:
+#        - step_type: elasticity
+#          name: elasticity
+#          algorithm: loglog
+#          kind: leg
+
+  rm_adaptive_hybrid:
     availability_control: leg
     processes:
       DCP:
@@ -570,13 +593,13 @@ choice_models:
 
 airlines:
   - name: AL1
-    rm_system: rm_bid_price
-    frat5: curve_C
+    rm_system: rm_hybrid
+    frat5: curve_G
     load_factor_curve: lf_curve1
 #    continuous_pricing: True
   - name: AL2
-    rm_system: rm_test1
-    frat5: curve_C
+    rm_system: rm_hybrid
+    frat5: curve_G
     load_factor_curve: lf_curve1
 #    continuous_pricing: True
 #    ancillaries:
@@ -1083,11 +1106,11 @@ snapshot_filters:
 #    sample: 35
 #    dcp: 0
 #    flt_no: 202
-#  - type: forecast
-#    title: Snapshot of forecasting
-#    sample: 35
-#    dcp: [14]
-#    flt_no: 211
+  - type: forecast
+    title: Snapshot of forecasting
+    sample: 35
+    dcp: [14]
+    flt_no: 211
   - type: rm
     title: RM Snapshot, EMSRb leg optimization
     sample: [35]
