@@ -71,9 +71,7 @@ class SummaryTables:
         db: database.Database,
         scenario: str,
         burn_samples: int,
-        additional: Collection[str | tuple]
-        | str
-        | None = (
+        additional: Collection[str | tuple] | str | None = (
             "fare_class_mix",
             "bookings_by_timeframe",
             "total_demand",
@@ -119,6 +117,8 @@ class SummaryTables:
                     additional.add("local_and_flow_yields")
                 if "leg" in cfg.db.write_items and cfg.db.store_leg_bid_prices:
                     additional.add("bid_price_history")
+                if "leg" in cfg.db.write_items and cfg.db.store_displacements:
+                    additional.add("displacement_history")
             else:
                 additional = [additional]
         elif additional is None:
@@ -131,10 +131,10 @@ class SummaryTables:
             )
             if self.od_fare_class_mix:
                 for orig, dest in list(self.od_fare_class_mix):
-                    self.od_fare_class_mix[
-                        (orig, dest)
-                    ] = database.common_queries.od_fare_class_mix(
-                        db, orig, dest, scenario, burn_samples=burn_samples
+                    self.od_fare_class_mix[(orig, dest)] = (
+                        database.common_queries.od_fare_class_mix(
+                            db, orig, dest, scenario, burn_samples=burn_samples
+                        )
                     )
 
         for i in additional:
@@ -143,10 +143,10 @@ class SummaryTables:
                 if self.od_fare_class_mix is None:
                     self.od_fare_class_mix = {}
                 logger.info(f"loading od_fare_class_mix({orig},{dest})")
-                self.od_fare_class_mix[
-                    (orig, dest)
-                ] = database.common_queries.od_fare_class_mix(
-                    db, orig, dest, scenario, burn_samples=burn_samples
+                self.od_fare_class_mix[(orig, dest)] = (
+                    database.common_queries.od_fare_class_mix(
+                        db, orig, dest, scenario, burn_samples=burn_samples
+                    )
                 )
 
         if "bookings_by_timeframe" in additional and db.is_open:
@@ -187,6 +187,12 @@ class SummaryTables:
                 db, scenario, burn_samples
             )
 
+        if "displacement_history" in additional and db.is_open:
+            logger.info("loading displacement_history")
+            self.displacement_history = database.common_queries.displacement_history(
+                db, scenario, burn_samples
+            )
+
         if "local_and_flow_yields" in additional and db.is_open:
             logger.info("loading local_and_flow_yields")
             self.local_and_flow_yields = database.common_queries.local_and_flow_yields(
@@ -217,6 +223,7 @@ class SummaryTables:
         carrier_history: pd.DataFrame | None = None,
         demand_to_come: pd.DataFrame | None = None,
         bid_price_history: pd.DataFrame | None = None,
+        displacement_history: pd.DataFrame | None = None,
         local_and_flow_yields: pd.DataFrame | None = None,
         leg_carried: pd.DataFrame | None = None,
     ):
@@ -236,6 +243,7 @@ class SummaryTables:
         self.carrier_history = carrier_history
         self.demand_to_come = demand_to_come
         self.bid_price_history = bid_price_history
+        self.displacement_history = displacement_history
         self.local_and_flow_yields = local_and_flow_yields
         self.leg_carried = leg_carried
 
@@ -947,6 +955,73 @@ class SummaryTables:
             )
             bottom_line = bound_line.encode(
                 y=alt.Y("bid_price_upper:Q", title="Bid Price")
+            )
+            fig = fig + bound + top_line + bottom_line
+        return fig
+
+    @report_figure
+    def fig_displacement_history(
+        self,
+        by_carrier: bool | str = True,
+        show_stdev: float | bool | None = None,
+        raw_df=False,
+    ):
+        df = self.displacement_history.reset_index()
+        color = None
+        if isinstance(by_carrier, str):
+            df = df[df.carrier == by_carrier]
+        elif by_carrier:
+            color = "carrier:N"
+            if show_stdev is None:
+                show_stdev = False
+        if show_stdev:
+            if show_stdev is True:
+                show_stdev = 2
+            df["displacement_upper"] = (
+                df["displacement_mean"] + show_stdev * df["displacement_stdev"]
+            )
+            df["displacement_lower"] = (
+                df["displacement_mean"] - show_stdev * df["displacement_stdev"]
+            ).clip(0, None)
+        if raw_df:
+            return df
+
+        import altair as alt
+
+        line_encoding = dict(
+            x=alt.X("days_prior:Q")
+            .scale(reverse=True)
+            .title("Days Prior to Departure"),
+            y=alt.Y("displacement_mean", title="Displacement Cost"),
+        )
+        if color:
+            line_encoding["color"] = color
+        chart = alt.Chart(df)
+        fig = chart.mark_line(interpolate="step-before").encode(**line_encoding)
+        if show_stdev:
+            area_encoding = dict(
+                x=alt.X("days_prior:Q")
+                .scale(reverse=True)
+                .title("Days Prior to Departure"),
+                y=alt.Y("displacement_lower:Q", title="Displacement Cost"),
+                y2=alt.Y2("displacement_upper:Q", title="Displacement Cost"),
+            )
+            bound = chart.mark_area(
+                opacity=0.1,
+                interpolate="step-before",
+            ).encode(**area_encoding)
+            bound_line = chart.mark_line(
+                opacity=0.4, strokeDash=[5, 5], interpolate="step-before"
+            ).encode(
+                x=alt.X("days_prior:Q")
+                .scale(reverse=True)
+                .title("Days Prior to Departure")
+            )
+            top_line = bound_line.encode(
+                y=alt.Y("displacement_lower:Q", title="Displacement Cost")
+            )
+            bottom_line = bound_line.encode(
+                y=alt.Y("displacement_upper:Q", title="Displacement Cost")
             )
             fig = fig + bound + top_line + bottom_line
         return fig

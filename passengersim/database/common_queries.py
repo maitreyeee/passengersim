@@ -626,6 +626,63 @@ def bid_price_history(
         raise ValueError(f"unknown weighting {weighting}")
     return bph
 
+def displacement_history(
+    cnx: Database,
+    scenario: str,
+    burn_samples: int = 100,
+) -> pd.DataFrame:
+    """
+    Compute average displacement cost history over all legs for each carrier.
+
+    This query requires that the simulation was run while recording leg
+    details (i.e. with the `leg` flag set on `Config.db.write_items`),
+    including displacement costs.
+
+    Parameters
+    ----------
+    cnx : Database
+    scenario : str
+    burn_samples : int, default 100
+        The bid prices will be analyzed ignoring this many samples from the
+        beginning of each trial.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The resulting dataframe is indexed by `carrier` and `days_prior`, and has
+        these columns:
+
+        - `displacement_mean`: Average displacement cost across all samples and
+            all legs
+        - `displacement_stdev`: Sample standard deviation of displacement cost
+            across all samples and all legs
+    """
+    qry = """
+    SELECT
+        carrier,
+        days_prior,
+        avg(displacement) as displacement_mean,
+        stdev(displacement) as displacement_stdev
+    FROM leg_detail
+        LEFT JOIN leg_defs ON leg_detail.flt_no = leg_defs.flt_no
+    WHERE
+        scenario == ?1
+        AND sample >= ?2
+    GROUP BY
+        carrier, days_prior
+    ORDER BY
+        carrier, days_prior DESC
+    """
+    df = cnx.dataframe(
+        qry,
+        (
+            scenario,
+            burn_samples,
+        ),
+    )
+    df = df.set_index(["carrier", "days_prior"])
+    return df
+
 
 def local_and_flow_yields(
     cnx: Database, scenario: str, burn_samples: int = 100
