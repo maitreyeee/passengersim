@@ -705,7 +705,8 @@ def fig_path_forecasts(
     else:
         raise NotImplementedError
 
-    # use ordinal data type for DCP labels unless the underlying data is daily, then use Q
+    # use ordinal data type for DCP labels unless
+    # the underlying data is daily, then use Q
     rrd_ntype = "O"
     if len(df["days_prior"].value_counts()) > 30:
         rrd_ntype = "Q"
@@ -738,7 +739,8 @@ def fig_bid_price_history(
 
     if not isinstance(by_carrier, str) and show_stdev:
         raise NotImplementedError(
-            "contrast.fig_bid_price_history with show_stdev requires looking at a single carrier (set `by_carrier`)"
+            "contrast.fig_bid_price_history with show_stdev requires "
+            "looking at a single carrier (set `by_carrier`)"
         )
     df = _assemble(
         summaries,
@@ -780,6 +782,67 @@ def fig_bid_price_history(
         )
         top_line = bound_line.encode(y=alt.Y("bid_price_lower:Q", title="Bid Price"))
         bottom_line = bound_line.encode(y=alt.Y("bid_price_upper:Q", title="Bid Price"))
+        fig = fig + bound + top_line + bottom_line
+    if not isinstance(by_carrier, str):
+        return fig.properties(height=125, width=225).facet(facet="carrier:N", columns=2)
+    return fig
+
+
+@report_figure
+def fig_displacement_history(
+    summaries,
+    by_carrier: bool | str = True,
+    show_stdev: float | bool | None = None,
+    raw_df=False,
+):
+    if not isinstance(by_carrier, str) and show_stdev:
+        raise NotImplementedError(
+            "contrast.fig_displacement_history with show_stdev requires "
+            "looking at a single carrier (set `by_carrier`)"
+        )
+    df = _assemble(
+        summaries,
+        "displacement_history",
+        by_carrier=by_carrier,
+        show_stdev=show_stdev,
+    )
+    if raw_df:
+        return df
+
+    line_encoding = dict(
+        x=alt.X("days_prior:Q").scale(reverse=True).title("Days Prior to Departure"),
+        y=alt.Y("displacement_mean", title="Displacement Cost"),
+        color="source:N",
+    )
+    chart = alt.Chart(df)
+    fig = chart.mark_line(interpolate="step-before").encode(**line_encoding)
+    if show_stdev:
+        area_encoding = dict(
+            x=alt.X("days_prior:Q")
+            .scale(reverse=True)
+            .title("Days Prior to Departure"),
+            y=alt.Y("displacement_lower:Q", title="Displacement Cost"),
+            y2=alt.Y2("displacement_upper:Q", title="Displacement Cost"),
+            color="source:N",
+        )
+        bound = chart.mark_area(
+            opacity=0.1,
+            interpolate="step-before",
+        ).encode(**area_encoding)
+        bound_line = chart.mark_line(
+            opacity=0.4, strokeDash=[5, 5], interpolate="step-before"
+        ).encode(
+            x=alt.X("days_prior:Q")
+            .scale(reverse=True)
+            .title("Days Prior to Departure"),
+            color="source:N",
+        )
+        top_line = bound_line.encode(
+            y=alt.Y("displacement_lower:Q", title="Displacement Cost")
+        )
+        bottom_line = bound_line.encode(
+            y=alt.Y("displacement_upper:Q", title="Displacement Cost")
+        )
         fig = fig + bound + top_line + bottom_line
     if not isinstance(by_carrier, str):
         return fig.properties(height=125, width=225).facet(facet="carrier:N", columns=2)

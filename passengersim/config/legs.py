@@ -35,7 +35,7 @@ class Leg(BaseModel, extra="forbid"):
     dest_timezone: str | None = None
     """Timezone name for the destination location for this leg."""
 
-    date: datetime = datetime.fromisoformat("2020-03-01").replace(tzinfo=timezone.utc)
+    date: datetime = datetime.fromisoformat("2020-03-01")
     """Departure date for this leg."""
 
     arr_day: int = 0
@@ -87,6 +87,9 @@ class Leg(BaseModel, extra="forbid"):
     def _date_from_string(cls, v):
         if isinstance(v, str):
             v = datetime.fromisoformat(v)
+        if v.tzinfo is None:
+            # when no timezone is specified, assume UTC (not naive)
+            v = v.replace(tzinfo=timezone.utc)
         return v
 
     @field_validator("dep_time", "arr_time", mode="before")
