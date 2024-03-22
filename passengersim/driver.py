@@ -430,7 +430,7 @@ class Simulation:
                 * self.sim.num_trials
                 * (self.sim.num_samples - self.sim.burn_samples)
             )
-            prob = self.choice_set_obs / total_choice_sets
+            prob = self.choice_set_obs / total_choice_sets if total_choice_sets > 0 else 0
             self.sim.choice_set_sampling_probability = prob
 
     def vn_initial_mapping(self):
@@ -608,7 +608,7 @@ class Simulation:
                     event_type="departure",
                 )
                 if self.sim.sample % 7 == 0:
-                    # Can be used less frequently, such as ML steps on accumlated data
+                    # Can be used less frequently, such as ML steps on accumulated data
                     airline.rm_system.run(
                         self.sim,
                         airline.name,
