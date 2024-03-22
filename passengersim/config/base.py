@@ -542,12 +542,17 @@ class Config(YamlConfig, extra="forbid"):
                     tz = place.time_zone_info
                     if tz is not None:
                         # construct a datetime object as if it is UTC
-                        t = datetime.utcfromtimestamp(t)
+                        # t = datetime.utcfromtimestamp(t)
                         # naively inject the desired timezone
-                        t = t.replace(tzinfo=tz)
+                        # t = t.replace(tzinfo=tz)
                         # convert "back" to UTC
-                        t = t.astimezone(timezone.utc)
-                        return int(t.timestamp())
+                        # t = t.astimezone(timezone.utc)
+                        # return int(t.timestamp())
+                        # Alan's approach...
+                        t2 = datetime(year=t.year, month=t.month, day=t.day,
+                                      hour=t.hour, minute=t.minute, second=t.second,
+                                      tzinfo=tz)
+                        return int(t2.timestamp())
                 return t
 
             place_o = self.places.get(leg.orig, None)
