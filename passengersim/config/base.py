@@ -547,12 +547,14 @@ class Config(YamlConfig, extra="forbid"):
                         # t = t.replace(tzinfo=tz)
                         # convert "back" to UTC
                         # t = t.astimezone(timezone.utc)
-                        # return int(t.timestamp())
-                        # Alan's approach...
-                        t2 = datetime(year=t.year, month=t.month, day=t.day,
-                                      hour=t.hour, minute=t.minute, second=t.second,
-                                      tzinfo=tz)
-                        return int(t2.timestamp())
+
+                        # Alan's approach
+                        # It was converted as a local time, so unpack it and create a new datetime in the given TZ
+                        dt = datetime.fromtimestamp(t)
+                        dt2 = datetime(dt.year, dt.month, dt.day,
+                                       dt.hour, dt.minute, 0, 0,
+                                       tzinfo=tz)
+                        return int(dt2.timestamp())
                 return t
 
             place_o = self.places.get(leg.orig, None)
