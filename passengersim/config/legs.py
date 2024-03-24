@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, ValidationInfo, field_validator
+from typing import List
 
 
 def create_timestamp(base_date, offset, hh, mm) -> int:
@@ -80,7 +81,7 @@ class Leg(BaseModel, extra="forbid"):
             t = t.astimezone(z)
         return t
 
-    capacity: int
+    capacity: int | List[int]
     distance: float | None = None
 
     @field_validator("date", mode="before")
