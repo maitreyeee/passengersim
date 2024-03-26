@@ -596,12 +596,12 @@ choice_models:
 
 airlines:
   - name: AL1
-    rm_system: rm_leg
+    rm_system: rm_bid_price
     frat5: curve_G
     load_factor_curve: lf_curve1
 #    continuous_pricing: True
   - name: AL2
-    rm_system: rm_leg
+    rm_system: rm_bid_price
     frat5: curve_1_5
     load_factor_curve: lf_curve1
 #    continuous_pricing: True
