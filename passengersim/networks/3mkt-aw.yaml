@@ -4,7 +4,7 @@
 
 scenario: AW_test
 simulation_controls:
-  num_trials: 1
+  num_trials: 5
   num_samples: 600
   sys_k_factor: 0.1
   mkt_k_factor: 0.15
@@ -596,12 +596,12 @@ choice_models:
 
 airlines:
   - name: AL1
-    rm_system: rm_hybrid
+    rm_system: rm_leg
     frat5: curve_G
     load_factor_curve: lf_curve1
 #    continuous_pricing: True
   - name: AL2
-    rm_system: rm_adaptive_hybrid
+    rm_system: rm_leg
     frat5: curve_1_5
     load_factor_curve: lf_curve1
 #    continuous_pricing: True
