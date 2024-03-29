@@ -14,7 +14,7 @@ write_to = "passengersim/_version.py"
 [project]
 name = "passengersim"
 dynamic = ["version"]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "addicty",
     "numpy",
