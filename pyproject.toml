@@ -18,6 +18,7 @@ requires-python = ">=3.10"
 dependencies = [
     "addicty",
     "numpy",
+    "ortools",
     "pandas",
     "pydantic>=2.4",
     "pyyaml",
