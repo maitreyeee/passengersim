@@ -19,7 +19,7 @@ import passengersim.config.rm_systems
 import passengersim.core
 from passengersim.config import Config
 from passengersim.config.snapshot_filter import SnapshotFilter
-from passengersim.core import Event, Frat5, PathClass, SimulationEngine
+from passengersim.core import Cabin, Event, Frat5, PathClass, SimulationEngine
 from passengersim.summary import SummaryTables
 
 from . import database
@@ -397,18 +397,22 @@ class Simulation:
 
             # Now we do the cabins and buckets
             if isinstance(leg_config.capacity, int):
-                tmp_cap = leg_config.capacity
+                cap = int(leg_config.capacity * self.capacity_multiplier)
+                cabin = passengersim.core.Cabin("Y", cap)
+                leg.add_cabin(cabin)
+                self.set_classes(leg, cabin)
             else:
                 tmp_cap = leg_config.capacity[0]
-            cap = int(tmp_cap * self.capacity_multiplier)
+                cap = int(tmp_cap * self.capacity_multiplier)
             leg.capacity = cap
-            if len(self.classes) > 0:
-                self.set_classes(leg)
             if self.debug:
                 print(f"Added leg: {leg}, dist = {leg.distance}")
             self.legs[leg.flt_no] = leg
 
-    def set_classes(self, _leg, debug=False):
+    def set_classes(self, _leg, _cabin, debug=False):
+        if len(self.classes) == 0:
+            return
+
         cap = float(_leg.capacity)
         if debug:
             print(_leg, "Capacity = ", cap)
