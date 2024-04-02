@@ -29,3 +29,23 @@ class Airline(Named, extra="forbid"):
 
     ancillaries: dict[str, float] | None = {}
     """Specifies ancillaries offered by the airline, codes are ANC1 .. ANC4"""
+
+    classes: list[str] = []
+    """A list of fare classes.
+
+    One convention is to use Y0, Y1, ... to label fare classes from the highest
+    fare (Y0) to the lowest fare (Yn).  You can also use Y, B, M, H,... etc.
+    An example of classes is below.
+
+    Example
+    -------
+    ```{yaml}
+    classes:
+      - Y0
+      - Y1
+      - Y2
+      - Y3
+      - Y4
+      - Y5
+    ```
+    """

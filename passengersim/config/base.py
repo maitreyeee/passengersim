@@ -13,6 +13,7 @@ import time
 import typing
 import warnings
 from datetime import datetime
+from typing import Any
 from urllib.request import urlopen
 
 import addicty
@@ -286,6 +287,18 @@ class Config(YamlConfig, extra="forbid"):
       - Y5
     ```
     """
+
+    @model_validator(mode="before")
+    @classmethod
+    def _classes_are_for_carriers(cls, data: Any) -> Any:
+        """Any carrier that doesn't have its own classes gets the global ones."""
+        if isinstance(data, dict):
+            carriers = data.get("airlines", {})
+            for carrier in carriers.values():
+                if isinstance(carrier, dict) and "classes" not in carrier:
+                    carrier["classes"] = data.get("classes", [])
+            data["airlines"] = carriers
+        return data
 
     dcps: list[int] = []
     """A list of DCPs (data collection points).
