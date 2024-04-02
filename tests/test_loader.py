@@ -46,7 +46,8 @@ def test_rm_systems():
     assert system1.processes["dcp"][0].algorithm == "additive_pickup"
     assert system1.processes["dcp"][0].name == "baz"
 
-    # there are several errors in demo2, the parser finds and reports them all with legible error message
+    # there are several errors in demo2, the parser finds and
+    # reports them all with legible error message
     demo2 = """
     rm_systems:
       processes:

@@ -12,7 +12,7 @@ import sys
 import time
 import typing
 import warnings
-from datetime import datetime, timezone
+from datetime import datetime
 from urllib.request import urlopen
 
 import addicty
@@ -549,11 +549,19 @@ class Config(YamlConfig, extra="forbid"):
                         # t = t.astimezone(timezone.utc)
 
                         # Alan's approach
-                        # It was converted as a local time, so unpack it and create a new datetime in the given TZ
+                        # It was converted as a local time, so unpack it and
+                        #   create a new datetime in the given TZ
                         dt = datetime.fromtimestamp(t)
-                        dt2 = datetime(dt.year, dt.month, dt.day,
-                                       dt.hour, dt.minute, 0, 0,
-                                       tzinfo=tz)
+                        dt2 = datetime(
+                            dt.year,
+                            dt.month,
+                            dt.day,
+                            dt.hour,
+                            dt.minute,
+                            0,
+                            0,
+                            tzinfo=tz,
+                        )
                         return int(dt2.timestamp())
                 return t
 
