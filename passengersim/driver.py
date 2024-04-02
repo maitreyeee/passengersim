@@ -277,28 +277,8 @@ class Simulation:
                 bc.add_dcp(days_prior, pct)
             self.curves[curve_name] = bc
 
-        self.legs = {}
-        for leg_config in config.legs:
-            cap = int(leg_config.capacity * self.capacity_multiplier)
-            leg = passengersim.core.Leg(
-                leg_config.carrier,
-                leg_config.fltno,
-                leg_config.orig,
-                leg_config.dest,
-                capacity=cap,
-            )
-            leg.dep_time = leg_config.dep_time
-            leg.arr_time = leg_config.arr_time
-            if leg_config.distance:
-                leg.distance = leg_config.distance
-            elif len(self.airports) > 0:
-                leg.distance = self.get_mileage(leg.orig, leg.dest)
-            if len(self.classes) > 0:
-                self.set_classes(leg)
-            self.sim.add_leg(leg)
-            if self.debug:
-                print(f"Added leg: {leg}, dist = {leg.distance}")
-            self.legs[leg.flt_no] = leg
+        # It got more complex with cabins and buckets, so now it's in a separate method
+        self._initialize_leg_cabin_bucket(config)
 
         for dmd_config in config.demands:
             dmd = passengersim.core.Demand(
@@ -397,6 +377,36 @@ class Simulation:
                     leg.set_bucket_fcst_revenue(fare.booking_class, fare.price)
 
         self.sim.base_time = config.simulation_controls.reference_epoch()
+
+    def _initialize_leg_cabin_bucket(self, config: Config):
+        self.legs = {}
+        for leg_config in config.legs:
+            leg = passengersim.core.Leg(
+                leg_config.carrier,
+                leg_config.fltno,
+                leg_config.orig,
+                leg_config.dest,
+            )
+            leg.dep_time = leg_config.dep_time
+            leg.arr_time = leg_config.arr_time
+            if leg_config.distance:
+                leg.distance = leg_config.distance
+            elif len(self.airports) > 0:
+                leg.distance = self.get_mileage(leg.orig, leg.dest)
+            self.sim.add_leg(leg)
+
+            # Now we do the cabins and buckets
+            if isinstance(leg_config.capacity, int):
+                tmp_cap = leg_config.capacity
+            else:
+                tmp_cap = leg_config.capacity[0]
+            cap = int(tmp_cap * self.capacity_multiplier)
+            leg.capacity = cap
+            if len(self.classes) > 0:
+                self.set_classes(leg)
+            if self.debug:
+                print(f"Added leg: {leg}, dist = {leg.distance}")
+            self.legs[leg.flt_no] = leg
 
     def set_classes(self, _leg, debug=False):
         cap = float(_leg.capacity)
