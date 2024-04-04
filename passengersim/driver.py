@@ -398,13 +398,19 @@ class Simulation:
             # Now we do the cabins and buckets
             if isinstance(leg_config.capacity, int):
                 cap = int(leg_config.capacity * self.capacity_multiplier)
+                leg.capacity = cap
                 cabin = passengersim.core.Cabin("Y", cap)
                 leg.add_cabin(cabin)
                 self.set_classes(leg, cabin)
             else:
-                tmp_cap = leg_config.capacity[0]
-                cap = int(tmp_cap * self.capacity_multiplier)
-            leg.capacity = cap
+                tot_cap = 0
+                for cabin_code, tmp_cap in leg_config.capacity.items():
+                    cap = int(tmp_cap * self.capacity_multiplier)
+                    tot_cap += cap
+                    cabin = passengersim.core.Cabin(cabin_code, cap)
+                    leg.add_cabin(cabin)
+                leg.capacity = tot_cap
+                self.set_classes(leg, cabin)
             if self.debug:
                 print(f"Added leg: {leg}, dist = {leg.distance}")
             self.legs[leg.flt_no] = leg
@@ -412,7 +418,6 @@ class Simulation:
     def set_classes(self, _leg, _cabin, debug=False):
         if len(self.classes) == 0:
             return
-
         cap = float(_leg.capacity)
         if debug:
             print(_leg, "Capacity = ", cap)
