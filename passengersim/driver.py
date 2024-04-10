@@ -161,8 +161,8 @@ class Simulation:
             elif pname in [
                 "base_date",
                 "dcp_hour",
-                "dwm_lite",
                 "double_capacity_until",
+                "dwm_lite",
                 "show_progress_bar",
                 "simple_k_factor",
                 "timeframe_demand_allocation",
@@ -222,9 +222,12 @@ class Simulation:
                     continue
                 if pvalue is None:
                     continue
-                if pname == "dwm_tod":
-                    if len(pvalue) > 0:
-                        x.dwm_tod = pvalue
+                if pname == "dwm_data":
+                    for dwm in pvalue:
+                        x.add_dwm_data(dwm.min_distance, dwm.max_distance, dwm.k_factor,
+                                       dwm.earlyDepMultiplier, dwm.lateDepMultiplier,
+                                       dwm.earlyArrMultiplier, dwm.lateArrMultiplier,
+                                       dwm.probabilities)
                 elif isinstance(pvalue, list | tuple):
                     x.add_parm(pname, *pvalue)
                 else:
