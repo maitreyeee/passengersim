@@ -943,6 +943,15 @@ class Simulation:
         num_samples = sim.num_trials * (sim.num_samples - sim.burn_samples)
         leg_df = []
         for leg in sim.legs:
+            # Checking consistency while I debug the cabin code
+            sum_b1, sum_b2 = 0, 0
+            for b in leg.buckets:
+                sum_b1 += b.sold
+            for c in leg.cabins:
+                for b in c.buckets:
+                    sum_b2 += b.sold
+            if sum_b1 != sum_b2:
+                print("Oh, crap!")
             avg_sold = leg.gt_sold / num_samples
             avg_rev = leg.gt_revenue / num_samples
             lf = 100.0 * leg.gt_sold / (leg.capacity * num_samples)
