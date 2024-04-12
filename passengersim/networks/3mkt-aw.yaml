@@ -251,6 +251,24 @@ rm_systems:
           algorithm: emsrb
           kind: leg
 
+  rm_leg_cabin:
+    availability_control: cabin
+    processes:
+      DCP:
+        - step_type: untruncation
+          name: untruncation
+          algorithm: em
+          kind: leg
+        - step_type: forecast
+          name: forecast
+          algorithm: exp_smoothing
+          alpha: 0.15
+          kind: leg
+        - step_type: cabin
+          name: leg_optimization
+          algorithm: emsrb
+          kind: leg
+
   rm_test1:
     availability_control: leg
     processes:
@@ -609,12 +627,12 @@ choice_models:
 
 airlines:
   - name: AL1
-    rm_system: rm_bid_price
+    rm_system: rm_leg_cabin
     frat5: curve_G
     load_factor_curve: lf_curve1
 #    continuous_pricing: True
   - name: AL2
-    rm_system: rm_bid_price
+    rm_system: rm_leg
     frat5: curve_1_5
     load_factor_curve: lf_curve1
 #    continuous_pricing: True
@@ -693,8 +711,8 @@ legs:
     date: '2020-01-01'
     dep_time: 08:00
     arr_time: '10:00'
-    capacity:
-      Y: 100
+    capacity: 100
+#      "": 100
     distance: 864.0
   - carrier: AL1
     fltno: 102
@@ -1123,11 +1141,16 @@ snapshot_filters:
 #    sample: 35
 #    dcp: 0
 #    flt_no: 202
-  - type: forecast
-    title: Snapshot of forecasting
-    sample: 35
+#  - type: forecast
+#    title: Snapshot of forecasting
+#    sample: 35
+#    dcp: [14]
+#    flt_no: 211
+  - type: rm
+    title: RM Snapshot, EMSRb leg optimization
+    sample: [35]
     dcp: [14]
-    flt_no: 21100000
+    flt_no: 111
   - type: rm
     title: RM Snapshot, EMSRb leg optimization
     sample: [35]

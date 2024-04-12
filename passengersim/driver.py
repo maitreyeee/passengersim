@@ -402,7 +402,7 @@ class Simulation:
             if isinstance(leg_config.capacity, int):
                 cap = int(leg_config.capacity * self.capacity_multiplier)
                 leg.capacity = cap
-                cabin = passengersim.core.Cabin("Y", cap)
+                cabin = passengersim.core.Cabin("", cap)
                 leg.add_cabin(cabin)
                 self.set_classes(leg, cabin)
             else:

@@ -16,7 +16,7 @@ class RmSystem(Named, extra="forbid"):
     processes: dict[str, RmProcess]
 
     availability_control: Literal[
-        "infer", "leg", "theft", "bp", "bp_loose", "vn", "none"
+        "infer", "leg", "cabin", "theft", "bp", "bp_loose", "vn", "none"
     ] = "infer"
     """Fare class availability algorithm for carriers using this RmSystem.
 
