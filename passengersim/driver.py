@@ -863,6 +863,7 @@ class Simulation:
         carrier_df = self.compute_carrier_report(sim, to_log, to_db)
 
         summary = SummaryTables(
+            name=sim.name,
             demands=dmd_df,
             fares=fare_df,
             legs=leg_df,

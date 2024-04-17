@@ -17,24 +17,24 @@ simulation_controls:
   demand_multiplier: 1.0
   capacity_multiplier: 1.0
   manual_paths: false
-  debug_orders: false
+#  debug_orders: false
   timeframe_demand_allocation: pods
   capture_choice_set_file: choice-set.csv
   capture_choice_set_obs: 10000
   # Mountain Standard Time (for me)
   controller_time_zone: -7
 
-db:
-  write_items:
-    - leg_final
-    - fare_final
-    - demand
-    - demand_final
-    - bookings
-    - bucket
-  fast: true
-  engine: sqlite
-  filename: ":memory:"
+#db:
+#  write_items:
+#    - leg_final
+#    - fare_final
+#    - demand
+#    - demand_final
+#    - bookings
+#    - bucket
+#  fast: true
+#  engine: sqlite
+#  filename: ":memory:"
 
 frat5_curves:
   - name: curve_A
@@ -627,8 +627,8 @@ choice_models:
 
 airlines:
   - name: AL1
-    rm_system: rm_adaptive_hybrid
-    frat5: curve_1_5
+    rm_system: rm_hybrid
+    frat5: curve_G
     load_factor_curve: lf_curve1
 #    continuous_pricing: True
   - name: AL2
