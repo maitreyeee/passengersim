@@ -627,13 +627,13 @@ choice_models:
 
 airlines:
   - name: AL1
-    rm_system: rm_leg_cabin
-    frat5: curve_G
+    rm_system: rm_adaptive_hybrid
+    frat5: curve_1_5
     load_factor_curve: lf_curve1
 #    continuous_pricing: True
   - name: AL2
-    rm_system: rm_leg
-    frat5: curve_1_5
+    rm_system: rm_hybrid
+    frat5: curve_G
     load_factor_curve: lf_curve1
 #    continuous_pricing: True
 #    ancillaries:
