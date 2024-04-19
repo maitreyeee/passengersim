@@ -294,9 +294,14 @@ class Config(YamlConfig, extra="forbid"):
         """Any carrier that doesn't have its own classes gets the global ones."""
         if isinstance(data, dict):
             carriers = data.get("airlines", {})
-            for carrier in carriers.values():
-                if isinstance(carrier, dict) and "classes" not in carrier:
-                    carrier["classes"] = data.get("classes", [])
+            if isinstance(carriers, list):
+                for carrier in carriers:
+                    if isinstance(carrier, dict) and "classes" not in carrier:
+                        carrier["classes"] = data.get("classes", [])
+            else:
+                for carrier in carriers.values():
+                    if isinstance(carrier, dict) and "classes" not in carrier:
+                        carrier["classes"] = data.get("classes", [])
             data["airlines"] = carriers
         return data
 
