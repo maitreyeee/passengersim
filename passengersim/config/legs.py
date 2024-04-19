@@ -81,7 +81,7 @@ class Leg(BaseModel, extra="forbid"):
             t = t.astimezone(z)
         return t
 
-    capacity: int | List[int]
+    capacity: int | dict[str, int]
     distance: float | None = None
 
     @field_validator("date", mode="before")

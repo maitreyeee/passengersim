@@ -7,6 +7,7 @@ except ImportError:
     Airline = None
     BookingCurve = None
     Bucket = None
+    Cabin = None
     ChoiceModel = None
     Demand = None
     DynamicProgram = None
@@ -27,6 +28,7 @@ else:
         Airline,
         BookingCurve,
         Bucket,
+        Cabin,
         ChoiceModel,
         Demand,
         DynamicProgram,
@@ -48,6 +50,7 @@ __all__ = [
     "Airline",
     "BookingCurve",
     "Bucket",
+    "Cabin",
     "ChoiceModel",
     "Demand",
     "DynamicProgram",

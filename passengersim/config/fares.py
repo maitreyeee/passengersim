@@ -13,7 +13,7 @@ class Fare(BaseModel, extra="forbid"):
     advance_purchase: int
     restrictions: list[str] = []
     category: str | None = None
-    cabin: Optional[int] = 0
+    cabin: Optional[str] = "Y"
 
     @field_validator("restrictions", mode="before")
     def allow_unrestricted(cls, v):

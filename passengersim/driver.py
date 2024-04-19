@@ -19,7 +19,7 @@ import passengersim.config.rm_systems
 import passengersim.core
 from passengersim.config import Config
 from passengersim.config.snapshot_filter import SnapshotFilter
-from passengersim.core import Event, Frat5, PathClass, SimulationEngine
+from passengersim.core import Cabin, Event, Frat5, PathClass, SimulationEngine
 from passengersim.summary import SummaryTables
 
 from . import database
@@ -161,8 +161,8 @@ class Simulation:
             elif pname in [
                 "base_date",
                 "dcp_hour",
-                "dwm_lite",
                 "double_capacity_until",
+                "dwm_lite",
                 "show_progress_bar",
                 "simple_k_factor",
                 "timeframe_demand_allocation",
@@ -222,9 +222,12 @@ class Simulation:
                     continue
                 if pvalue is None:
                     continue
-                if pname == "dwm_tod":
-                    if len(pvalue) > 0:
-                        x.dwm_tod = pvalue
+                if pname == "dwm_data":
+                    for dwm in pvalue:
+                        x.add_dwm_data(dwm.min_distance, dwm.max_distance, dwm.k_factor,
+                                       dwm.earlyDepMultiplier, dwm.lateDepMultiplier,
+                                       dwm.earlyArrMultiplier, dwm.lateArrMultiplier,
+                                       dwm.probabilities)
                 elif isinstance(pvalue, list | tuple):
                     x.add_parm(pname, *pvalue)
                 else:
@@ -277,28 +280,8 @@ class Simulation:
                 bc.add_dcp(days_prior, pct)
             self.curves[curve_name] = bc
 
-        self.legs = {}
-        for leg_config in config.legs:
-            cap = int(leg_config.capacity * self.capacity_multiplier)
-            leg = passengersim.core.Leg(
-                leg_config.carrier,
-                leg_config.fltno,
-                leg_config.orig,
-                leg_config.dest,
-                capacity=cap,
-            )
-            leg.dep_time = leg_config.dep_time
-            leg.arr_time = leg_config.arr_time
-            if leg_config.distance:
-                leg.distance = leg_config.distance
-            elif len(self.airports) > 0:
-                leg.distance = self.get_mileage(leg.orig, leg.dest)
-            if len(self.classes) > 0:
-                self.set_classes(leg)
-            self.sim.add_leg(leg)
-            if self.debug:
-                print(f"Added leg: {leg}, dist = {leg.distance}")
-            self.legs[leg.flt_no] = leg
+        # It got more complex with cabins and buckets, so now it's in a separate method
+        self._initialize_leg_cabin_bucket(config)
 
         for dmd_config in config.demands:
             dmd = passengersim.core.Demand(
@@ -398,7 +381,46 @@ class Simulation:
 
         self.sim.base_time = config.simulation_controls.reference_epoch()
 
-    def set_classes(self, _leg, debug=False):
+    def _initialize_leg_cabin_bucket(self, config: Config):
+        self.legs = {}
+        for leg_config in config.legs:
+            leg = passengersim.core.Leg(
+                leg_config.carrier,
+                leg_config.fltno,
+                leg_config.orig,
+                leg_config.dest,
+            )
+            leg.dep_time = leg_config.dep_time
+            leg.arr_time = leg_config.arr_time
+            if leg_config.distance:
+                leg.distance = leg_config.distance
+            elif len(self.airports) > 0:
+                leg.distance = self.get_mileage(leg.orig, leg.dest)
+            self.sim.add_leg(leg)
+
+            # Now we do the cabins and buckets
+            if isinstance(leg_config.capacity, int):
+                cap = int(leg_config.capacity * self.capacity_multiplier)
+                leg.capacity = cap
+                cabin = passengersim.core.Cabin("", cap)
+                leg.add_cabin(cabin)
+                self.set_classes(leg, cabin)
+            else:
+                tot_cap = 0
+                for cabin_code, tmp_cap in leg_config.capacity.items():
+                    cap = int(tmp_cap * self.capacity_multiplier)
+                    tot_cap += cap
+                    cabin = passengersim.core.Cabin(cabin_code, cap)
+                    leg.add_cabin(cabin)
+                leg.capacity = tot_cap
+                self.set_classes(leg, cabin)
+            if self.debug:
+                print(f"Added leg: {leg}, dist = {leg.distance}")
+            self.legs[leg.flt_no] = leg
+
+    def set_classes(self, _leg, _cabin, debug=False):
+        if len(self.classes) == 0:
+            return
         cap = float(_leg.capacity)
         if debug:
             print(_leg, "Capacity = ", cap)
@@ -841,6 +863,7 @@ class Simulation:
         carrier_df = self.compute_carrier_report(sim, to_log, to_db)
 
         summary = SummaryTables(
+            name=sim.name,
             demands=dmd_df,
             fares=fare_df,
             legs=leg_df,
@@ -921,6 +944,15 @@ class Simulation:
         num_samples = sim.num_trials * (sim.num_samples - sim.burn_samples)
         leg_df = []
         for leg in sim.legs:
+            # Checking consistency while I debug the cabin code
+            sum_b1, sum_b2 = 0, 0
+            for b in leg.buckets:
+                sum_b1 += b.sold
+            for c in leg.cabins:
+                for b in c.buckets:
+                    sum_b2 += b.sold
+            if sum_b1 != sum_b2:
+                print("Oh, crap!")
             avg_sold = leg.gt_sold / num_samples
             avg_rev = leg.gt_revenue / num_samples
             lf = 100.0 * leg.gt_sold / (leg.capacity * num_samples)

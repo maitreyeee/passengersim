@@ -207,6 +207,7 @@ class SummaryTables:
 
     def __init__(
         self,
+        name: str | None = "name?",
         demands: pd.DataFrame | None = None,
         fares: pd.DataFrame | None = None,
         legs: pd.DataFrame | None = None,

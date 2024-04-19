@@ -3,9 +3,20 @@ from __future__ import annotations
 
 from typing import Annotated, Literal, List
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
-from .named import Named
+from .named import Named, DictOfNamed
+
+
+class DwmData(BaseModel, extra="forbid"):
+    min_distance: int = 0
+    max_distance: int = 25000
+    k_factor: float = 3.0
+    earlyDepMultiplier: float = 10.0
+    lateDepMultiplier: float = 10.0
+    earlyArrMultiplier: float = 10.0
+    lateArrMultiplier: float = 10.0
+    probabilities: List[float] = []
 
 
 class PodsChoiceModel(Named, extra="forbid"):
@@ -21,8 +32,7 @@ class PodsChoiceModel(Named, extra="forbid"):
     r2: float | None = None
     r3: float | None = None
     r4: float | None = None
-    dwm_tod: List[float] = []
-    dwm_tolerance: float | None = None
+    dwm_data: List[DwmData] = []
     tolerance: float | None = None
     non_stop_multiplier: float | None = None
     connection_multiplier: float | None = None
