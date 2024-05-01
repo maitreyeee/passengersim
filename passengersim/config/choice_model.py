@@ -28,6 +28,7 @@ class PodsChoiceModel(Named, extra="forbid"):
     connect_disutility: float | None = None
     path_quality: tuple[float, float] | None = None
     preferred_airline: tuple[float, float] | None = None
+    hhi: tuple[float, float] | None = None
     r1: float | None = None
     r2: float | None = None
     r3: float | None = None
