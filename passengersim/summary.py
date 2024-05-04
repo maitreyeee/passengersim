@@ -860,6 +860,8 @@ class SummaryTables:
         of: Literal["mu", "sigma", "closed"] = "mu",
         raw_df=False,
     ):
+        if self.path_forecasts is None:
+            raise ValueError("the path_forecasts summary table is not available")
         of_columns = {
             "mu": "forecast_mean",
             "sigma": "forecast_stdev",

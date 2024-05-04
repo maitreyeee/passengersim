@@ -19,7 +19,7 @@ import passengersim.config.rm_systems
 import passengersim.core
 from passengersim.config import Config
 from passengersim.config.snapshot_filter import SnapshotFilter
-from passengersim.core import Cabin, Event, Frat5, PathClass, SimulationEngine
+from passengersim.core import Event, Frat5, PathClass, SimulationEngine
 from passengersim.summary import SummaryTables
 
 from . import database
@@ -224,10 +224,16 @@ class Simulation:
                     continue
                 if pname == "dwm_data":
                     for dwm in pvalue:
-                        x.add_dwm_data(dwm.min_distance, dwm.max_distance, dwm.k_factor,
-                                       dwm.earlyDepMultiplier, dwm.lateDepMultiplier,
-                                       dwm.earlyArrMultiplier, dwm.lateArrMultiplier,
-                                       dwm.probabilities)
+                        x.add_dwm_data(
+                            dwm.min_distance,
+                            dwm.max_distance,
+                            dwm.k_factor,
+                            dwm.earlyDepMultiplier,
+                            dwm.lateDepMultiplier,
+                            dwm.earlyArrMultiplier,
+                            dwm.lateArrMultiplier,
+                            dwm.probabilities,
+                        )
                 elif isinstance(pvalue, list | tuple):
                     x.add_parm(pname, *pvalue)
                 else:
@@ -433,7 +439,14 @@ class Simulation:
             if debug:
                 print("    Bucket", bkg_class, auth)
 
-    def setup_scenario(self):
+    def setup_scenario(self) -> None:
+        """
+        Set up the scenario for the simulation.
+
+        This will delete any existing data in the database under the same simulation
+        name, build the connections if needed, and then call the vn_initial_mapping
+        method to set up the initial mapping for the carriers using virtual nesting.
+        """
         self.cnx.delete_experiment(self.sim.name)
         logger.debug("building connections")
         num_paths = self.sim.build_connections()
@@ -441,6 +454,26 @@ class Simulation:
             database.tables.create_table_path_defs(self.cnx._connection, self.sim.paths)
         logger.debug(f"Connections done, num_paths = {num_paths}")
         self.vn_initial_mapping()
+
+        # Airlines using Q-forecasting need to have pathclasses set up for all paths
+        # so Q-demand can be forecasted by pathclass even in the absence of bookings
+        for carrier in self.sim.airlines:
+            if carrier.frat5:
+                print(f"{carrier=}, {carrier.frat5=}")
+                for pth in self.sim.paths:
+                    if pth.carrier != carrier.name:
+                        continue
+                    for fare in self.sim.fares:
+                        if (
+                            fare.carrier == pth.carrier
+                            and fare.orig == pth.orig
+                            and fare.dest == pth.dest
+                        ):
+                            pthcls = pth.add_booking_class(
+                                fare.booking_class, if_not_found=True
+                            )
+                            if pthcls is not None:
+                                pthcls.add_fare(fare)
 
         # This will save approximately the number of choice sets requested
         if self.choice_set_file is not None and self.choice_set_obs > 0:
@@ -452,7 +485,9 @@ class Simulation:
                 * self.sim.num_trials
                 * (self.sim.num_samples - self.sim.burn_samples)
             )
-            prob = self.choice_set_obs / total_choice_sets if total_choice_sets > 0 else 0
+            prob = (
+                self.choice_set_obs / total_choice_sets if total_choice_sets > 0 else 0
+            )
             self.sim.choice_set_sampling_probability = prob
 
     def vn_initial_mapping(self):
@@ -593,7 +628,9 @@ class Simulation:
 
     def run_airline_models(self, info: Any = None, departed: bool = False, debug=False):
         event_type = info[0]
-        recording_day = info[1]  # could in theory also be non-integer for fractional days
+        recording_day = info[
+            1
+        ]  # could in theory also be non-integer for fractional days
         dcp_index = info[2]
         if dcp_index == -1:
             dcp_index = len(self.dcp_list) - 1
@@ -603,7 +640,7 @@ class Simulation:
             self.sim.last_dcp = recording_day
             self.sim.last_dcp_index = dcp_index
             self.capture_dcp_data(dcp_index)
-            self.capture_competitor_data()    # Simulates Infare / QL2
+            self.capture_competitor_data()  # Simulates Infare / QL2
 
         # Run the specified process(es) for the airlines
         for airline in self.sim.airlines:
