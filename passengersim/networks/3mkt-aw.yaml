@@ -633,6 +633,9 @@ choice_models:
     anc1_relevance: 0.5
     anc2_relevance: 0.8
     anc3_relevance: 0.5
+    elapsed_time: [0, 0.7]
+    buffer_threshold: 25
+    buffer_time: [0, 0.1]
     dwm_data:
       - min_distance: 0
         max_distance: 5000
