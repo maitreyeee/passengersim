@@ -437,6 +437,7 @@ class Simulation:
         self.cnx.delete_experiment(self.sim.name)
         logger.debug("building connections")
         num_paths = self.sim.build_connections()
+        self.sim.compute_hhi()
         if num_paths and self.cnx.is_open:
             database.tables.create_table_path_defs(self.cnx._connection, self.sim.paths)
         logger.debug(f"Connections done, num_paths = {num_paths}")
