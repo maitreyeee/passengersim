@@ -651,6 +651,7 @@ airlines:
   - name: AL1
     rm_system: rm_leg
     frat5: curve_G_temp
+    fare_adjustment_scale: 0.9
     load_factor_curve: lf_curve1
 #    continuous_pricing: True
   - name: AL2

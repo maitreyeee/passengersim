@@ -22,6 +22,8 @@ class Airline(Named, extra="forbid"):
     This is the default that will be applied if not found at a more detailed level
     """
 
+    fare_adjustment_scale: Optional[float] = 1.0
+
     load_factor_curve: Optional[Any] = None
     """Named FRAT5 curve.  
     This is the default that will be applied if not found at a more detailed level

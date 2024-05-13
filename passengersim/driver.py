@@ -253,7 +253,15 @@ class Simulation:
             airline.rm_system = self.rm_systems[airline_config.rm_system]
             airline.continuous_pricing = airline_config.continuous_pricing
             if airline_config.frat5 is not None and airline_config.frat5 != "":
-                f5 = self.frat5curves[airline_config.frat5]
+                # We want a deep copy of the Frat5 curve, in case two airlines are using the same curve,
+                # and we want to adjust one of them using ML
+                f5_data = config.frat5_curves[airline_config.frat5]
+                f5 = Frat5(f5_name)
+                for _dcp, val in f5_data.curve.items():
+                    f5.add_vals(val)
+                # f5 = self.frat5curves[airline_config.frat5]
+                if airline_config.fare_adjustment_scale is not None:
+                    f5.fare_adjustment_scale = airline_config.fare_adjustment_scale
                 airline.frat5 = f5
             if (
                 airline_config.load_factor_curve is not None
