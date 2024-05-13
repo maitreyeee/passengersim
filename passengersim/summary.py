@@ -541,7 +541,7 @@ class SummaryTables:
             color = "carrier:N"
             color_title = "Carrier"
         elif by_class:
-            color = "class:N"
+            color = "booking_class:N"
             color_title = "Booking Class"
         else:
             color = "paxtype:N"
@@ -798,7 +798,12 @@ class SummaryTables:
         )
 
     def _fig_forecasts(
-        self, df, facet_on=None, y="forecast_mean", color="booking_class:N"
+        self,
+        df,
+        facet_on=None,
+        y="forecast_mean",
+        color="booking_class:N",
+        y_title="Avg Demand Forecast",
     ):
         import altair as alt
 
@@ -806,7 +811,7 @@ class SummaryTables:
             x=alt.X("days_prior:O")
             .scale(reverse=True)
             .title("Days Prior to Departure"),
-            y=alt.Y(f"{y}:Q", title="Avg Demand Forecast"),
+            y=alt.Y(f"{y}:Q", title=y_title),
         )
         if color:
             encoding["color"] = color
@@ -828,9 +833,24 @@ class SummaryTables:
         self,
         by_flt_no: bool | int = True,
         by_class: bool | str = True,
-        of: Literal["mu", "sigma"] = "mu",
+        of: Literal["mu", "sigma"] | list[Literal["mu", "sigma"]] = "mu",
         raw_df=False,
     ):
+        if isinstance(of, list):
+            if raw_df:
+                raise NotImplementedError
+            fig = self.fig_leg_forecasts(
+                by_flt_no=by_flt_no,
+                by_class=by_class,
+                of=of[0],
+            )
+            for of_ in of[1:]:
+                fig |= self.fig_leg_forecasts(
+                    by_flt_no=by_flt_no,
+                    by_class=by_class,
+                    of=of_,
+                )
+            return fig
         y = "forecast_mean" if of == "mu" else "forecast_stdev"
         columns = [
             "carrier",
@@ -850,7 +870,13 @@ class SummaryTables:
             color = None
         if raw_df:
             return df
-        return self._fig_forecasts(df, facet_on=None, y=y, color=color)
+        return self._fig_forecasts(
+            df,
+            facet_on=None,
+            y=y,
+            color=color,
+            y_title="Mean Demand Forecast" if of == "mu" else "Std Dev Demand Forecast",
+        )
 
     @report_figure
     def fig_path_forecasts(

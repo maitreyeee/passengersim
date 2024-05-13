@@ -459,7 +459,10 @@ class Simulation:
         # so Q-demand can be forecasted by pathclass even in the absence of bookings
         for carrier in self.sim.airlines:
             if carrier.frat5:
-                print(f"{carrier=}, {carrier.frat5=}")
+                logger.info(
+                    f"Setting up path classes for carrier {carrier.name}, "
+                    "which is using a Frat5 curve"
+                )
                 for pth in self.sim.paths:
                     if pth.carrier != carrier.name:
                         continue
