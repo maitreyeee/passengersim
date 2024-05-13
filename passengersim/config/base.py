@@ -12,7 +12,8 @@ import sys
 import time
 import typing
 import warnings
-from datetime import datetime, timezone
+from datetime import datetime
+from typing import Any
 from urllib.request import urlopen
 
 import addicty
@@ -287,6 +288,23 @@ class Config(YamlConfig, extra="forbid"):
     ```
     """
 
+    @model_validator(mode="before")
+    @classmethod
+    def _classes_are_for_carriers(cls, data: Any) -> Any:
+        """Any carrier that doesn't have its own classes gets the global ones."""
+        if isinstance(data, dict):
+            carriers = data.get("airlines", {})
+            if isinstance(carriers, list):
+                for carrier in carriers:
+                    if isinstance(carrier, dict) and "classes" not in carrier:
+                        carrier["classes"] = data.get("classes", [])
+            else:
+                for carrier in carriers.values():
+                    if isinstance(carrier, dict) and "classes" not in carrier:
+                        carrier["classes"] = data.get("classes", [])
+            data["airlines"] = carriers
+        return data
+
     dcps: list[int] = []
     """A list of DCPs (data collection points).
 
@@ -549,11 +567,19 @@ class Config(YamlConfig, extra="forbid"):
                         # t = t.astimezone(timezone.utc)
 
                         # Alan's approach
-                        # It was converted as a local time, so unpack it and create a new datetime in the given TZ
+                        # It was converted as a local time, so unpack it and
+                        #   create a new datetime in the given TZ
                         dt = datetime.fromtimestamp(t)
-                        dt2 = datetime(dt.year, dt.month, dt.day,
-                                       dt.hour, dt.minute, 0, 0,
-                                       tzinfo=tz)
+                        dt2 = datetime(
+                            dt.year,
+                            dt.month,
+                            dt.day,
+                            dt.hour,
+                            dt.minute,
+                            0,
+                            0,
+                            tzinfo=tz,
+                        )
                         return int(dt2.timestamp())
                 return t
 

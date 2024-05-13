@@ -46,7 +46,8 @@ def test_rm_systems():
     assert system1.processes["dcp"][0].algorithm == "additive_pickup"
     assert system1.processes["dcp"][0].name == "baz"
 
-    # there are several errors in demo2, the parser finds and reports them all with legible error message
+    # there are several errors in demo2, the parser finds and
+    # reports them all with legible error message
     demo2 = """
     rm_systems:
       processes:
@@ -93,3 +94,31 @@ def test_u10_loader():
 #         input_file=Path(__file__).parents[2].joinpath("networks/3mkt-temp.txt"),
 #     )
 #     sd.loader.dump_network(sd, "/tmp/3mkt.yaml")
+
+
+def test_carriers_have_classes():
+    demo = """
+    airlines:
+      AL1:
+        rm_system: SystemA
+        frat5: curve_G
+      AL2:
+        rm_system: SystemA
+        frat5: curve_1_5
+        classes:
+          - F
+          - C
+          - Y
+    classes: # global classes assigned to AL1 because it has none of its own
+      - Y0
+      - Y1
+      - Y2
+      - Y3
+    rm_systems:
+      - name: SystemA
+        processes: {}
+    """
+    content = yaml.safe_load(io.StringIO(demo))
+    loaded = Config.model_validate(content)
+    assert loaded.airlines["AL1"].classes == ["Y0", "Y1", "Y2", "Y3"]
+    assert loaded.airlines["AL2"].classes == ["F", "C", "Y"]
