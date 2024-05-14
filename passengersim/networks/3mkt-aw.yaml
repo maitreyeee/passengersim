@@ -4,7 +4,7 @@
 
 scenario: AW_test
 simulation_controls:
-  num_trials: 5
+  num_trials: 6
   num_samples: 600
   sys_k_factor: 0.1
   mkt_k_factor: 0.15
@@ -603,9 +603,9 @@ choice_models:
     basefare_mult: 2.5
     path_quality:  [38.30,  0.10]
     preferred_airline:  [-12.29,  0.17]
-    r1: 2.0
-    r2: 0.35
-    r3: 0.50
+#    r1: 2.0
+#    r2: 0.35
+#    r3: 0.50
     anc1_relevance: 0.8
     anc2_relevance: 0.5
     anc3_relevance: 0.8
@@ -627,9 +627,9 @@ choice_models:
     path_quality:  [2.02, 0.12]
     preferred_airline:  [-1.98, 0.11]
     hhi: [0.0, 0.0001]
-    r1: 0.70
-    r2: 0.35
-    r3: 0.35
+#    r1: 0.70
+#    r2: 0.35
+#    r3: 0.35
     anc1_relevance: 0.5
     anc2_relevance: 0.8
     anc3_relevance: 0.5
@@ -649,13 +649,13 @@ choice_models:
 
 airlines:
   - name: AL1
-    rm_system: rm_leg
+    rm_system: rm_fare_adj_leg
     frat5: curve_C
-    fare_adjustment_scale: 0.9
+    fare_adjustment_scale: 0.5
     load_factor_curve: lf_curve1
 #    continuous_pricing: True
   - name: AL2
-    rm_system: rm_leg
+    rm_system: rm_hybrid
     frat5: curve_G
     load_factor_curve: lf_curve1
 #    continuous_pricing: True
