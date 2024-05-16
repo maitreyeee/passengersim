@@ -39,6 +39,7 @@ from .pretty import PrettyModel, repr_dict_with_indent
 from .rm_systems import RmSystem
 from .simulation_controls import SimulationSettings
 from .snapshot_filter import SnapshotFilter
+from .todd_curves import ToddCurve
 
 if typing.TYPE_CHECKING:
     from pydantic.main import IncEx
@@ -387,6 +388,26 @@ class Config(YamlConfig, extra="forbid"):
             if airline.rm_system not in m.rm_systems:
                 raise ValueError(
                     f"Airline {airline.name} has unknown RM system {airline.rm_system}"
+                )
+        return m
+
+    @model_validator(mode="after")
+    def _choice_model_todd_curves_exist(cls, m: Config):
+        """Check that any TODD curvves referenced in the Demand objects have been defined."""
+        for name, cm in m.choice_models.items():
+            if cm.todd_curve is not None and cm.todd_curve not in m.todd_curves:
+                raise ValueError(
+                    f"ChoiceModel {name} has unknown TOD Curve {cm.todd_curve}"
+                )
+        return m
+
+    @model_validator(mode="after")
+    def _demand_todd_curves_exist(cls, m: Config):
+        """Check that any TODD curves referenced in the Demand objects have been defined."""
+        for dmd in m.demands:
+            if dmd.todd_curve is not None and dmd.todd_curve not in m.todd_curves:
+                raise ValueError(
+                    f"Demand {dmd.orig}-{dmd.dest}:{dmd.segment} has unknown TOD Curve {dmd.todd_curve}"
                 )
         return m
 
