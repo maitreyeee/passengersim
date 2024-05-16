@@ -246,6 +246,9 @@ class Config(YamlConfig, extra="forbid"):
     load_factor_curves: DictOfNamed[LoadFactorCurve] = {}
     """ FRAT5 curves are used to model sellup rates in Q-forecasting"""
 
+    todd_curves: DictOfNamed[ToddCurve] = {}
+    """ Time of Day curves"""
+
     choice_models: DictOfNamed[ChoiceModel] = {}
     """Several choice models are programmed behind the scenes.
 
