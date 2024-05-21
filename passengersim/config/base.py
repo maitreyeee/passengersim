@@ -415,6 +415,27 @@ class Config(YamlConfig, extra="forbid"):
         return m
 
     @model_validator(mode="after")
+    def _choice_model_todd_curves_exist(cls, m: Config):
+        """Check that any TODD curves referenced in Demand objects have been defined."""
+        for name, cm in m.choice_models.items():
+            if cm.todd_curve is not None and cm.todd_curve not in m.todd_curves:
+                raise ValueError(
+                    f"ChoiceModel {name} has unknown TOD Curve {cm.todd_curve}"
+                )
+        return m
+
+    @model_validator(mode="after")
+    def _demand_todd_curves_exist(cls, m: Config):
+        """Check that any TODD curves referenced in Demand objects have been defined."""
+        for dmd in m.demands:
+            if dmd.todd_curve is not None and dmd.todd_curve not in m.todd_curves:
+                raise ValueError(
+                    f"Demand {dmd.orig}-{dmd.dest}:{dmd.segment} has "
+                    f"unknown TOD Curve {dmd.todd_curve}"
+                )
+        return m
+
+    @model_validator(mode="after")
     def _booking_curves_match_dcps(cls, m: Config):
         """Check that all booking curves are complete and valid."""
         sorted_dcps = reversed(sorted(m.dcps))
