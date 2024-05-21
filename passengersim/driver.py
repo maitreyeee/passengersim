@@ -28,7 +28,7 @@ from .progressbar import DummyProgressBar, ProgressBar
 logger = logging.getLogger("passengersim")
 
 
-class Simulation:
+class BaseSimulation:
     @classmethod
     def from_yaml(
         cls,
@@ -61,6 +61,16 @@ class Simulation:
             self._tempdir = tempfile.TemporaryDirectory()
             output_dir = os.path.join(self._tempdir.name, "test1")
         self.cnx = None
+        self.output_dir = output_dir
+
+
+class Simulation(BaseSimulation):
+    def __init__(
+        self,
+        config: Config,
+        output_dir: pathlib.Path | None = None,
+    ):
+        super().__init__(config, output_dir)
         if config.simulation_controls.write_raw_files:
             try:
                 from passengersim_core.utils import FileWriter
@@ -78,7 +88,6 @@ class Simulation:
         self.fare_details_sold = defaultdict(int)
         self.fare_details_sold_business = defaultdict(int)
         self.fare_details_revenue = defaultdict(float)
-        self.output_dir = output_dir
         self.demand_multiplier = 1.0
         self.capacity_multiplier = 1.0
         self.airports = []
@@ -259,7 +268,8 @@ class Simulation:
             airline.rm_system = self.rm_systems[airline_config.rm_system]
             airline.continuous_pricing = airline_config.continuous_pricing
             if airline_config.frat5 is not None and airline_config.frat5 != "":
-                # We want a deep copy of the Frat5 curve, in case two airlines are using the same curve,
+                # We want a deep copy of the Frat5 curve,
+                # in case two airlines are using the same curve,
                 # and we want to adjust one of them using ML
                 f5_data = config.frat5_curves[airline_config.frat5]
                 f5 = Frat5(f5_name)
@@ -550,6 +560,85 @@ class Simulation:
                 else:
                     m.set_airline_share(a.name, share)
 
+    def _run_single_trial(
+        self,
+        trial: int,
+        n_samples_done: int = 0,
+        n_samples_total: int = 0,
+        progress: ProgressBar | None = None,
+        update_freq: int | None = None,
+    ):
+        """Run a single trial of the simulation."""
+        if not n_samples_total:
+            n_samples_total = self.sim.num_trials * self.sim.num_samples
+        self.sim.trial = trial
+        self.sim.reset_trial_counters()
+        for sample in range(self.sim.num_samples):
+            if self.sim.config.simulation_controls.double_capacity_until:
+                # Just trying this, PODS has something similar during burn phase
+                if sample == 0:
+                    for leg in self.sim.legs:
+                        leg.capacity = leg.capacity * 2.0
+                elif (
+                    sample == self.sim.config.simulation_controls.double_capacity_until
+                ):
+                    for leg in self.sim.legs:
+                        leg.capacity = leg.capacity / 2.0
+
+            if progress is not None:
+                progress.tick(refresh=(sample == 0))
+            self.sim.sample = sample
+            if self.sim.config.simulation_controls.random_seed is not None:
+                self.reseed(
+                    [
+                        self.sim.config.simulation_controls.random_seed,
+                        trial,
+                        sample,
+                    ]
+                )
+            if update_freq is not None and self.sim.sample % update_freq == 0:
+                total_rev, n = 0.0, 0
+                airline_info = ""
+                for cxr in self.sim.airlines:
+                    total_rev += cxr.revenue
+                    n += 1
+                    airline_info += (
+                        f"{', ' if n > 0 else ''}{cxr.name}=${cxr.revenue:8.0f}"
+                    )
+                dmd_b, dmd_l = 0, 0
+                for dmd in self.sim.demands:
+                    if dmd.business:
+                        dmd_b += dmd.scenario_demand
+                    else:
+                        dmd_l += dmd.scenario_demand
+                d_info = f", {int(dmd_b)}, {int(dmd_l)}"
+                logger.info(
+                    f"Trial={self.sim.trial}, "
+                    f"Sample={self.sim.sample}{airline_info}{d_info}"
+                )
+            if self.sim.trial > 0 or self.sim.sample > 0:
+                self.sim.reset_counters()
+            self.generate_demands()
+            # self.generate_demands_gamma()
+
+            # Loop on passengers
+            while True:
+                event = self.sim.go()
+                self.run_airline_models(event)
+                if event is None or str(event) == "Done" or (event[0] == "Done"):
+                    assert (
+                        self.sim.num_events() == 0
+                    ), f"Event queue still has {self.sim.num_events()} events"
+                    break
+
+            n_samples_done += 1
+            self.sample_done_callback(n_samples_done, n_samples_total)
+            self.end_sample()
+
+        self.sim.num_trials_completed += 1
+        if self.cnx.is_open:
+            self.cnx.save_final(self.sim)
+
     def _run_sim(self):
         update_freq = self.update_frequency
         logger.debug(
@@ -566,77 +655,34 @@ class Simulation:
             progress = DummyProgressBar()
         with progress:
             for trial in range(self.sim.num_trials):
-                self.sim.trial = trial
-                self.sim.reset_trial_counters()
-                for sample in range(self.sim.num_samples):
-                    if self.sim.config.simulation_controls.double_capacity_until:
-                        # Just trying this, PODS has something similar during burn phase
-                        if sample == 0:
-                            for leg in self.sim.legs:
-                                leg.capacity = leg.capacity * 2.0
-                        elif (
-                            sample
-                            == self.sim.config.simulation_controls.double_capacity_until
-                        ):
-                            for leg in self.sim.legs:
-                                leg.capacity = leg.capacity / 2.0
+                self._run_single_trial(
+                    trial,
+                    n_samples_done,
+                    n_samples_total,
+                    progress,
+                    update_freq,
+                )
 
-                    progress.tick(refresh=(sample == 0))
-                    self.sim.sample = sample
-                    if self.sim.config.simulation_controls.random_seed is not None:
-                        self.reseed(
-                            [
-                                self.sim.config.simulation_controls.random_seed,
-                                trial,
-                                sample,
-                            ]
-                        )
-                    if update_freq is not None and self.sim.sample % update_freq == 0:
-                        total_rev, n = 0.0, 0
-                        airline_info = ""
-                        for cxr in self.sim.airlines:
-                            total_rev += cxr.revenue
-                            n += 1
-                            airline_info += (
-                                f"{', ' if n > 0 else ''}{cxr.name}=${cxr.revenue:8.0f}"
-                            )
-
-                        dmd_b, dmd_l = 0, 0
-                        for dmd in self.sim.demands:
-                            if dmd.business:
-                                dmd_b += dmd.scenario_demand
-                            else:
-                                dmd_l += dmd.scenario_demand
-                        d_info = f", {int(dmd_b)}, {int(dmd_l)}"
-                        logger.info(
-                            f"Trial={self.sim.trial}, "
-                            f"Sample={self.sim.sample}{airline_info}{d_info}"
-                        )
-                    if self.sim.trial > 0 or self.sim.sample > 0:
-                        self.sim.reset_counters()
-                    self.generate_demands()
-                    # self.generate_demands_gamma()
-
-                    # Loop on passengers
-                    while True:
-                        event = self.sim.go()
-                        self.run_airline_models(event)
-                        if (
-                            event is None
-                            or str(event) == "Done"
-                            or (event[0] == "Done")
-                        ):
-                            assert (
-                                self.sim.num_events() == 0
-                            ), f"Event queue still has {self.sim.num_events()} events"
-                            break
-
-                    n_samples_done += 1
-                    self.sample_done_callback(n_samples_done, n_samples_total)
-                    self.end_sample()
-
-                if self.cnx.is_open:
-                    self.cnx.save_final(self.sim)
+    def _run_sim_single_trial(self, trial: int):
+        update_freq = self.update_frequency
+        self.sim.update_db_write_flags()
+        n_samples_total = self.sim.num_samples
+        n_samples_done = 0
+        self.sample_done_callback(n_samples_done, n_samples_total)
+        # if self.sim.config.simulation_controls.show_progress_bar:
+        #     progress = ProgressBar(total=n_samples_total)
+        # else:
+        #     progress = DummyProgressBar()
+        # with progress:
+        progress = DummyProgressBar()
+        with progress:
+            self._run_single_trial(
+                trial,
+                n_samples_done,
+                n_samples_total,
+                progress,
+                update_freq,
+            )
 
     def run_airline_models(self, info: Any = None, departed: bool = False, debug=False):
         event_type = info[0]
@@ -893,7 +939,7 @@ class Simulation:
             "total_demand",
         ),
     ) -> SummaryTables:
-        num_samples = sim.num_trials * (sim.num_samples - sim.burn_samples)
+        num_samples = sim.num_trials_completed * (sim.num_samples - sim.burn_samples)
         if num_samples <= 0:
             raise ValueError(
                 "insufficient number of samples outside burn period for reporting"
@@ -921,7 +967,9 @@ class Simulation:
             carriers=carrier_df,
         )
         summary.load_additional_tables(self.cnx, sim.name, sim.burn_samples, additional)
+        print("set cnx")
         summary.cnx = self.cnx
+        print("return summary")
         return summary
 
     def compute_demand_report(
@@ -990,7 +1038,7 @@ class Simulation:
     def compute_leg_report(
         self, sim: SimulationEngine, to_log=True, to_db: database.Database | None = None
     ):
-        num_samples = sim.num_trials * (sim.num_samples - sim.burn_samples)
+        num_samples = sim.num_trials_completed * (sim.num_samples - sim.burn_samples)
         leg_df = []
         for leg in sim.legs:
             # Checking consistency while I debug the cabin code
@@ -1030,7 +1078,7 @@ class Simulation:
     def compute_path_report(
         self, sim: SimulationEngine, to_log=True, to_db: database.Database | None = None
     ):
-        num_samples = sim.num_trials * (sim.num_samples - sim.burn_samples)
+        num_samples = sim.num_trials_completed * (sim.num_samples - sim.burn_samples)
         avg_lf, n = 0.0, 0
         for leg in sim.legs:
             lf = 100.0 * leg.gt_sold / (leg.capacity * num_samples)
@@ -1092,7 +1140,7 @@ class Simulation:
     def compute_path_class_report(
         self, sim: SimulationEngine, to_log=True, to_db: database.Database | None = None
     ):
-        num_samples = sim.num_trials * (sim.num_samples - sim.burn_samples)
+        num_samples = sim.num_trials_completed * (sim.num_samples - sim.burn_samples)
 
         path_class_df = []
         for path in sim.paths:
@@ -1163,7 +1211,7 @@ class Simulation:
         - asm (available seat miles)
         - rpm (revenue passenger miles)
         """
-        num_samples = sim.num_trials * (sim.num_samples - sim.burn_samples)
+        num_samples = sim.num_trials_completed * (sim.num_samples - sim.burn_samples)
         carrier_df = []
 
         airline_asm = defaultdict(float)
@@ -1245,22 +1293,40 @@ class Simulation:
         """The configuration used for this Simulation."""
         return self.sim.config
 
-    def run(self, log_reports: bool = False) -> SummaryTables:
+    def run(
+        self, log_reports: bool = False, single_trial: int | None = None
+    ) -> SummaryTables:
         start_time = time.time()
         self.setup_scenario()
-        self._run_sim()
+        if single_trial is not None:
+            self._run_sim_single_trial(single_trial)
+        else:
+            self._run_sim()
         if self.choice_set_file is not None:
             self.choice_set_file.close()
+        print("Computing reports")
         summary = self.compute_reports(
             self.sim,
             to_log=log_reports or self.sim.config.outputs.log_reports,
             additional=self.sim.config.outputs.reports,
         )
+        print("Saving reports")
         if self.sim.config.outputs.excel:
             summary.to_xlsx(self.sim.config.outputs.excel)
         logger.info(
             f"Th' th' that's all folks !!!    "
             f"(Elapsed time = {round(time.time() - start_time, 2)})"
+        )
+        return summary
+
+    def run_trial(self, trial: int, log_reports: bool = False) -> SummaryTables:
+        self.setup_scenario()
+        self.sim.trial = trial
+        self._run_sim()
+        summary = self.compute_reports(
+            self.sim,
+            to_log=log_reports or self.sim.config.outputs.log_reports,
+            additional=self.sim.config.outputs.reports,
         )
         return summary
 

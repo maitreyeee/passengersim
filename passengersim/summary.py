@@ -61,6 +61,54 @@ class SummaryTables:
         return summary
 
     @classmethod
+    def aggregate(cls, summaries: Collection[SummaryTables]):
+        """Aggregate multiple summary tables."""
+        if not summaries:
+            return None
+        carrier_history = pd.concat([s.carrier_history for s in summaries])
+        demands_avg = sum(
+            s.demands.set_index(["orig", "dest", "segment"])[
+                ["sold", "revenue", "avg_fare"]
+            ]
+            for s in summaries
+        ) / len(summaries)
+        demands_sum = sum(
+            s.demands.set_index(["orig", "dest", "segment"])[
+                ["gt_demand", "gt_sold", "gt_revenue"]
+            ]
+            for s in summaries
+        )
+        demands = pd.concat([demands_avg, demands_sum], axis=1).reset_index()
+
+        carriers = sum(s.carriers.set_index("carrier") for s in summaries) / len(
+            summaries
+        )
+        legs = sum(
+            s.legs.set_index(["carrier", "flt_no", "orig", "dest"]) for s in summaries
+        ) / len(summaries)
+        paths = sum(
+            s.paths.set_index(["orig", "dest", "carrier1", "flt_no1", "carrier2"])
+            for s in summaries
+        ) / len(summaries)
+
+        fare_class_mix = sum(s.fare_class_mix for s in summaries) / len(summaries)
+        leg_forecasts = sum(s.leg_forecasts for s in summaries) / len(summaries)
+        path_forecasts = sum(s.path_forecasts for s in summaries) / len(summaries)
+
+        result = cls(
+            demands=demands,
+            legs=legs,
+            paths=paths,
+            carriers=carriers,
+            fare_class_mix=fare_class_mix,
+            leg_forecasts=leg_forecasts,
+            path_forecasts=path_forecasts,
+            carrier_history=carrier_history,
+        )
+        result.meta_trials = summaries
+        return result
+
+    @classmethod
     def load_basic_table(self, db: database.Database, tablename: str):
         """Load a basic table"""
         logger.info("loading %s", tablename)

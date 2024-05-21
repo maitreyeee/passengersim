@@ -131,6 +131,30 @@ class YamlConfig(PrettyModel):
         raw_config = cls._load_unformatted_yaml(filenames)
         return cls.model_validate(raw_config.to_dict())
 
+    tags: dict[str, Any] = {}
+    """Tags that can be used in format strings in the config."""
+
+    @model_validator(mode="before")
+    @classmethod
+    def _parse_format_tags(cls, data: Any) -> Any:
+        """Parse format tags in the config."""
+        tags = {}
+        if "tags" in data:
+            tags.update(data["tags"])
+        if "scenario" in data:
+            tags["scenario"] = data["scenario"]
+
+        def apply_tags(x):
+            if isinstance(x, dict):
+                return {k: apply_tags(v) for k, v in x.items()}
+            if isinstance(x, list):
+                return [apply_tags(i) for i in x]
+            if isinstance(x, str):
+                return x.format(**tags)
+            return x
+
+        return apply_tags(data)
+
     def to_yaml(
         self,
         stream: os.PathLike | io.FileIO | None = None,
