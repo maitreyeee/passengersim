@@ -460,6 +460,27 @@ rm_systems:
   #          algorithm: loglog
   #          kind: leg
 
+  rm_hybrid_ki:
+    availability_control: leg
+    processes:
+      DCP:
+        - step_type: forecast
+          name: hybrid_forecast
+          algorithm: additive_pickup
+          max_cap: 10.0
+          kind: hybrid
+        - step_type: fareadjustment
+          name: fare_adj
+          algorithm: ki
+          kind: path
+          frat5: curve_C
+        - step_type: aggregation
+          name: aggregate
+        - step_type: emsr
+          name: optimization
+          algorithm: emsrb
+          kind: leg
+
   rm_hybrid_mr:
     availability_control: leg
     processes:
@@ -470,7 +491,7 @@ rm_systems:
           max_cap: 10.0
           kind: hybrid
         - step_type: fareadjustment
-          name: aggregate
+          name: fare_adj
           algorithm: mr
           kind: path
           frat5: curve_C
@@ -658,11 +679,11 @@ airlines:
   - name: AL1
     rm_system: rm_hybrid_mr
     frat5: curve_C
-    fare_adjustment_scale: 0.3
+    fare_adjustment_scale: 0.9
   - name: AL2
     rm_system: rm_hybrid_mr
     frat5: curve_C
-    fare_adjustment_scale: 0.3
+    fare_adjustment_scale: 0.9
 
 classes:
   - Y0
