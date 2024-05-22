@@ -32,7 +32,7 @@ class Airline(Named, extra="forbid"):
     ancillaries: dict[str, float] | None = {}
     """Specifies ancillaries offered by the airline, codes are ANC1 .. ANC4"""
 
-    classes: list[str] = []
+    classes: list[str] | list[tuple[str, str]] = []
     """A list of fare classes.
 
     One convention is to use Y0, Y1, ... to label fare classes from the highest

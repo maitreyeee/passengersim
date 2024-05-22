@@ -8,7 +8,7 @@ simulation_controls:
   num_samples: 600
   sys_k_factor: 0.1
   mkt_k_factor: 0.15
-#  pax_type_k_factor: 0.2
+  pax_type_k_factor: 0.2
   simple_k_factor: 0.2
   tf_k_factor: 0.1
   tf_z_factor: 2.0
@@ -18,7 +18,7 @@ simulation_controls:
   demand_multiplier: 1.0
   capacity_multiplier: 1.0
   manual_paths: false
-#  debug_orders: false
+  #  debug_orders: false
   timeframe_demand_allocation: pods
   capture_choice_set_file: choice-set.csv
   capture_choice_set_obs: 10000
@@ -202,20 +202,6 @@ frat5_curves:
       3: 1.5
       1: 1.5
 
-load_factor_curves:
-  - name: lf_curve1
-    algorithm: lf_target
-    min_accordion: 1.2
-    max_accordion: 1.8
-    target_load_factor: 0.8
-    convergence_constant: 0.75
-    curve:
-      Y0: 1.0
-      Y1: 0.9
-      Y2: 0.8
-      Y3: 0.7
-      Y4: 0.6
-      Y5: 0.5
 
 rm_systems:
   fcfs:
@@ -415,10 +401,10 @@ rm_systems:
           algorithm: additive_pickup
           alpha: 0.15
           kind: path
-#        - step_type: fareadjustment
-#          name: adjust_fares
-#          algorithm: mr
-#          kind: path
+        #        - step_type: fareadjustment
+        #          name: adjust_fares
+        #          algorithm: mr
+        #          kind: path
         - step_type: probp
           name: optimization
       DAILY:
@@ -468,11 +454,11 @@ rm_systems:
           name: optimization
           algorithm: emsrb
           kind: leg
-#      DEPARTURE:
-#        - step_type: elasticity
-#          name: elasticity
-#          algorithm: loglog
-#          kind: leg
+  #      DEPARTURE:
+  #        - step_type: elasticity
+  #          name: elasticity
+  #          algorithm: loglog
+  #          kind: leg
 
   rm_hybrid_mr:
     availability_control: leg
@@ -652,74 +638,31 @@ choice_models:
     emult: 1.6
     basefare_mult: 2.5
     path_quality:  [38.30,  0.10]
-    preferred_airline:  [-12.29,  0.17]
-#    r1: 2.0
-#    r2: 0.35
-#    r3: 0.50
-    anc1_relevance: 0.8
-    anc2_relevance: 0.5
-    anc3_relevance: 0.8
-    dwm_data:
-      - min_distance: 0
-        max_distance: 5000
-        k_factor: 3.0
-        earlyDepMultiplier: 20.0
-        lateDepMultiplier: 30.0
-        earlyArrMultiplier: 15.0
-        lateArrMultiplier: 40.0
-        probabilities: [0.28, 0.09, 0.06, 0.04, 0.1, 0.71, 2.7, 4.76, 6.01, 6.54, 6.29, 5.88,
-                        5.71, 5.77, 6.06, 6.57, 7.22, 7.75, 7.94, 7.36, 5.73, 3.67, 1.94, 0.82]
+#    preferred_airline:  [-12.29,  0.17]
 
   leisure:
     kind: pods
     emult: 1.5
     basefare_mult: 1.0
     path_quality:  [2.02, 0.12]
-    preferred_airline:  [-1.98, 0.11]
+#    preferred_airline:  [-1.98, 0.11]
     hhi: [0.0, 0.0001]
-#    r1: 0.70
-#    r2: 0.35
-#    r3: 0.35
-    anc1_relevance: 0.5
-    anc2_relevance: 0.8
-    anc3_relevance: 0.5
-    elapsed_time: [0, 0.7]
-    buffer_threshold: 25
-    buffer_time: [0, 0.1]
-    dwm_data:
-      - min_distance: 0
-        max_distance: 5000
-        k_factor: 3.0
-        earlyDepMultiplier: 10.0
-        lateDepMultiplier: 15.0
-        earlyArrMultiplier: 10.0
-        lateArrMultiplier: 20.0
-        probabilities: [0.28, 0.09, 0.06, 0.04, 0.1, 0.71, 2.7, 4.76, 6.01, 6.54, 6.29, 5.88,
-                        5.71, 5.77, 6.06, 6.57, 7.22, 7.75, 7.94, 7.36, 5.73, 3.67, 1.94, 0.82]
+    #    r1: 0.70
+    #    r2: 0.35
+    #    r3: 0.35
+#    elapsed_time: [0, 0.7]
+#    buffer_threshold: 25
+#    buffer_time: [0, 0.1]
 
 airlines:
   - name: AL1
     rm_system: rm_hybrid_mr
     frat5: curve_C
-    #    fare_adjustment_scale: 0.3
-    #    load_factor_curve: lf_curve1
-    #    continuous_pricing: True
-    classes:
-      - (Y0, Y)
-      - (Y1, Y)
-      - (Y2, Y)
-      - (Y3, Y)
-      - (Y4, Y)
-      - (Y5, Y)
+    fare_adjustment_scale: 0.3
   - name: AL2
-    rm_system: rm_hybrid
+    rm_system: rm_hybrid_mr
     frat5: curve_C
-    fare_adjustment_scale: 0.5
-    load_factor_curve: lf_curve1
-#    continuous_pricing: True
-#    ancillaries:
-#      ANC1: 75.0
-#      ANC2: 40.0
+    fare_adjustment_scale: 0.3
 
 classes:
   - Y0
@@ -793,7 +736,7 @@ legs:
     dep_time: 08:00
     arr_time: '10:00'
     capacity: 100
-#      "": 100
+    #      "": 100
     distance: 864.0
   - carrier: AL1
     fltno: 102
@@ -1217,16 +1160,16 @@ fares:
       - R3
 
 snapshot_filters:
-#  - type: path_untruncation
-#    title: Snapshot of path untruncation
-#    sample: 35
-#    dcp: 0
-#    flt_no: 202
-#  - type: forecast
-#    title: Snapshot of forecasting
-#    sample: 35
-#    dcp: [14]
-#    flt_no: 211
+  #  - type: path_untruncation
+  #    title: Snapshot of path untruncation
+  #    sample: 35
+  #    dcp: 0
+  #    flt_no: 202
+  #  - type: forecast
+  #    title: Snapshot of forecasting
+  #    sample: 35
+  #    dcp: [14]
+  #    flt_no: 211
   - type: rm
     title: RM Snapshot, EMSRb leg optimization
     sample: [35]
