@@ -679,7 +679,7 @@ airlines:
   - name: AL1
     rm_system: rm_hybrid_mr
     frat5: curve_C
-    fare_adjustment_scale: 0.9
+    fare_adjustment_scale: 0.7
   - name: AL2
     rm_system: rm_hybrid_mr
     frat5: curve_C
@@ -1191,6 +1191,12 @@ snapshot_filters:
   #    sample: 35
   #    dcp: [14]
   #    flt_no: 211
+  - type: fare_adj
+    title: RM Snapshot, Fare Adjustment
+    sample: [45]
+    dcp: [10]
+    orig: BOS
+    dest: LAX
   - type: rm
     title: RM Snapshot, EMSRb leg optimization
     sample: [35]
