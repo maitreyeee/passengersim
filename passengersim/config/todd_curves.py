@@ -14,10 +14,10 @@ class ToddCurve(Named, extra="forbid"):
     min_distance: int = 0
     max_distance: int = 25000
     k_factor: float = 3.0
-    earlyDepMultiplier: float = 0.0
-    lateDepMultiplier: float = 0.0
-    earlyArrMultiplier: float = 0.0
-    lateArrMultiplier: float = 0.0
+    earlyDepMultiplier: tuple[float, float] | None = None
+    lateDepMultiplier: tuple[float, float] | None = None
+    earlyArrMultiplier: tuple[float, float] | None = None
+    lateArrMultiplier: tuple[float, float] | None = None
 
     curve: dict[int, float]
     """Define a TODD curve.

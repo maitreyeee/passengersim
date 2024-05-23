@@ -663,10 +663,10 @@ choice_models:
       - min_distance: 0
         max_distance: 5000
         k_factor: 3.0
-        earlyDepMultiplier: 20.0
-        lateDepMultiplier: 30.0
-        earlyArrMultiplier: 15.0
-        lateArrMultiplier: 40.0
+        earlyDep: [0, 20.0]
+        lateDep: [0, 30.0]
+        earlyArr: [0, 15.0]
+        lateArr: [0, 40.0]
         probabilities: [0.28, 0.09, 0.06, 0.04, 0.1, 0.71, 2.7, 4.76, 6.01, 6.54, 6.29, 5.88,
                         5.71, 5.77, 6.06, 6.57, 7.22, 7.75, 7.94, 7.36, 5.73, 3.67, 1.94, 0.82]
 
@@ -677,9 +677,9 @@ choice_models:
     path_quality:  [2.02, 0.12]
     preferred_airline:  [-1.98, 0.11]
     hhi: [0.0, 0.0001]
-#    r1: 0.70
-#    r2: 0.35
-#    r3: 0.35
+    r1: 0.70
+    r2: 0.35
+    r3: 0.35
     anc1_relevance: 0.5
     anc2_relevance: 0.8
     anc3_relevance: 0.5
@@ -691,10 +691,10 @@ choice_models:
       - min_distance: 0
         max_distance: 5000
         k_factor: 3.0
-        earlyDepMultiplier: 10.0
-        lateDepMultiplier: 15.0
-        earlyArrMultiplier: 10.0
-        lateArrMultiplier: 20.0
+        earlyDep: [0, 10.0]
+        lateDep: [0, 15.0]
+        earlyArr: [0, 10.0]
+        lateArr: [0, 20.0]
         probabilities: [0.28, 0.09, 0.06, 0.04, 0.1, 0.71, 2.7, 4.76, 6.01, 6.54, 6.29, 5.88,
                         5.71, 5.77, 6.06, 6.57, 7.22, 7.75, 7.94, 7.36, 5.73, 3.67, 1.94, 0.82]
 
