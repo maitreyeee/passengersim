@@ -686,6 +686,7 @@ choice_models:
     elapsed_time: [0, 0.7]
     buffer_threshold: 25
     buffer_time: [0, 0.1]
+    replanning: [1.9, 0.1012]
     dwm_data:
       - min_distance: 0
         max_distance: 5000

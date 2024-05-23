@@ -32,6 +32,7 @@ class PodsChoiceModel(Named, extra="forbid"):
     elapsed_time: tuple[float, float] | None = None
     buffer_threshold: int | None = None
     buffer_time: tuple[float, float] | None = None
+    replanning: tuple[float, float] | None = None
     r1: float | None = None
     r2: float | None = None
     r3: float | None = None
