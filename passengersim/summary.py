@@ -75,6 +75,8 @@ class SummaryTables:
             "fare_class_mix",
             "bookings_by_timeframe",
             "total_demand",
+            "load_factors_groupedMai",
+
         ),
     ) -> None:
         """
@@ -136,7 +138,12 @@ class SummaryTables:
                             db, orig, dest, scenario, burn_samples=burn_samples
                         )
                     )
-
+        # load additional fare class mix tables
+        if "load_factors_groupedMai" in additional and db.is_open:
+            logger.info("loading load_factors_groupedMai")
+            self.load_factors_groupedMai = database.common_queries.load_factors_groupedMai(
+                db
+            )
         for i in additional:
             if isinstance(i, tuple) and i[0] == "od_fare_class_mix" and db.is_open:
                 orig, dest = i[1], i[2]
@@ -227,6 +234,8 @@ class SummaryTables:
         displacement_history: pd.DataFrame | None = None,
         local_and_flow_yields: pd.DataFrame | None = None,
         leg_carried: pd.DataFrame | None = None,
+        load_factors_groupedMai: pd.DataFrame | None = None,  # Added this argument
+
     ):
         self.demands = demands
         self.fares = fares
@@ -247,6 +256,8 @@ class SummaryTables:
         self.displacement_history = displacement_history
         self.local_and_flow_yields = local_and_flow_yields
         self.leg_carried = leg_carried
+        self.load_factors_groupedMai = load_factors_groupedMai  # Assigned the new argument
+
 
     def to_records(self) -> dict[str, list[dict]]:
         """Convert all summary tables to a dictionary of records."""
@@ -267,6 +278,18 @@ class SummaryTables:
             for k, v in self.__dict__.items():
                 if isinstance(v, pd.DataFrame):
                     v.to_excel(writer, sheet_name=k)
+
+    def to_dataframe(self, table) -> pd.DataFrame:
+        """Convert the summary tables to a individual dataframes."""
+        sheet_count = 0
+        for k, v in self.__dict__.items():
+            if isinstance(v, pd.DataFrame):
+                sheet_count += 1
+                if sheet_count == table:
+                    return v.assign(table=k)
+        
+        raise IndexError("There are fewer than", table, " DataFrames in the object")
+    
 
     def aggregate_demand_history(self, by_segment: bool = True) -> pd.Series:
         """
@@ -433,6 +456,33 @@ class SummaryTables:
         return self._fig_fare_class_mix(
             df, label_threshold=label_threshold, title=f"Fare Class Mix ({orig}-{dest})"
         )
+    
+    @report_figure
+    def fig_load_factors_groupedMai(self, raw_df=False):
+        if not hasattr(self, 'load_factors_groupedMai'):
+            raise AttributeError("load_factors_groupedMai data not found. Please load it first.")
+        
+        df = self.load_factors_groupedMai(self)
+        print(df)
+        df_for_chart = df[["0.0 - 0.5", "0.5 - 0.6", "0.6 - 0.7", "0.7 - 0.8", "0.8 - 0.85", "0.85 - 0.9", "0.9 - 0.95", "0.95 - 1"]]
+
+        if raw_df:
+            return df_for_chart
+
+        chart = alt.Chart(df_for_chart).mark_bar().encode(
+            x=alt.X("x:O", title="Load Factor Range"),
+            y=alt.Y("y:Q", title="Count"),
+            color=alt.Color("x:O", legend=None),
+        ).transform_fold(
+            ["0.0 - 0.5", "0.5 - 0.6", "0.6 - 0.7", "0.7 - 0.8", "0.8 - 0.85", "0.85 - 0.9", "0.9 - 0.95", "0.95 - 1"],
+            as_=["x", "y"]
+        ).properties(
+            width=600,
+            height=400,
+            title="Load Factors Grouped by Mai"
+        )
+
+        return chart
 
     @property
     def raw_fare_class_mix(self) -> pd.DataFrame:
