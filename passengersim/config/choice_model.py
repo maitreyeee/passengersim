@@ -12,10 +12,10 @@ class DwmData(BaseModel, extra="forbid"):
     min_distance: int = 0
     max_distance: int = 25000
     k_factor: float = 3.0
-    earlyDep: tuple[float, float] | None = None
-    lateDep: tuple[float, float] | None = None
-    earlyArr: tuple[float, float] | None = None
-    lateArr: tuple[float, float] | None = None
+    early_dep: tuple[float, float] | None = None
+    late_dep: tuple[float, float] | None = None
+    early_arr: tuple[float, float] | None = None
+    late_arr: tuple[float, float] | None = None
     probabilities: List[float] = []
 
 

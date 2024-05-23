@@ -225,14 +225,14 @@ class Simulation:
                     continue
                 if pname == "dwm_data":
                     for dwm in pvalue:
-                        early_dep_alpha = dwm.earlyDep[0] if dwm.earlyDep is not None else 0.0
-                        early_dep_beta = dwm.earlyDep[1] if dwm.earlyDep is not None else 0.0
-                        late_dep_alpha = dwm.lateDep[0] if dwm.lateDep is not None else 0.0
-                        late_dep_beta = dwm.lateDep[1] if dwm.lateDep is not None else 0.0
-                        early_arr_alpha = dwm.earlyArr[0] if dwm.earlyArr is not None else 0.0
-                        early_arr_beta = dwm.earlyArr[1] if dwm.earlyArr is not None else 0.0
-                        late_arr_alpha = dwm.lateArr[0] if dwm.lateArr is not None else 0.0
-                        late_arr_beta = dwm.lateArr[1] if dwm.lateArr is not None else 0.0
+                        early_dep_alpha = dwm.early_dep[0] if dwm.early_dep is not None else 0.0
+                        early_dep_beta = dwm.early_dep[1] if dwm.early_dep is not None else 0.0
+                        late_dep_alpha = dwm.late_dep[0] if dwm.late_dep is not None else 0.0
+                        late_dep_beta = dwm.late_dep[1] if dwm.late_dep is not None else 0.0
+                        early_arr_alpha = dwm.early_arr[0] if dwm.early_arr is not None else 0.0
+                        early_arr_beta = dwm.early_arr[1] if dwm.early_arr is not None else 0.0
+                        late_arr_alpha = dwm.late_arr[0] if dwm.late_arr is not None else 0.0
+                        late_arr_beta = dwm.late_arr[1] if dwm.late_arr is not None else 0.0
                         x.add_dwm_data(
                             dwm.min_distance,
                             dwm.max_distance,
