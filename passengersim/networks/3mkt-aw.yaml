@@ -871,6 +871,7 @@ demands:
     choice_model: business
     curve: c1
     distance: 864.0
+    todd_curve: Tues_SameTZ_LE600
   - orig: BOS
     dest: ORD
     segment: leisure

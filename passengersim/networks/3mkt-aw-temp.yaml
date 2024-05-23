@@ -683,7 +683,7 @@ airlines:
   - name: AL2
     rm_system: rm_hybrid_mr
     frat5: curve_C
-    fare_adjustment_scale: 0.9
+    fare_adjustment_scale: 0.7
 
 classes:
   - Y0
@@ -1192,7 +1192,7 @@ snapshot_filters:
   #    dcp: [14]
   #    flt_no: 211
   - type: fare_adj
-    title: RM Snapshot, Fare Adjustment
+    title: Fare Adj Snapshot
     sample: [45]
     dcp: [10]
     orig: BOS
