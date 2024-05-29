@@ -155,7 +155,7 @@ def load_factors(cnx: Database, scenario: str, burn_samples: int = 100) -> pd.Da
     return cnx.dataframe(qry, (scenario, burn_samples))
 
 
-def load_factors_grouped(
+def load_factor_distribution(
     cnx: Database,
     scenario: str,
     burn_samples: int = 100,

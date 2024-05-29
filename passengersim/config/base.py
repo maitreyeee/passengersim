@@ -511,10 +511,10 @@ class Config(YamlConfig, extra="forbid"):
                     "the `fare_class_mix` report requires recording "
                     "at least `fare_final` details in the database"
                 )
-        if "load_factors_grouped" in m.outputs.reports:
+        if "load_factor_distribution" in m.outputs.reports:
             if not m.db.write_items & {"leg", "leg_final"}:
                 raise ValueError(
-                    "the `load_factors_grouped` report requires recording "
+                    "the `load_factor_distribution` report requires recording "
                     "at least `leg_final` details in the database"
                 )
         return m

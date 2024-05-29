@@ -19,7 +19,7 @@ def summary() -> SummaryTables:
     cfg.simulation_controls.num_trials = 1
     cfg.simulation_controls.num_samples = 500
     cfg.outputs.reports.add(("od_fare_class_mix", "BOS", "ORD"))
-    cfg.outputs.reports.add("load_factors_grouped")
+    cfg.outputs.reports.add("load_factor_distribution")
     sim = Simulation(cfg)
     summary = sim.run()
     return summary
@@ -207,9 +207,9 @@ def test_3mkt_01_fig_leg_forecasts(summary, dataframe_regression):
 @pytest.mark.parametrize("by_carrier", [False, True, "AL1"])
 def test_3mkt_01_fig_load_factor_grouped(summary, dataframe_regression, by_carrier):
     assert isinstance(summary, SummaryTables)
-    fig = summary.fig_load_factors_grouped(by_carrier=by_carrier)
+    fig = summary.fig_load_factor_distribution(by_carrier=by_carrier)
     assert isinstance(fig, altair.TopLevelMixin)
-    df = summary.fig_load_factors_grouped(
+    df = summary.fig_load_factor_distribution(
         by_carrier=by_carrier, raw_df=True
     ).reset_index(drop=True)
     dataframe_regression.check(df, default_tolerance=DEFAULT_TOLERANCE)

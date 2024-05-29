@@ -15,7 +15,7 @@ class OutputConfig(PrettyModel, extra="forbid", validate_assignment=True):
         "load_factors",
         "bookings_by_timeframe",
         "total_demand",
-        "load_factors_grouped",
+        "load_factor_distribution",
     }
     """Reports to include."""
 
