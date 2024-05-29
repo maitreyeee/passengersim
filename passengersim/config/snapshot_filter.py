@@ -69,6 +69,7 @@ class SnapshotInstruction:
 
 class SnapshotFilter(BaseModel, validate_assignment=True):
     type: Literal[
+        "fare_adj",
         "forecast",
         "leg_untruncation",
         "path_untruncation",
@@ -123,7 +124,7 @@ class SnapshotFilter(BaseModel, validate_assignment=True):
         return pth.with_suffix(".log")
 
     def run(
-        self, sim, leg=None, path=None, carrier=None, why=False
+        self, sim, leg=None, path=None, carrier=None, orig=None, dest=None, why=False
     ) -> SnapshotInstruction:
         # Check the filter conditions
         info = ""
@@ -175,6 +176,16 @@ class SnapshotFilter(BaseModel, validate_assignment=True):
                 return SnapshotInstruction(False, why=f"cause {carrier=}")
             info += f"  carrier={carrier}"
 
+        if orig is not None:
+            if self.orig and orig not in self.orig:
+                return SnapshotInstruction(False, why=f"cause {orig=}")
+            info += f"  orig={orig}"
+
+        if dest is not None:
+            if self.airline and dest not in self.dest:
+                return SnapshotInstruction(False, why=f"cause {dest=}")
+            info += f"  dest={dest}"
+
         # Now do something
         snapshot_file = self.filepath(sim, leg, path)
         created_date = time.strftime("Snapshot created %Y-%m-%d %A %I:%M:%S %p")
@@ -184,7 +195,9 @@ class SnapshotFilter(BaseModel, validate_assignment=True):
 
         self._last_run_info = info
 
-        if self.type in ["leg_untruncation", "path_untruncation"]:
+        if self.type in ["fare_adj"]:
+            return SnapshotInstruction(True, snapshot_file, why=title, filter=self)
+        elif self.type in ["leg_untruncation", "path_untruncation"]:
             return SnapshotInstruction(True, snapshot_file, why=title, filter=self)
         elif self.type in ("forecast", "forecast_adj"):
             return SnapshotInstruction(True, snapshot_file, why=title, filter=self)

@@ -12,10 +12,10 @@ class DwmData(BaseModel, extra="forbid"):
     min_distance: int = 0
     max_distance: int = 25000
     k_factor: float = 3.0
-    earlyDepMultiplier: float = 10.0
-    lateDepMultiplier: float = 10.0
-    earlyArrMultiplier: float = 10.0
-    lateArrMultiplier: float = 10.0
+    early_dep: tuple[float, float] | None = None
+    late_dep: tuple[float, float] | None = None
+    early_arr: tuple[float, float] | None = None
+    late_arr: tuple[float, float] | None = None
     probabilities: List[float] = []
 
 
@@ -32,6 +32,7 @@ class PodsChoiceModel(Named, extra="forbid"):
     elapsed_time: tuple[float, float] | None = None
     buffer_threshold: int | None = None
     buffer_time: tuple[float, float] | None = None
+    replanning: tuple[float, float] | None = None
     r1: float | None = None
     r2: float | None = None
     r3: float | None = None

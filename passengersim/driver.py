@@ -267,14 +267,42 @@ class Simulation(BaseSimulation):
                     continue
                 if pname == "dwm_data":
                     for dwm in pvalue:
+                        early_dep_alpha = (
+                            dwm.early_dep[0] if dwm.early_dep is not None else 0.0
+                        )
+                        early_dep_beta = (
+                            dwm.early_dep[1] if dwm.early_dep is not None else 0.0
+                        )
+                        late_dep_alpha = (
+                            dwm.late_dep[0] if dwm.late_dep is not None else 0.0
+                        )
+                        late_dep_beta = (
+                            dwm.late_dep[1] if dwm.late_dep is not None else 0.0
+                        )
+                        early_arr_alpha = (
+                            dwm.early_arr[0] if dwm.early_arr is not None else 0.0
+                        )
+                        early_arr_beta = (
+                            dwm.early_arr[1] if dwm.early_arr is not None else 0.0
+                        )
+                        late_arr_alpha = (
+                            dwm.late_arr[0] if dwm.late_arr is not None else 0.0
+                        )
+                        late_arr_beta = (
+                            dwm.late_arr[1] if dwm.late_arr is not None else 0.0
+                        )
                         x.add_dwm_data(
                             dwm.min_distance,
                             dwm.max_distance,
                             dwm.k_factor,
-                            dwm.earlyDepMultiplier,
-                            dwm.lateDepMultiplier,
-                            dwm.earlyArrMultiplier,
-                            dwm.lateArrMultiplier,
+                            early_dep_alpha,
+                            early_dep_beta,
+                            late_dep_alpha,
+                            late_dep_beta,
+                            early_arr_alpha,
+                            early_arr_beta,
+                            late_arr_alpha,
+                            late_arr_beta,
                             dwm.probabilities,
                         )
                 elif isinstance(pvalue, list | tuple):

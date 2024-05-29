@@ -39,6 +39,7 @@ from .pretty import PrettyModel, repr_dict_with_indent
 from .rm_systems import RmSystem
 from .simulation_controls import SimulationSettings
 from .snapshot_filter import SnapshotFilter
+from .todd_curves import ToddCurve
 
 if typing.TYPE_CHECKING:
     from pydantic.main import IncEx
@@ -268,6 +269,9 @@ class Config(YamlConfig, extra="forbid"):
 
     load_factor_curves: DictOfNamed[LoadFactorCurve] = {}
     """ FRAT5 curves are used to model sellup rates in Q-forecasting"""
+
+    todd_curves: DictOfNamed[ToddCurve] = {}
+    """ Time of Day curves"""
 
     choice_models: DictOfNamed[ChoiceModel] = {}
     """Several choice models are programmed behind the scenes.
