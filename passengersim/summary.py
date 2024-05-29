@@ -65,7 +65,23 @@ class SummaryTables:
         """Aggregate multiple summary tables."""
         if not summaries:
             return None
-        carrier_history = pd.concat([s.carrier_history for s in summaries])
+
+        # dataframes where trial is in the index, just concatenate
+        def concat(name):
+            frames = []
+            for s in summaries:
+                frame = getattr(s, name)
+                if frame is not None:
+                    frames.append(frame)
+            if frames:
+                return pd.concat(frames)
+            return None
+
+        carrier_history = concat("carrier_history")
+        bookings_by_timeframe = concat("bookings_by_timeframe")
+        demand_to_come = concat("demand_to_come")
+
+        # demands has some columns that are averages and some that are sums
         demands_avg = sum(
             s.demands.set_index(["orig", "dest", "segment"])[
                 ["sold", "revenue", "avg_fare"]
@@ -91,9 +107,21 @@ class SummaryTables:
             for s in summaries
         ) / len(summaries)
 
-        fare_class_mix = sum(s.fare_class_mix for s in summaries) / len(summaries)
-        leg_forecasts = sum(s.leg_forecasts for s in summaries) / len(summaries)
-        path_forecasts = sum(s.path_forecasts for s in summaries) / len(summaries)
+        def average(name):
+            frames = []
+            for s in summaries:
+                frame = getattr(s, name)
+                if frame is not None:
+                    frames.append(frame)
+            if frames:
+                return sum(frames) / len(frames)
+            return None
+
+        fare_class_mix = average("fare_class_mix")
+        leg_forecasts = average("leg_forecasts")
+        path_forecasts = average("path_forecasts")
+        bid_price_history = average("bid_price_history")
+        displacement_history = average("displacement_history")
 
         result = cls(
             demands=demands,
@@ -104,6 +132,10 @@ class SummaryTables:
             leg_forecasts=leg_forecasts,
             path_forecasts=path_forecasts,
             carrier_history=carrier_history,
+            bookings_by_timeframe=bookings_by_timeframe,
+            bid_price_history=bid_price_history,
+            displacement_history=displacement_history,
+            demand_to_come=demand_to_come,
         )
         result.meta_trials = summaries
         return result

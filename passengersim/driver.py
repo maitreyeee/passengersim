@@ -5,6 +5,7 @@ import os
 import pathlib
 import sqlite3
 import time
+from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import datetime, timezone
 from math import sqrt
@@ -28,7 +29,7 @@ from .progressbar import DummyProgressBar, ProgressBar
 logger = logging.getLogger("passengersim")
 
 
-class BaseSimulation:
+class BaseSimulation(ABC):
     @classmethod
     def from_yaml(
         cls,
@@ -62,6 +63,34 @@ class BaseSimulation:
             output_dir = os.path.join(self._tempdir.name, "test1")
         self.cnx = None
         self.output_dir = output_dir
+
+    @property
+    @abstractmethod
+    def _sim(self) -> SimulationEngine:
+        raise NotImplementedError
+
+    def path_names(self):
+        result = {}
+        for p in self._sim.paths:
+            result[p.path_id] = str(p)
+        return result
+
+    @property
+    def paths(self):
+        """Generator of all paths in the simulation."""
+        return self._sim.paths
+
+    @property
+    def pathclasses(self):
+        """Generator of all path classes in the simulation."""
+        for path in self._sim.paths:
+            yield from path.pathclasses
+
+    def pathclasses_for_airline(self, airline: str):
+        """Generator of all path classes for a given airline."""
+        for path in self._sim.paths:
+            if path.carrier == airline:
+                yield from path.pathclasses
 
 
 class Simulation(BaseSimulation):
@@ -114,6 +143,10 @@ class Simulation(BaseSimulation):
             database.tables.create_table_path_defs(self.cnx._connection, self.sim.paths)
             if config.db != ":memory:":
                 self.cnx.save_configs(config)
+
+    @property
+    def _sim(self) -> SimulationEngine:
+        return self.sim
 
     @property
     def base_time(self) -> int:
@@ -968,9 +1001,7 @@ class Simulation(BaseSimulation):
             carriers=carrier_df,
         )
         summary.load_additional_tables(self.cnx, sim.name, sim.burn_samples, additional)
-        print("set cnx")
         summary.cnx = self.cnx
-        print("return summary")
         return summary
 
     def compute_demand_report(
@@ -1305,13 +1336,13 @@ class Simulation(BaseSimulation):
             self._run_sim()
         if self.choice_set_file is not None:
             self.choice_set_file.close()
-        print("Computing reports")
+        logger.info("Computing reports")
         summary = self.compute_reports(
             self.sim,
             to_log=log_reports or self.sim.config.outputs.log_reports,
             additional=self.sim.config.outputs.reports,
         )
-        print("Saving reports")
+        logger.info("Saving reports")
         if self.sim.config.outputs.excel:
             summary.to_xlsx(self.sim.config.outputs.excel)
         logger.info(
@@ -1339,26 +1370,3 @@ class Simulation(BaseSimulation):
         dst : Path-like or sqlite3.Connection
         """
         return self.cnx.backup(dst)
-
-    def path_names(self):
-        result = {}
-        for p in self.sim.paths:
-            result[p.path_id] = str(p)
-        return result
-
-    @property
-    def paths(self):
-        """Generator of all paths in the simulation."""
-        return self.sim.paths
-
-    @property
-    def pathclasses(self):
-        """Generator of all path classes in the simulation."""
-        for path in self.sim.paths:
-            yield from path.pathclasses
-
-    def pathclasses_for_airline(self, airline: str):
-        """Generator of all path classes for a given airline."""
-        for path in self.sim.paths:
-            if path.carrier == airline:
-                yield from path.pathclasses
