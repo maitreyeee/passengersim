@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import logging
 import os.path
 import pathlib
@@ -155,6 +156,7 @@ class SummaryTables:
             "fare_class_mix",
             "bookings_by_timeframe",
             "total_demand",
+            "load_factors_grouped",
         ),
     ) -> None:
         """
@@ -216,7 +218,7 @@ class SummaryTables:
                             db, orig, dest, scenario, burn_samples=burn_samples
                         )
                     )
-
+        # load additional fare class mix tables
         for i in additional:
             if isinstance(i, tuple) and i[0] == "od_fare_class_mix" and db.is_open:
                 orig, dest = i[1], i[2]
@@ -226,6 +228,20 @@ class SummaryTables:
                 self.od_fare_class_mix[(orig, dest)] = (
                     database.common_queries.od_fare_class_mix(
                         db, orig, dest, scenario, burn_samples=burn_samples
+                    )
+                )
+
+        for i in additional:
+            cutoffs = None
+            if i == "load_factors_grouped" and db.is_open:
+                cutoffs = (0.5, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95)  # default cutoffs
+            elif isinstance(i, tuple) and i[0] == "load_factors_grouped" and db.is_open:
+                cutoffs = ast.literal_eval(i[1])
+            if cutoffs is not None:
+                logger.info("loading load_factors_grouped")
+                self.load_factors_grouped = (
+                    database.common_queries.load_factors_grouped(
+                        db, scenario, burn_samples=burn_samples, cutoffs=cutoffs
                     )
                 )
 
@@ -307,6 +323,7 @@ class SummaryTables:
         displacement_history: pd.DataFrame | None = None,
         local_and_flow_yields: pd.DataFrame | None = None,
         leg_carried: pd.DataFrame | None = None,
+        load_factors_grouped: pd.DataFrame | None = None,
     ):
         self.demands = demands
         self.fares = fares
@@ -327,6 +344,7 @@ class SummaryTables:
         self.displacement_history = displacement_history
         self.local_and_flow_yields = local_and_flow_yields
         self.leg_carried = leg_carried
+        self.load_factors_grouped = load_factors_grouped
 
     def to_records(self) -> dict[str, list[dict]]:
         """Convert all summary tables to a dictionary of records."""
@@ -347,6 +365,17 @@ class SummaryTables:
             for k, v in self.__dict__.items():
                 if isinstance(v, pd.DataFrame):
                     v.to_excel(writer, sheet_name=k)
+
+    def to_dataframe(self, table) -> pd.DataFrame:
+        """Convert the summary tables to a individual dataframes."""
+        sheet_count = 0
+        for k, v in self.__dict__.items():
+            if isinstance(v, pd.DataFrame):
+                sheet_count += 1
+                if sheet_count == table:
+                    return v.assign(table=k)
+
+        raise IndexError("There are fewer than", table, " DataFrames in the object")
 
     def aggregate_demand_history(self, by_segment: bool = True) -> pd.Series:
         """
@@ -513,6 +542,67 @@ class SummaryTables:
         return self._fig_fare_class_mix(
             df, label_threshold=label_threshold, title=f"Fare Class Mix ({orig}-{dest})"
         )
+
+    @report_figure
+    def fig_load_factors_grouped(self, by_carrier: bool | str = True, raw_df=False):
+        if not hasattr(self, "load_factors_grouped"):
+            raise AttributeError(
+                "load_factors_grouped data not found. Please load it first."
+            )
+
+        df_for_chart = self.load_factors_grouped
+        df_for_chart.columns.names = ["Load Factor Range"]
+        df_for_chart = df_for_chart.set_index("carrier")
+        df_for_chart = df_for_chart.stack().rename("Count").reset_index()
+
+        if not by_carrier:
+            df_for_chart = (
+                df_for_chart.groupby(["Load Factor Range"]).Count.sum().reset_index()
+            )
+        elif isinstance(by_carrier, str):
+            df_for_chart = df_for_chart[df_for_chart["carrier"] == by_carrier]
+            df_for_chart = df_for_chart.drop(columns=["carrier"])
+
+        if raw_df:
+            return df_for_chart
+
+        import altair as alt
+
+        if by_carrier is True:
+            chart = (
+                alt.Chart(df_for_chart)
+                .mark_bar()
+                .encode(
+                    x=alt.X("Load Factor Range", title="Load Factor Range"),
+                    y=alt.Y("Count:Q", title="Count"),
+                    facet=alt.Facet("carrier:N", columns=2, title="Carrier"),
+                    tooltip=[
+                        alt.Tooltip("carrier", title="Carrier"),
+                        alt.Tooltip("Count", title="Count"),
+                    ],
+                )
+                .properties(
+                    width=300, height=250, title="Leg Load Factor Frequency by Carrier"
+                )
+            )
+        else:
+            chart = (
+                alt.Chart(df_for_chart)
+                .mark_bar()
+                .encode(
+                    x=alt.X("Load Factor Range", title="Load Factor Range"),
+                    y=alt.Y("Count:Q", title="Count"),
+                )
+                .properties(
+                    width=600,
+                    height=400,
+                    title="Leg Load Factor Frequency"
+                    if not by_carrier
+                    else f"Leg Load Factor Frequency ({by_carrier})",
+                )
+            )
+
+        return chart
 
     @property
     def raw_fare_class_mix(self) -> pd.DataFrame:
