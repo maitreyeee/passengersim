@@ -277,7 +277,7 @@ class Database:
             idx = """
             CREATE INDEX fare_detail_idx_2
             ON fare_detail (
-                scenario, trial, sample, days_prior, carrier, booking_class
+                fare_id, scenario, trial, sample, days_prior
             );
             """
             self._connection.execute(idx)
