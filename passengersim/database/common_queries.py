@@ -154,24 +154,45 @@ def load_factors(cnx: Database, scenario: str, burn_samples: int = 100) -> pd.Da
     """
     return cnx.dataframe(qry, (scenario, burn_samples))
 
-def load_factors_groupedMai(cnx: Database) -> pd.DataFrame:
-    qry = """
-    SELECT
-        count(CASE WHEN lf>= 0 AND lf < 0.5 THEN 1 END) AS '0.0 - 0.5',
-        count(CASE WHEN lf>= 0.5 AND lf < 0.6 THEN 1 END) AS '0.5 - 0.6',
-        count(CASE WHEN lf>= 0.6 AND lf < 0.7 THEN 1 END) AS '0.6 - 0.7',
-        count(CASE WHEN lf>= 0.7 AND lf < 0.8 THEN 1 END) AS '0.7 - 0.8',
-        count(CASE WHEN lf>= 0.8 AND lf < 0.85 THEN 1 END) AS '0.8 - 0.85',
-        count(CASE WHEN lf>= 0.85 AND lf < 0.9 THEN 1 END) AS '0.85 - 0.9',
-        count(CASE WHEN lf>= 0.9 AND lf < 0.95 THEN 1 END) AS '0.9 - 0.95',
-        count(CASE WHEN lf>= 0.95 AND lf <= 1 THEN 1 END) AS '0.95 - 1'
-    
-    FROM (
-        SELECT sold, capacity, (1.0*sold)/capacity AS lf 
-        FROM leg_detail INNER JOIN leg_defs ON leg_detail.flt_no = leg_defs.flt_no
+
+def load_factor_distribution(
+    cnx: Database,
+    scenario: str,
+    burn_samples: int = 100,
+    cutoffs=(0.5, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95),
+) -> pd.DataFrame:
+    cutoffs = sorted([float(j) for j in cutoffs])
+    if 0.0 not in cutoffs:
+        cutoffs = [0.0] + cutoffs
+    if 1.0 not in cutoffs:
+        cutoffs = cutoffs + [1.0]
+    vars = []
+    for i in range(len(cutoffs) - 2):
+        vars.append(
+            f"count(CASE WHEN lf>= {cutoffs[i]} AND lf < {cutoffs[i+1]} THEN 1 END) "
+            f"AS '{cutoffs[i]} - {cutoffs[i+1]}'"
+        )
+    vars.append(
+        f"count(CASE WHEN lf>= {cutoffs[-2]} AND lf <= {cutoffs[-1]} THEN 1 END) "
+        f"AS '{cutoffs[-2]} - {cutoffs[-1]}'"
     )
+    vars = ",\n        ".join(vars)
+    qry = f"""
+    SELECT
+        carrier,
+        {vars}
+    FROM (
+        SELECT carrier, sold, capacity, (1.0*sold)/capacity AS lf
+        FROM leg_detail
+                   JOIN leg_defs USING (flt_no)
+          WHERE days_prior = 0  -- only after all sales are recorded
+            AND sample >= ?2    -- only after burn period
+            AND scenario = ?1   -- only for this scenario
+    )
+    GROUP BY carrier
     """
-    return cnx.dataframe(qry)
+    return cnx.dataframe(qry, (scenario, burn_samples))
+
 
 def total_demand(cnx: Database, scenario: str, burn_samples: int = 100) -> float:
     """
@@ -643,6 +664,7 @@ def bid_price_history(
     else:
         raise ValueError(f"unknown weighting {weighting}")
     return bph
+
 
 def displacement_history(
     cnx: Database,
