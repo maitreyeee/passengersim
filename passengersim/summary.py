@@ -973,6 +973,12 @@ class SummaryTables:
             raw_df, "yield", "Average Yield", "$.4f", title="Carrier Yields"
         )
 
+    @report_figure
+    def fig_carrier_total_bookings(self, raw_df=False):
+        return self._fig_carrier_load_factors(
+            raw_df, "sold", "Total Bookings", ".4s", title="Carrier Total Bookings"
+        )
+
     def _fig_forecasts(
         self,
         df,
